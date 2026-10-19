@@ -1,7 +1,7 @@
 # MEMORIA TÉCNICA — TrainSync
 ### App de planificación de entrenamiento basada en intervals.icu
 
-> **Versión:** 0.4 — Reglas de TSB, HRV, zonas de running y clasificación de Z4 corregidas según bibliografía (ver `MOTOR_ENTRENAMIENTO.md` §11.1)  
+> **Versión:** 0.5 — Reglas de TSB, HRV, zonas de running y clasificación de Z4 corregidas según bibliografía (ver `MOTOR_ENTRENAMIENTO.md` §11.1)  
 > **Fecha última actualización:** 2026-10-19  
 > **Estado:** Pre-desarrollo — Aprobado para inicio
 
@@ -859,6 +859,8 @@ Total de semanas disponibles → dividir en:
 └── Fase TAPER (10–15%): Reducción de carga, mantenimiento de intensidad
 ```
 
+> v0.5: el taper se fija en días según la prueba (5K/10K ~9, media ~12, maratón y ultra ~21, resto 14) y el resto se reparte con estas proporciones. Sin fecha de inicio, la preparación empieza 20 semanas antes del objetivo. El catálogo distingue running en asfalto por distancia, trail, ciclismo de fondo, natación en piscina y aguas abiertas, triatlón y duatlón. El RPE de intervals.icu (`icu_rpe`, `session_rpe`) entra en el ajuste diario y en la carga semanal (sRPE, monotonía). Detalle y fuentes: `MOTOR_ENTRENAMIENTO.md` v0.4.
+
 ---
 
 ## 9. Roadmap por Fases
@@ -1092,6 +1094,7 @@ trainsync/
 | Versión | Fecha | Cambios |
 |---|---|---|
 | 0.1 | 2026-04-21 | Versión inicial. Memoria completa pre-desarrollo |
+| 0.5 | 2026-10-19 | Taper por distancia, todos los tipos de prueba y RPE en el motor (ver nota en 8.5 y `MOTOR_ENTRENAMIENTO.md` v0.4). |
 | 0.4 | 2026-10-19 | Verificación bibliográfica (detalle en `MOTOR_ENTRENAMIENTO.md` §11.1): TSB solo reduce carga por debajo de −30 (Friel); HRV con media móvil 7 d de ln(RMSSD) vs SWC; zonas de FC distintas para running y ciclismo (Friel) y techo LTHR − 30 en sesiones fáciles; Z4 clasificada como intensidad moderada (plan piramidal). |
 | 0.3 | 2026-04-21 | Añadido duatlón como tipo de objetivo (sprint/estándar/long/personalizado). Añadido entrenamiento de fuerza: RF-08, rTSS por RPE×duración, integración en CTL/ATL, programación por fases. Sección 8.0 añadida: explicación completa del proceso de decisión diaria (CTL/ATL/TSB/HRV/sueño → tipo de día → fase → sesión). Modelo de datos actualizado: goals con duathlon_format y campos de distancias, user_profiles con strength_training y gym_access. |
 

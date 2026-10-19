@@ -136,11 +136,11 @@ def test_open_water_only_in_build_and_peak():
 
 def test_swim_without_css_uses_rpe():
     s = e.build_session("threshold", "swimming_pool", e.Profile(active_sports=["swimming_pool"]), phase="build")
-    assert s["targets"]["Z4"] == "RPE 7"
+    assert s["targets"]["Z4"] == "RPE 6-7"
 
 
 def test_running_long_capped_at_150_minutes():
-    assert e.build_session("long", "running", PROFILE, volume=3)["duration_min"] <= 150
+    assert e.build_session("long", "running", PROFILE, volume=3, max_minutes=e.long_cap(None, "running"))["duration_min"] <= 150
 
 
 def test_strength_dose_by_phase():
@@ -156,3 +156,107 @@ def test_weekly_load_follows_ctl_ramp():
     target = e.weekly_tss_target(40)  # 7 × (40 + 3 / 0,1535) ≈ 417
     assert target == pytest.approx(416.8, abs=1)
     assert sum(e.day_tss(d) for d in days) == pytest.approx(target, rel=0.15)
+
+
+# ---------------------------------------------------------------- RPE
+
+def test_every_block_has_rpe_and_short_intervals_guide_by_rpe():
+    week = next(w for w in range(5) if e.pick_session("vo2max", "running", "base_early", w)["id"] == "R-VO2-2")
+    s = e.build_session("vo2max", "running", PROFILE, phase="base_early", week=week)  # 8×2′
+    assert all("rpe" in b for b in s["blocks"])
+    assert any("guide" in b for b in s["blocks"])
+
+
+def test_high_rpe_with_low_hr_removes_intensity():
+    assert e.effort_mismatch(7, [1200, 2400, 100, 0, 0, 0, 0])
+    assert not e.effort_mismatch(7, [600, 1200, 900, 600, 0, 0, 0])  # sesión dura: RPE alto esperado
+    assert not e.effort_mismatch(None, [1200, 2400, 0])
+    kind, _, reasons = e.adjust("vo2max", e.DayState(ctl=40, atl=40, effort_mismatch=True))
+    assert kind == "aerobic" and "percibido" in reasons[0]
+
+
+def test_monotony_and_strain():
+    load, mono, strain = e.monotony([300, 300, 300, 300, 300, 300, 310])  # carga casi idéntica: monotonía alta
+    assert load == 2110 and mono > 2 and strain > load
+    assert e.monotony([0] * 7)[1] is None
+
+
+# ---------------------------------------------------------------- tipos de prueba
+
+def goal(sport="running", km=None, trail=False, weeks=20):
+    return e.Goal("X", sport, date(2026, 10, 19) + timedelta(weeks=weeks), distance_km=km, trail=trail)
+
+
+def test_taper_length_depends_on_distance():
+    marathon, tenk = goal(km=42.2), goal(km=10)
+    assert e.phase_for(marathon.date - timedelta(days=20), marathon, None)[0] == "taper"
+    assert e.phase_for(tenk.date - timedelta(days=20), tenk, None)[0] == "peak"
+    assert e.phase_for(tenk.date - timedelta(days=8), tenk, None)[0] == "taper"
+
+
+def test_long_run_cap_by_distance():
+    assert e.long_cap(goal(km=5), "running") == 75 and e.long_cap(goal(km=100), "running") == 240
+    assert e.long_cap(goal(km=42.2), "cycling") is None
+
+
+def test_templates_by_event():
+    assert e.template_for("build", goal(km=21.1))["THU"] == "threshold"
+    assert e.template_for("build", goal(km=10))["THU"] == "vo2max"
+    assert e.template_for("peak", goal(km=80))["SAT"] == "long"
+    assert e.template_for("build", goal("triathlon"))["SAT"] == "brick"
+
+
+def test_trail_sessions_only_for_trail_goals():
+    trail = {e.pick_session("long", "running", "base", w, "trail")["id"] for w in range(2)}
+    road = {e.pick_session("long", "running", "base", w)["id"] for w in range(2)}
+    assert "T-LONG" in trail and "R-LONG" in trail
+    assert road == {"R-LONG"}
+
+
+def test_swimming_goal_plans_swimming():
+    profile = e.Profile(active_sports=["swimming_pool", "running"], css=95)
+    days = e.plan(date(2026, 10, 19), 7, profile, goal("swimming_pool", km=1.5))
+    assert {d["main"]["sport"] for d in days if d["main"]} == {"swimming_pool"}
+
+
+def test_open_water_long_in_build():
+    profile = e.Profile(active_sports=["swimming_open"])
+    assert e.build_session("long", "swimming_open", profile, phase="build")["id"] == "S-OW-LONG"
+
+
+# ---------------------------------------------------------------- pendientes completados
+
+def test_base_has_neuromuscular_day():
+    d = e.propose_day(date(2026, 10, 29) + timedelta(weeks=5), PROFILE, GOAL)  # jueves en base
+    assert d["phase"] == "base" and d["main"]["type"] == "neuromuscular"
+
+
+def test_brick_on_saturday_in_build_for_triathlon():
+    profile = e.Profile(active_sports=["running", "cycling", "swimming_pool"], css=95)
+    g = goal("triathlon", weeks=10)
+    sat = next(d for d in e.plan(date(2026, 10, 19), 14, profile, g) if d["weekday"] == "SAT" and d["phase"] == "build")
+    assert sat["main"]["id"] == "C-BRICK"
+
+
+def test_missing_physiology_schedules_test_once():
+    profile = e.Profile(active_sports=["running", "cycling"], lthr=174, needs_test={"running"})
+    days = e.plan(date(2026, 10, 19), 14, profile, GOAL)
+    tests = [d for d in days if d["main"] and d["main"]["type"] == "test"]
+    assert len(tests) == 1 and tests[0]["main"]["id"] == "R-TEST-LTHR"
+
+
+def test_intermittent_duty_lowers_tss():
+    block = [{"reps": 1, "minutes": 13, "zone": "Z5"}]
+    assert e._blocks_tss([block[0] | {"duty": 0.67}]) < e._blocks_tss(block)
+
+
+def test_long_session_gets_largest_share_of_weekly_tss():
+    days = e.plan(date(2026, 10, 19), 7, PROFILE, GOAL, e.DayState(ctl=40, atl=40))
+    long_day = next(d for d in days if d["main"] and d["main"]["type"] == "long")
+    assert long_day["main"]["tss"] == max(d["main"]["tss"] for d in days if d["main"])
+
+
+def test_phase_progresses_without_plan_start():
+    g = goal(km=42.2, weeks=30)
+    phases = [e.phase_for(date(2026, 10, 19) + timedelta(weeks=w), g, None)[0] for w in range(30)]
+    assert phases[0] == "base" and "base_early" in phases and "build" in phases and phases[-1] == "taper"

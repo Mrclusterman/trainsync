@@ -1,6 +1,6 @@
 # MOTOR DE ENTRENAMIENTO — TrainSync
 
-> **Versión:** 0.3 — Reconstrucción de `PROMPT_MOTOR_ENTRENAMIENTO.md` (original no localizado), contrastada con fuentes
+> **Versión:** 0.4 — Reconstrucción de `PROMPT_MOTOR_ENTRENAMIENTO.md` (original no localizado), contrastada con fuentes
 > **Fecha:** 2026-10-19
 > **Estado:** Verificado por Claude contra bibliografía (sección 11). Cambios de §11.1 aprobados el 2026-10-19 y aplicados en Memoria v0.4
 > **Complementa a:** `MEMORIA_TECNICA.md` §8 (fórmulas de TSS, CTL/ATL/TSB, zonas, HRV). Este documento no las repite: define **qué sesiones existen, cómo se eligen y cómo se organizan**.
@@ -165,6 +165,28 @@ TSB en valor **absoluto**, no en % del CTL: el % exagera con CTL bajos. [Prácti
 
 ---
 
+### 3.3 RPE (esfuerzo percibido)
+
+**¿Importa? Sí, con matices.**
+- Las medidas subjetivas (bienestar, esfuerzo percibido) reflejan la carga aguda y crónica con más sensibilidad y consistencia que las objetivas (FC, marcadores sanguíneos) [Verificado: Saw 2016, revisión sistemática de 56 estudios].
+- El sRPE (RPE × minutos) es una medida válida de carga, también en intervalos [Verificado: Foster 2001; Haddad 2017].
+- La monotonía y el strain semanales del sRPE explicaron la mayoría de las enfermedades leves cuando cada atleta superaba sus umbrales individuales [Verificado: Foster 1998, resumen].
+- Un RPE más alto a la misma intensidad aparece en la sobrecarga funcional [Verificado: estudio en triatletas 2017 y revisión de 2021 sobre marcadores de sobrecarga].
+- Prescribir solo por RPE funciona en estudios pequeños, pero la relación RPE-umbral varía mucho entre personas: complementa a FC/ritmo, no la sustituye [Verificado: estudio piloto Biology of Sport 2015; variabilidad del RPE en el umbral].
+- Con calor, la FC deriva al alza a ritmo constante (deriva cardiovascular) [Verificado: concepto fisiológico; fuentes divulgativas].
+
+**Uso en el motor:**
+
+| Uso | Regla | Etiqueta |
+|---|---|---|
+| Prescripción | Cada bloque lleva un RPE objetivo (CR10): Z1 1–2 · Z2 3–4 · Z3 5 · Z4 6–7 · Z5 8–9 · Z6 10 | [Práctica; 2 mmol ≈ 4,3 y 4 mmol ≈ 6,5 en CR10 en corredores, fuente secundaria] |
+| Series cortas | En series Z5–Z6 de < 3′, la guía principal es el RPE: la FC tarda en subir | [Práctica] |
+| Natación sin CSS | Se prescribe solo por RPE | [Práctica] |
+| Señal de fatiga | RPE ≥ 6 en una sesión con < 10 % del tiempo en Z3+ en los últimos 2 días → sin intensidad hoy | [Verificado: dirección del efecto; umbrales: Inferencia] |
+| Carga semanal | sRPE de 7 días, monotonía (media/DT) y strain (carga × monotonía) en `/state`; aviso si monotonía > 2 | [Verificado: Foster 1998; umbral 2: Práctica] |
+
+**Datos:** se leen de intervals.icu, que ya pide el RPE al terminar la actividad (`icu_rpe`, 1–10, y `session_rpe`) [Verificado: campos presentes en la API real].
+
 ## 4. Catálogo de sesiones
 
 Zonas según `MEMORIA_TECNICA.md` §8.3 (FC: % LTHR; natación: % CSS). Rango de duración pensado para nivel intermedio; principiante × 0.75, avanzado × 1.25 [Inferencia].
@@ -193,6 +215,31 @@ Zonas según `MEMORIA_TECNICA.md` §8.3 (FC: % LTHR; natación: % CSS). Rango de
 
 *Descartado:* 30″/15″ en carrera. Solo hay estudios agudos, y en mediofondistas muy entrenados los intervalos de 30″ dieron **menos** tiempo por encima del 90 % del VO2max que los de 3′. No se encontraron ensayos de entrenamiento. [Verificado: búsqueda sin ensayos; estudio agudo]
 
+### 4.1.b Trail (5 tipos, solo con objetivo trail)
+
+Determinantes: en subida pesan la velocidad aeróbica máxima, la fuerza máxima y el peso; en bajada, la rigidez musculotendinosa [Verificado: Lemire 2021]. La bajada causa daño muscular excéntrico que dura días, y la exposición previa a bajadas lo reduce (efecto de carga repetida) [Verificado: Bontemps 2021, revisión]. Con 5–10 sesiones de bajada baja el dolor, no la fatiga [Verificado: Bontemps 2024]. Entrenadores recomiendan bajadas rápidas cada ~2 semanas [Práctica].
+
+| ID | Categoría | Estructura | Fases |
+|---|---|---|---|
+| T-HILL-VO2 | vo2max | 6×3′ subida Z5, bajada al trote | todas salvo taper |
+| T-HILL-THR | threshold | 3×10′ subida Z4; marcha rápida si > ~15 % | build, peak |
+| T-LONG | long | Por tiempo en desnivel, bajadas controladas | todas salvo taper |
+| T-DOWNHILL | neuromuscular | 6×2′ de bajada viva, subida andando | base, build |
+| T-RACE-SIM | race_specific | Recorrido similar con subidas a ritmo de carrera | peak |
+
+Las sesiones trail alternan con las de running por rotación semanal, así la bajada sale cada ~2 semanas. [Inferencia]
+
+### 4.1.c Neuromusculares y tests (todos los deportes)
+
+| ID | Categoría | Estructura | Fases |
+|---|---|---|---|
+| R-HILL-NM | neuromuscular | 8–10×10″ cuesta máxima, rec. completa | base_early, base, build |
+| C-SPRINT | neuromuscular | 6–8×10″ sprint, 4′ entre sprints | base, build, peak |
+| S-SPRINT | neuromuscular | 8×25 máximo, desc. 45″ | base, build |
+| R-TEST-LTHR · C-TEST · S-TEST-CSS | test | Protocolos de §4.1–4.3 | cualquiera |
+
+Los tests sustituyen la primera sesión de calidad del plan cuando faltan datos fiables (LTHR implausible o ausente, sin CSS). [Memoria RF-03]
+
 ### 4.2 Ciclismo (17 tipos)
 
 | ID | Categoría | Estructura principal | Duración | Fases | Cap. mín. | Etiqueta |
@@ -213,7 +260,8 @@ Zonas según `MEMORIA_TECNICA.md` §8.3 (FC: % LTHR; natación: % CSS). Rango de
 | C-CLIMB | threshold | 2–4 subidas de 8–20′ en Z4, bajada de recuperación | 90–180′ | build, peak | high | [Práctica]; usa puertos locales si el perfil los define |
 | C-RACE-SIM | race_specific | Larga con 2–3 bloques de 20–30′ a ritmo de evento | 180–300′ | peak | high | [Práctica]; Z3 permitida si el evento es gran fondo |
 | C-OPENER | race_specific | 3×3′ Z4 a ritmo de carrera, rec. 3′ | 45–75′ | taper | high | [Práctica]; añadida en v0.3: el taper de ciclismo no tenía sesión race_specific |
-| C-BRICK | brick | Bici a ritmo de carrera + R-BRICK inmediato | 60–150′ | build, peak | high | [Práctica]; solo triatlón/duatlón |
+| C-BRICK | brick | Bici a ritmo de carrera + R-BRICK inmediato | 60–150′ | build, peak | high | [Práctica]; solo triatlón/duatlón, sábados de build/peak |
+| C-LONG-LATE | long | Larga Z2 con 2×10′ Z4 en la última hora | 180–300′ | build, peak | high | [Verificado: la durabilidad (rendir con fatiga) decide las fases finales de pruebas largas — revisión Frontiers 2025; sesión: Práctica] |
 | C-TEST | test | LTHR 30′ (sin potencia) · FTP 20′ o rampa (con potencia) | 50–60′ | onboarding, cada 8–12 semanas | high | [Memoria 7.4] |
 
 ### 4.3 Natación (16 tipos)
@@ -235,6 +283,7 @@ Sin CSS conocido, las zonas se prescriben por RPE (Z2 = 4–5/10, Z4 = 7/10, Z5 
 | S-VO2-50 | vo2max | 16×50 Z5, desc. 15–20″ | 1.800–2.400 m | base_early, base, build | high | [Práctica] |
 | S-VO2-100 | vo2max | 8×100 Z5, desc. 30″ | 2.000–2.600 m | base, build, peak | high | [Práctica] |
 | S-SPRINT | neuromuscular | 8×25 Z6, desc. 45″ | 1.500–2.000 m | base, build | medium | [Práctica] |
+| S-OW-LONG | long | Continuo en aguas abiertas, orientación y rebufo | 40–90′ | build, peak | medium | [Práctica: guías de USA Swimming y entrenadores; sin ensayos] |
 | S-OW | race_specific | Aguas abiertas: Z2 con orientación cada 6–9 brazadas + 4×3′ Z4 | 30–60′ | build, peak | high | [Práctica]; solo con `swimming_open` activo |
 | S-RACE | race_specific | Distancia de triatlón a ritmo de carrera, dividida en 2–3 bloques | distancia × 0.6–1.0 | peak, taper | high | [Práctica]; taper añadido en v0.3 |
 | S-TEST-CSS | test | 400 m + 200 m máximos; CSS (s/100 m) = (T400 − T200) / 2 | 1.500 m | onboarding, cada 8–12 semanas | high | [Verificado: velocidad crítica, Wakayoshi 1992; protocolo 200/400 fiable en los 4 estilos, error típico ≤ 0,04 m/s (estudio 2023); sobreestima algo frente a protocolos más largos] |
@@ -315,6 +364,17 @@ Carga: `rTSS = (RPE/10)² × horas × 100` [Memoria 8.1]. El RPE real introducid
 
 Se controla por **tiempo semanal** en tres bloques: bajo (Z1–Z2), moderado (Z3–Z4, la zona gris de Seiler) y alto (Z5–Z6). Las metas de la Memoria §8.4 (base_early 75/25, base 85/15, build 80/20, peak 75–80/20–25) se aplican a bajo frente a moderado+alto; dentro de la parte dura, el moderado no supera al alto salvo en build (piramidal). [Verificado: definición de Seiler; límite moderado ≤ alto: Inferencia] Si la semana planificada se desvía más de 5 puntos, el motor sustituye una sesión `aerobic` por `recovery` (exceso de calidad) o añade *strides*/sprints neuromusculares (defecto). [Inferencia]
 
+### 6.4 Por tipo de prueba
+
+| Prueba | Cambio sobre la plantilla | Etiqueta |
+|---|---|---|
+| Media, maratón, ultra (build) | Jueves umbral en lugar de VO2max | [Verificado parcial: los maratonianos de élite entrenan de forma más piramidal; Casado 2022] |
+| Ultra (build, peak) | Sábado larga: dos largas seguidas | [Práctica; el volumen semanal predice el rendimiento en ultra — estudios observacionales] |
+| Triatlón, duatlón (build, peak) | Sábado brick | [Práctica] |
+| Trail | Sesiones T- en la rotación | §4.1.b |
+| Natación | Deporte principal todos los días; nadadores de fondo más piramidales | [Verificado: González-Ravé 2021, evidencia débil] |
+| Ciclismo de fondo | C-LONG-LATE en build/peak | §4.2 |
+
 ### 6.3 Multideporte
 
 | Objetivo | MAR | MIÉ | JUE | VIE | SÁB | DOM | Fuente |
@@ -349,7 +409,9 @@ Deportes no activos en el perfil se sustituyen por el primer deporte activo.
 
 ### 8.1 Fases
 
-Proporciones de la Memoria §8.5 sobre las semanas totales de preparación: BASE 40–50 %, CONSTRUCCIÓN 30–35 %, PEAK 15–20 %, TAPER 10–15 %. Dentro de BASE, las 2–4 primeras semanas son `base_early`. [Memoria]
+El taper se fija en días según la prueba (§8.2). El resto se reparte con las proporciones de la Memoria §8.5 reescaladas: BASE ~52 %, CONSTRUCCIÓN ~28 %, PEAK ~20 %. Dentro de BASE, las 4 primeras semanas son `base_early`. [Memoria]
+
+Sin `PLAN_START`, la preparación empieza 20 semanas antes del objetivo; antes de esa fecha, base de mantenimiento. [Inferencia]
 
 Mínimos y máximos por duración total: [Inferencia]
 - < 8 semanas: sin base_early; base 2 semanas; taper según §8.2.
@@ -359,7 +421,8 @@ Mínimos y máximos por duración total: [Inferencia]
 
 | Prioridad | Duración | Volumen | Intensidad / frecuencia | Etiqueta |
 |---|---|---|---|---|
-| A | 14 días | −41 a −60 %, reducción exponencial (semana −2: −35 %; semana −1: −60 %) | Se mantienen | [Verificado: Bosquet 2007 — 2 semanas, −41–60 %, intensidad y frecuencia constantes; Mujika & Padilla 2003 — frecuencia −20 % como máximo, reducción progresiva no lineal] |
+| A (running) | 5K/10K 7–10 días · 15K–media 11–14 · maratón 19–22 · ultra ~21 | Igual que la fila siguiente | Se mantienen | [Práctica: fisioterapeutas de Mayo Clinic; ultra: entrenadores]. En el código: 9 / 12 / 21 / 21 |
+| A (resto) | 14 días | −41 a −60 %, reducción exponencial (semana −2: −35 %; semana −1: −60 %) | Se mantienen | [Verificado: Bosquet 2007 — 2 semanas, −41–60 %, intensidad y frecuencia constantes; Mujika & Padilla 2003 — frecuencia −20 % como máximo, reducción progresiva no lineal] |
 | B | 3–5 días | −20 a −30 % | Se mantienen | [Práctica: Zwift Insider — carreras B/C con poca o ninguna puesta a punto, TSB −10 a 0]. Un taper de 6 días en mediofondistas no mejoró el rendimiento [Verificado: Mujika 2000, resumen] |
 | C | 0–1 días | Solo el día previo suave | — | [Práctica: mismo origen]; la carrera cuenta como sesión de calidad de la semana |
 
@@ -377,9 +440,11 @@ Topes por objetivo: [running: Práctica (Daniels); resto: Inferencia — no se e
 
 | Objetivo | Tope de la larga |
 |---|---|
+| 5K | 75′ |
 | 10K | 90′ |
 | Media maratón | 120′ |
 | Maratón | 150′ (nunca > 32 km) |
+| Ultra (> 45 km) | 240′, con dos largas seguidas en build/peak |
 | Gran fondo / ciclismo de distancia | 75–85 % de la duración prevista del evento, tope 5 h |
 | Triatlón olímpico | Brick 90′ bici + 20′ carrera |
 | 70.3 | Brick 3 h + 30′ |
@@ -506,6 +571,18 @@ Clave: `plan:{user_id}:{fecha}`. Se invalida cuando: [Memoria RF-05/Fase 3 + Inf
 29. Friel J. Why ramp rate is an important training metric. TrainingPeaks. https://www.trainingpeaks.com/learn/articles/why-ramp-rate-is-an-important-training-metric/ · Tabla de riesgo por CTL: https://www.trainingpeaks.com/blog/track-triathlon-training-trainingpeaks/
 30. Friel J. Quick guide to setting zones. TrainingPeaks. https://www.trainingpeaks.com/learn/articles/joe-friel-s-quick-guide-to-setting-zones/
 31. Mujika I, et al. (2000) Taper de 6 días en mediofondistas — resumen en https://coachsci.sdsu.edu/csa/vol101/mujika1.htm
+32. Saw AE, Main LC, Gastin PB. Monitoring the athlete training response: subjective self-reported measures trump commonly used objective measures: a systematic review. *Br J Sports Med.* 2016;50(5):281-291. https://bjsm.bmj.com/content/50/5/281
+33. Foster C. Monitoring training in athletes with reference to overtraining syndrome. *Med Sci Sports Exerc.* 1998;30(7):1164-1168.
+34. Rating of perceived exertion as a tool for prescribing and self-regulating interval training: a pilot study. *Biol Sport.* 2015. https://www.termedia.pl/Rating-of-perceived-exertion-as-a-tool-for-prescribing-and-self-regulating-interval-training-a-pilot-study,78,24330,0,1.html
+35. A systematic review on markers of functional overreaching in endurance athletes (2021). https://lida.sport-iat.de/ta/Record/4072832
+36. Bontemps B, et al. Downhill running: what are the effects and how can we adapt? A narrative review. *Sports Med.* 2020. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7674385/
+37. Bontemps B, et al. (2024) Muscle soreness but not neuromuscular fatigue responses following downhill running differ according to the number of exercise bouts. *Eur J Sport Sci.* https://researchonline.ljmu.ac.uk/24976/
+38. Lemire M, et al. Physiological factors determining downhill vs uphill running endurance performance. *J Sci Med Sport.* 2021. https://lab3072.unistra.fr/publications/publications-marquantes/physiological-factors-determining-downhill-vs-uphill-running-endurance-performance
+39. Casado A, González-Mohíno F, González-Ravé JM, Foster C. Training periodization, methods, intensity distribution, and volume in highly trained and elite distance runners: a systematic review. *Int J Sports Physiol Perform.* 2022. doi:10.1123/ijspp.2021-0435
+40. González-Ravé JM, et al. Training intensity distribution, training volume, and periodization models in elite swimmers: a systematic review. *Int J Sports Physiol Perform.* 2021. https://lida.sport-iat.de/ta/Record/4072108
+41. Mayo Clinic. Designing your taper to maximize your potential on race day. https://newsnetwork.mayoclinic.org/discussion/how-tapering-maximizes-your-potential-on-marathon-day/
+42. Durabilidad en deportes de resistencia: revisión. *Front Sports Act Living.* 2025. https://www.frontiersin.org/journals/sports-and-active-living/articles/10.3389/fspor.2025.1530162/pdf
+43. Effects of training and anthropometric factors on marathon and 100 km ultramarathon race performance. *Open Access J Sports Med.* 2015;6. https://pmc.ncbi.nlm.nih.gov/articles/PMC4425319
 
 
 **Título de la ref. 11:** el resultado de búsqueda confirma el artículo de mantenimiento en *Eur J Appl Physiol* 110(6):1269-82 del mismo grupo, pero no he visto el título ni la lista de autores. [No verificado: título literal y autores]
@@ -516,6 +593,7 @@ Clave: `plan:{user_id}:{fecha}`. Se invalida cuando: [Memoria RF-05/Fase 3 + Inf
 
 | Versión | Fecha | Cambios |
 |---|---|---|
+| 0.4 | 2026-10-19 | RPE verificado e implementado (§3.3). Todas las pruebas: running por distancia (5K→ultra), trail (§4.1.b), ciclismo de fondo, natación en piscina y aguas abiertas, triatlón/duatlón (§6.4). Taper por distancia (§8.2), topes de larga 5K/ultra (§8.4). Implementados: neuromusculares, tests de onboarding, brick, notas si te sientes mal/bien, pesos por tipo de sesión (§9.1) e intermitentes con fracción de trabajo. Corregido: sin PLAN_START la fase no avanzaba. 12 referencias nuevas. |
 | 0.3 | 2026-10-19 | Catálogo implementado en `backend/app/services/session_catalog.py`. Añadida C-OPENER y S-RACE en taper (huecos de la plantilla). En código: S-TECH cubre el slot `recovery`; natación en minutos (~1:45/100 m) mientras no se use el CSS; con poco volumen las series se reducen (mínimo 2, o 1 en bloques ≥ 10′). Pendiente en código: sesiones neuromusculares, tests de campo, bricks, notas "si te sientes mal/bien" y pesos por tipo de sesión (§9.1). |
 | 0.2 | 2026-10-19 | Verificación de todas las [Inferencia] contra bibliografía. Nuevas reglas de HRV (§3.1) y TSB (§3.2); zonas de running separadas; techo LTHR − 30 en sesiones fáciles; Z4 contada como moderada; rampa de CTL según TrainingPeaks; TSB de carrera +15/+25; taper B/C; regla de Daniels para la tirada larga; orden fuerza/resistencia (Eddens 2018); descartado 30/15 en carrera; 14 referencias nuevas. Sección 11 reescrita sin revisor externo. |
 | 0.1 | 2026-10-19 | Reconstrucción completa: estructuras de entrada, pipeline diario, catálogo de 51 sesiones (18 running, 17 ciclismo, 16 natación), biblioteca de fuerza por fase, plantillas semanales, zona gris, periodización y taper, progresión por TSS, proyección a 14 días, invalidación de caché y referencias verificadas. |

@@ -18,8 +18,10 @@ Backend FastAPI monousuario con el motor de entrenamiento (sección 8 de la memo
 Lo marcado `[Inferencia]` en `backend/app/services/training_engine.py` no tiene evidencia publicada
 (ver `docs/MOTOR_ENTRENAMIENTO.md` §11.2).
 
-- Catálogo de 43 sesiones (`backend/app/services/session_catalog.py`) con rotación semanal, biblioteca de fuerza por fase
-  y volumen semanal escalado a la rampa de CTL (TrainingPeaks). Pendiente: neuromusculares, tests de campo y bricks.
+- Catálogo de 57 sesiones (`backend/app/services/session_catalog.py`) con rotación semanal: running por distancia
+  (5K a ultra), trail, ciclismo, natación en piscina y aguas abiertas, triatlón/duatlón (brick), neuromusculares y tests.
+- Biblioteca de fuerza por fase y TSS semanal según la rampa de CTL, repartido por tipo de sesión.
+- RPE: objetivo por bloque, señal de fatiga (RPE alto con FC baja) y carga semanal sRPE con monotonía/strain.
 
 ## Arrancar
 

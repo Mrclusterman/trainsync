@@ -1,33 +1,39 @@
 """Catálogo de sesiones y biblioteca de fuerza (docs/MOTOR_ENTRENAMIENTO.md §4 y §5).
 
 Solo datos. Bloques con minutes=None absorben la diferencia hasta la duración elegida.
-Fuera por ahora: sesiones neuromusculares (strides sueltos, sprints, cuestas cortas),
-tests de campo y bricks, que necesitan flujos que aún no existen (onboarding, días multideporte).
+"events" limita una sesión a un tipo de prueba (p. ej. trail); "duty" es la fracción de trabajo
+de un bloque intermitente (30/15 = 0,67) para no sobreestimar su TSS.
 """
 
 ALL = ("base_early", "base", "build", "peak", "taper")
 NO_TAPER = ALL[:-1]
 
 
-def B(block: str, minutes: float | None, zone: str, reps: int = 1, rest: float = 0, detail: str | None = None) -> dict:
+def B(block: str, minutes: float | None, zone: str, reps: int = 1, rest: float = 0, detail: str | None = None,
+      duty: float | None = None) -> dict:
     b = {"block": block, "reps": reps, "minutes": minutes, "zone": zone}
     if rest:
         b |= {"rest_minutes": rest, "rest_zone": "Z1"}
     if detail:
         b["detail"] = detail
+    if duty:
+        b["duty"] = duty
     return b
 
 
-def S(id: str, sport: str, category: str, phases: tuple, duration: tuple, blocks: list) -> dict:
-    return {"id": id, "sport": sport, "category": category, "phases": phases, "duration": duration, "blocks": blocks}
+def S(id: str, sport: str, category: str, phases: tuple, duration: tuple, blocks: list, events: tuple = ()) -> dict:
+    s = {"id": id, "sport": sport, "category": category, "phases": phases, "duration": duration, "blocks": blocks}
+    return s | {"events": events} if events else s
 
 
 def easy(zone: str) -> list:
     return [B("calentamiento", 10, "Z1"), B("principal", None, zone), B("vuelta a la calma", 5, "Z1")]
 
 
-def intervals(reps: int, work: float, zone: str, rest: float, detail: str | None = None, warmup: float = 15) -> list:
-    return [B("calentamiento", warmup, "Z2"), B("principal", work, zone, reps, rest, detail), B("vuelta a la calma", None, "Z1")]
+def intervals(reps: int, work: float, zone: str, rest: float, detail: str | None = None, warmup: float = 15,
+              duty: float | None = None) -> list:
+    return [B("calentamiento", warmup, "Z2"), B("principal", work, zone, reps, rest, detail, duty),
+            B("vuelta a la calma", None, "Z1")]
 
 
 # shortcut: natación en minutos con ~1:45/100 m sin CSS; pasar a metros cuando el plan use el CSS del usuario
@@ -57,6 +63,27 @@ CATALOG = [
        B("progresivo", 10, "Z4"), B("vuelta a la calma", None, "Z1")]),
     S("R-RACE", "running", "race_specific", ("peak", "taper"), (60, 100),
       intervals(2, 15, "Z4", 4, "a ritmo objetivo: 10K 3×2 km · media 2×5 km")),
+    S("R-HILL-NM", "running", "neuromuscular", ("base_early", "base", "build"), (40, 50),
+      [B("calentamiento", 15, "Z2"), B("cuestas máximas", 0.17, "Z6", 8, 2, "8–10×10″ en cuesta, rec. completa andando"),
+       B("principal", None, "Z2")]),
+    S("R-TEST-LTHR", "running", "test", ALL, (50, 50),
+      [B("calentamiento", 15, "Z2"), B("test", 30, "Z4", detail="30′ al máximo sostenible en solitario; LTHR = FC media de los últimos 20′"),
+       B("vuelta a la calma", None, "Z1")]),
+
+    # ---- Trail (§4.4): subidas, bajadas controladas y largas por tiempo en desnivel
+    S("T-HILL-VO2", "running", "vo2max", NO_TAPER, (50, 70),
+      intervals(6, 3, "Z5", 3, "subida de 3′; bajada al trote controlado"), events=("trail",)),
+    S("T-HILL-THR", "running", "threshold", ("build", "peak"), (60, 80),
+      intervals(3, 10, "Z4", 4, "subida continua; marcha rápida si la pendiente supera ~15 %"), events=("trail",)),
+    S("T-LONG", "running", "long", NO_TAPER, (90, 240),
+      [B("calentamiento", 10, "Z1"), B("principal", None, "Z2", detail="terreno con desnivel; bajadas a ritmo controlado (exposición excéntrica)"),
+       B("vuelta a la calma", 5, "Z1")], events=("trail",)),
+    S("T-DOWNHILL", "running", "neuromuscular", ("base", "build"), (45, 60),
+      [B("calentamiento", 15, "Z2"), B("bajadas", 2, "Z2", 6, 3, "6×2′ de bajada a ritmo vivo, subida andando (efecto de carga repetida)"),
+       B("principal", None, "Z2")], events=("trail",)),
+    S("T-RACE-SIM", "running", "race_specific", ("peak",), (120, 240),
+      [B("calentamiento", 10, "Z1"), B("principal", None, "Z2", detail="recorrido similar a la carrera"),
+       B("subidas a ritmo de carrera", 15, "Z4", 3, 10, "subidas a ritmo de carrera; bajadas técnicas")], events=("trail",)),
 
     # ---- Ciclismo (§4.2)
     S("C-REC", "cycling", "recovery", ALL, (30, 60), [B("principal", None, "Z1")]),
@@ -67,12 +94,22 @@ CATALOG = [
       [B("calentamiento", 15, "Z1"), B("fuerza-resistencia", 5, "Z2", 5, 5, "50–60 rpm en subida, FC en Z2"),
        B("principal", None, "Z2")]),
     S("C-LONG", "cycling", "long", NO_TAPER, (150, 300), easy("Z2")),
-    # shortcut: el 30/15 se modela como Z5 continua y sobreestima el TSS (~1/3 del bloque es suave); modelar on/off cuando haya bloques compuestos
+    S("C-LONG-LATE", "cycling", "long", ("build", "peak"), (180, 300),
+      [B("calentamiento", 15, "Z1"), B("principal", None, "Z2"),
+       B("esfuerzos al final", 10, "Z4", 2, 5, "en la última hora: durabilidad (rendir con fatiga acumulada)")]),
+    S("C-SPRINT", "cycling", "neuromuscular", ("base", "build", "peak"), (60, 90),
+      [B("calentamiento", 15, "Z2"), B("sprints", 0.17, "Z6", 8, 4, "6–8×10″ sprint"), B("principal", None, "Z2")]),
+    S("C-TEST", "cycling", "test", ALL, (55, 55),
+      [B("calentamiento", 15, "Z2"), B("test", 30, "Z4", detail="30′ al máximo sostenible; LTHR = FC media de los últimos 20′"),
+       B("vuelta a la calma", None, "Z1")]),
+    S("C-BRICK", "cycling", "brick", ("build", "peak"), (75, 150),
+      [B("calentamiento", 15, "Z1"), B("bici", None, "Z2"), B("bici a ritmo de carrera", 20, "Z4"),
+       B("carrera a pie", 15, "Z2", detail="transición inmediata; usa tus zonas de running")]),
     S("C-VO2-3015", "cycling", "vo2max", ("base_early", "base", "build"), (75, 90),
-      intervals(3, 13, "Z5", 3, "30″ Z5–Z6 / 15″ suave (Rønnestad 2015)")),
+      intervals(3, 13, "Z5", 3, "30″ Z5–Z6 / 15″ suave (Rønnestad 2015)", duty=0.67)),
     S("C-VO2-4x5", "cycling", "vo2max", NO_TAPER, (60, 80), intervals(4, 5, "Z5", 2.5)),
     S("C-VO2-5x4", "cycling", "vo2max", ("base", "build", "peak"), (70, 90), intervals(5, 4, "Z5", 4)),
-    S("C-VO2-4020", "cycling", "vo2max", ("build", "peak"), (70, 90), intervals(3, 10, "Z5", 5, "40″ Z5–Z6 / 20″ suave")),
+    S("C-VO2-4020", "cycling", "vo2max", ("build", "peak"), (70, 90), intervals(3, 10, "Z5", 5, "40″ Z5–Z6 / 20″ suave", duty=0.67)),
     S("C-THR-3x12", "cycling", "threshold", ("build", "peak"), (75, 100), intervals(3, 12, "Z4", 4)),
     S("C-THR-2x20", "cycling", "threshold", ("build", "peak"), (80, 110), intervals(2, 20, "Z4", 5)),
     S("C-THR-OU", "cycling", "threshold", ("build", "peak"), (75, 95), intervals(3, 12, "Z4", 5, "4×(2′ Z4 / 1′ Z5)")),
@@ -111,9 +148,18 @@ CATALOG = [
     S("S-VO2-100", "swimming_pool", "vo2max", ("base", "build", "peak"), (40, 50),
       intervals(8, 1.6, "Z5", 0.5, "8×100, desc. 30″", warmup=10)),
     S("S-RACE", "swimming_pool", "race_specific", ("peak", "taper"), (30, 60),
-      intervals(3, 8, "Z4", 2, "distancia de triatlón a ritmo de carrera en 2–3 bloques", warmup=10)),
+      intervals(3, 8, "Z4", 2, "distancia de carrera a ritmo objetivo en 2–3 bloques", warmup=10)),
+    S("S-SPRINT", "swimming_pool", "neuromuscular", ("base", "build"), (30, 45),
+      [B("calentamiento", 10, "Z1", detail=SWIM_WARMUP), B("sprints", 0.4, "Z6", 8, 0.75, "8×25 máximo, desc. 45″"),
+       B("principal", None, "Z2")]),
+    S("S-TEST-CSS", "swimming_pool", "test", ALL, (40, 40),
+      [B("calentamiento", 10, "Z1", detail=SWIM_WARMUP), B("test 400", 7, "Z5", detail="400 m al máximo"),
+       B("recuperación", 8, "Z1"), B("test 200", 3.5, "Z5", detail="200 m al máximo; CSS (s/100 m) = (T400 − T200) / 2"),
+       B("vuelta a la calma", None, "Z1")]),
 
     # ---- Aguas abiertas: solo build/peak (§4.3)
+    S("S-OW-LONG", "swimming_open", "long", ("build", "peak"), (40, 90),
+      [B("calentamiento", 10, "Z1"), B("principal", None, "Z2", detail="continuo; orientación cada 6–9 brazadas, practicar ir a rebufo")]),
     S("S-OW", "swimming_open", "race_specific", ("build", "peak"), (30, 60),
       [B("calentamiento", 10, "Z2", detail="orientación cada 6–9 brazadas"), B("principal", 3, "Z4", 4, 2),
        B("vuelta a la calma", None, "Z1")]),
@@ -121,6 +167,19 @@ CATALOG = [
 
 # Sesiones donde la Regla 1 permite Z3 (simulacros y progresivos, MOTOR §1.2)
 Z3_ALLOWED = {"R-LONG-MP", "R-THR-PROG", "C-RACE-SIM"}
+
+# Notas de adaptación por categoría (diseño: "si te sientes mal / bien"). [Práctica]
+NOTES = {
+    "recovery": ("Si te sientes mal: acorta o descansa; hoy no suma forzar.", "Si te sientes bien: no alargues; recuperar es el objetivo."),
+    "aerobic": ("Si te sientes mal: quédate en Z1 y acorta un tercio.", "Si te sientes bien: respeta el techo de FC; no subas a zona gris."),
+    "long": ("Si te sientes mal: corta en el punto medio y vuelve suave.", "Si te sientes bien: mantén la zona; la duración es el estímulo."),
+    "neuromuscular": ("Si te sientes mal: quita los esfuerzos y haz solo el rodaje.", "Si te sientes bien: no añadas repeticiones; calidad máxima en cada una."),
+    "vo2max": ("Si la FC no sube a Z5 en la 2.ª serie o te notas vacío: termina en Z2.", "Si te sientes bien: no añadas series; la calidad está en la ejecución."),
+    "threshold": ("Si no sostienes la zona: quita la última serie.", "Si te sientes bien: mantén la zona, no la subas a Z5."),
+    "race_specific": ("Si no aguantas el ritmo objetivo: pasa a Z2 y vuelve a intentarlo la semana siguiente.", "Si te sientes bien: aguanta el ritmo exacto; no lo superes."),
+    "brick": ("Si te sientes mal: haz solo la bici en Z2.", "Si te sientes bien: céntrate en una transición rápida, no en ir más fuerte."),
+    "test": ("Si no estás descansado: aplaza el test; un test fatigado da zonas erróneas.", "Hazlo en solitario y en terreno constante."),
+}
 
 # ---- Fuerza (§5.1, §5.2): (dosis, RPE planificado, minutos [Inferencia])
 STRENGTH_DOSE = {

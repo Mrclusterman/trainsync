@@ -21,9 +21,9 @@ def fake_intervals(request: httpx.Request) -> httpx.Response:
     if path.endswith("/activities"):
         return httpx.Response(200, json=[{"start_date_local": f"{(TODAY - timedelta(1)).isoformat()}T08:00:00",
                                           "type": "Run", "name": "Rodaje", "moving_time": 3000, "icu_training_load": 45,
-                                          "icu_hr_zone_times": [600, 1800, 600, 0, 0, 0, 0]}])
+                                          "icu_hr_zone_times": [600, 1800, 600, 0, 0, 0, 0], "icu_rpe": 4, "session_rpe": 200}])
     if path.endswith("/events"):
-        return httpx.Response(200, json=[{"category": "RACE_A", "name": "Maratón de Valencia", "type": "Run",
+        return httpx.Response(200, json=[{"category": "RACE_A", "name": "Maratón de Valencia", "type": "Run", "distance": 42195,
                                           "start_date_local": f"{(TODAY + timedelta(weeks=10)).isoformat()}T00:00:00"}])
     return httpx.Response(200, json={"icu_resting_hr": 46, "sportSettings": [{"types": ["Run"], "lthr": 174, "max_hr": 192}]})
 
@@ -35,6 +35,7 @@ def test_endpoints(monkeypatch):
     state = api.get("/state").json()
     assert state["tsb"] == -5 and state["hrv_status"] == "outside_swc" and state["physiology"]["lthr"] == 174
     assert state["goal"]["name"] == "Maratón de Valencia" and state["last_activity"]["gray_zone"]
+    assert state["goal"]["distance_km"] == 42.195 and state["srpe_week"]["load"] == 200
 
     today = api.get("/plan/today").json()
     if today["main"]:  # HRV fuera de rango + sueño 45: recuperación
