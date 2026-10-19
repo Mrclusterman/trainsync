@@ -117,7 +117,7 @@ def state():
 def plan_today():
     today = date.today()
     profile, goal, s, _ = load_context(today)
-    return engine.propose_day(today, profile, goal, s)
+    return engine.plan(today, 1, profile, goal, s)[0]
 
 
 @router.get("/plan")

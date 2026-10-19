@@ -3,6 +3,7 @@ from datetime import date, timedelta
 import pytest
 
 from app.services import training_engine as e
+from app.services.session_catalog import CATALOG, Z3_ALLOWED
 
 PROFILE = e.Profile(active_sports=["running", "cycling"], lthr=174, max_hr=192, rest_hr=46)
 GOAL = e.Goal(name="Maratón", sport="running", date=date(2027, 3, 7))
@@ -87,13 +88,13 @@ def test_two_week_plan_is_polarized_and_complete():
     days = e.plan(date(2026, 10, 19), 14, PROFILE, GOAL)
     assert len(days) == 14
     sessions = [d["main"] for d in days if d["main"]]
-    # Regla 1 de zona gris: Z3 nunca es objetivo de ningún bloque
+    # Regla 1 de zona gris: Z3 nunca es objetivo de ningún bloque en base
     assert all(b["zone"] != "Z3" for s in sessions for b in s["blocks"])
     assert any(d["strength"] for d in days)
     for d in days:
         if d["main"]:
             assert [a["sport"] for a in d["alternatives"]] == ["cycling"]
-            assert d["alternatives"][0]["tss"] == pytest.approx(d["main"]["tss"], rel=0.2)
+            assert d["alternatives"][0]["tss"] == pytest.approx(d["main"]["tss"], rel=0.15)
 
 
 def test_taper_has_no_strength():
@@ -107,3 +108,51 @@ def test_triathlon_rotates_sports():
     goal = e.Goal(name="70.3", sport="triathlon", date=date(2027, 6, 1))
     sports = {d["main"]["sport"] for d in e.plan(date(2026, 10, 19), 7, profile, goal) if d["main"]}
     assert sports == {"running", "cycling", "swimming_pool"}
+
+
+@pytest.mark.parametrize("sport", ["running", "cycling", "swimming_pool"])
+def test_catalog_covers_every_template_slot(sport):
+    for phase, template in e.TEMPLATES.items():
+        for kind in set(template.values()) | {"recovery", "aerobic"}:  # recovery/aerobic: destinos de DOWNGRADE
+            assert e.pick_session(kind, sport, phase, 0), (sport, phase, kind)
+
+
+def test_z3_only_in_allowed_sessions():
+    for c in CATALOG:
+        if c["id"] not in Z3_ALLOWED:
+            assert all(b["zone"] != "Z3" for b in c["blocks"]), c["id"]
+
+
+def test_sessions_rotate_weekly():
+    ids = {e.pick_session("vo2max", "running", "base_early", w)["id"] for w in range(4)}
+    assert len(ids) > 1
+
+
+def test_open_water_only_in_build_and_peak():
+    profile = e.Profile(active_sports=["swimming_pool", "swimming_open"])
+    assert e.build_session("race_specific", "swimming_open", profile, phase="base") is None
+    assert e.build_session("race_specific", "swimming_open", profile, phase="peak")["id"] == "S-OW"
+
+
+def test_swim_without_css_uses_rpe():
+    s = e.build_session("threshold", "swimming_pool", e.Profile(active_sports=["swimming_pool"]), phase="build")
+    assert s["targets"]["Z4"] == "RPE 7"
+
+
+def test_running_long_capped_at_150_minutes():
+    assert e.build_session("long", "running", PROFILE, volume=3)["duration_min"] <= 150
+
+
+def test_strength_dose_by_phase():
+    base, build = e.build_strength("running", PROFILE, "base"), e.build_strength("running", PROFILE, "build")
+    assert "4–8 RM" in base["dose"] and base["order"].startswith("antes")
+    assert "Saltos al cajón" in build["exercises"] and "Saltos al cajón" not in base["exercises"]
+    assert build["order"].startswith("después")
+
+
+def test_weekly_load_follows_ctl_ramp():
+    state = e.DayState(ctl=40, atl=40)
+    days = e.plan(date(2026, 10, 19), 7, PROFILE, GOAL, state)
+    target = e.weekly_tss_target(40)  # 7 × (40 + 3 / 0,1535) ≈ 417
+    assert target == pytest.approx(416.8, abs=1)
+    assert sum(e.day_tss(d) for d in days) == pytest.approx(target, rel=0.15)

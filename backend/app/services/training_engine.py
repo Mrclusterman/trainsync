@@ -9,6 +9,8 @@ from datetime import date, timedelta
 from math import exp, log
 from statistics import mean, stdev
 
+from app.services.session_catalog import CATALOG, CORE, LOWER, PLYO, STRENGTH_DOSE, UPPER
+
 K_CTL = 1 - exp(-1 / 42)
 K_ATL = 1 - exp(-1 / 7)
 WEEKDAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
@@ -64,6 +66,7 @@ HR_ZONES = {
     "cycling": {"Z1": (0, 0.81), "Z2": (0.81, 0.90), "Z3": (0.90, 0.94),
                 "Z4": (0.94, 1.00), "Z5": (1.00, 1.07), "Z6": (1.07, None)},
 }
+SWIM_RPE = {"Z1": "RPE 2-3", "Z2": "RPE 4-5", "Z3": "RPE 6", "Z4": "RPE 7", "Z5": "RPE 8-9", "Z6": "RPE 10"}
 SWIM_ZONES = {"Z1": (1.20, None), "Z2": (1.10, 1.20), "Z3": (1.03, 1.10),
               "Z4": (0.97, 1.03), "Z5": (0.90, 0.97), "Z6": (None, 0.90)}
 
@@ -71,8 +74,8 @@ SWIM_ZONES = {"Z1": (1.20, None), "Z2": (1.10, 1.20), "Z3": (1.03, 1.10),
 def zone_target(zone: str, sport: str, lthr: float | None, css: float | None) -> str | None:
     """Rango legible de una zona: bpm para running/ciclismo, ritmo /100m para natación."""
     if sport in SWIM:
-        if not css:
-            return None
+        if not css:  # Sin CSS se prescribe por RPE hasta hacer el test (MOTOR §4.3)
+            return SWIM_RPE[zone]
         lo, hi = SWIM_ZONES[zone]
         fmt = lambda f: f"{int(css * f // 60)}:{round(css * f % 60):02d}"
         if lo is None:
@@ -209,18 +212,6 @@ class Profile:
         return self.lthr_by_sport.get(sport) or self.lthr
 
 
-# Minutos base por tipo y deporte. [Inferencia] Se ajustarán con PROMPT_MOTOR_ENTRENAMIENTO.md
-BASE_MINUTES = {
-    "running": {"recovery": 30, "aerobic": 50, "long": 90, "vo2max": 55, "threshold": 60, "race_specific": 70},
-    "cycling": {"recovery": 45, "aerobic": 90, "long": 180, "vo2max": 75, "threshold": 90, "race_specific": 120},
-    "swim": {"recovery": 30, "aerobic": 45, "long": 60, "vo2max": 45, "threshold": 50, "race_specific": 60},
-}
-# Series principales (reps, min trabajo, zona, min recuperación). VO2max según 8.4 (5x3, 8x2)
-MAIN_SETS = {
-    "running": {"vo2max": (5, 3, "Z5", 3), "threshold": (3, 10, "Z4", 3), "race_specific": (2, 15, "Z4", 4)},
-    "cycling": {"vo2max": (5, 4, "Z5", 4), "threshold": (3, 12, "Z4", 4), "race_specific": (2, 20, "Z4", 5)},
-    "swim": {"vo2max": (8, 2, "Z5", 1), "threshold": (5, 4, "Z4", 1), "race_specific": (3, 8, "Z4", 2)},
-}
 # Ratio de intensidad medio por zona para estimar TSS planificado. [Inferencia]
 ZONE_IF = {"Z1": 0.65, "Z2": 0.75, "Z3": 0.88, "Z4": 0.97, "Z5": 1.05, "Z6": 1.15}
 NAMES = {"recovery": "Recuperación", "aerobic": "Aeróbico base", "long": "Tirada larga",
@@ -239,21 +230,35 @@ def _blocks_tss(blocks: list[dict]) -> float:
     return total / 60 * 100
 
 
-def build_session(kind: str, sport: str, profile: Profile, volume: float = 1.0) -> dict:
-    """Sesión aeróbica con bloques calentamiento / principal / vuelta a la calma."""
-    lib = "swim" if sport in SWIM else sport
-    total = max(round(BASE_MINUTES[lib][kind] * volume), 20)
-    if kind in MAIN_SETS[lib]:
-        reps, work, zone, rest = MAIN_SETS[lib][kind]
-        main = {"block": "principal", "reps": reps, "minutes": work, "zone": zone, "rest_minutes": rest, "rest_zone": "Z1"}
-        easy = max(total - reps * (work + rest), 15)
-        blocks = [{"block": "calentamiento", "reps": 1, "minutes": round(easy * 0.6), "zone": "Z2"}, main,
-                  {"block": "vuelta a la calma", "reps": 1, "minutes": round(easy * 0.4), "zone": "Z1"}]
-    else:
-        zone = "Z1" if kind == "recovery" else "Z2"
-        blocks = [{"block": "calentamiento", "reps": 1, "minutes": 10, "zone": "Z1"},
-                  {"block": "principal", "reps": 1, "minutes": max(total - 15, 5), "zone": zone},
-                  {"block": "vuelta a la calma", "reps": 1, "minutes": 5, "zone": "Z1"}]
+def pick_session(kind: str, sport: str, phase: str, week: int) -> dict | None:
+    """Sesión del catálogo para el slot; rota cada semana entre las opciones válidas (determinista)."""
+    options = [c for c in CATALOG if c["sport"] == sport and c["category"] == kind and phase in c["phases"]]
+    return options[week % len(options)] if options else None
+
+
+def build_session(kind: str, sport: str, profile: Profile, volume: float = 1.0,
+                  phase: str = "base", week: int = 0) -> dict | None:
+    """Sesión del catálogo con duración ajustada al volumen; None si el deporte no tiene sesión para ese slot."""
+    entry = pick_session(kind, sport, phase, week)
+    if entry is None:
+        return None
+    lo, hi = entry["duration"]
+    total = max(round((lo + hi) / 2 * volume), 20)
+    if sport == "running" and kind == "long":
+        total = min(total, 150)  # [Práctica: Daniels] tirada larga <= 150 min
+    blocks = [dict(b) for b in entry["blocks"]]
+    span = lambda b: b["reps"] * (b["minutes"] + b.get("rest_minutes", 0))
+    for b in blocks:
+        if b["reps"] > 1 and b["minutes"] is not None:
+            # Si el volumen no da para la estructura (p. ej. alternativa de igual TSS), caben menos series:
+            # mínimo 2 en series cortas y 1 en bloques de >= 10 min (una serie de 13' de 30/15 es válida)
+            others = sum(span(o) for o in blocks if o is not b and o["minutes"] is not None)
+            fits = int((total - 5 - others) // (b["minutes"] + b.get("rest_minutes", 0)))
+            b["reps"] = max(1 if b["minutes"] >= 10 else 2, min(b["reps"], fits))
+    fixed = sum(span(b) for b in blocks if b["minutes"] is not None)
+    for b in blocks:
+        if b["minutes"] is None:
+            b["minutes"] = max(total - fixed, 5)
     zones = {b["zone"] for b in blocks} | {b["rest_zone"] for b in blocks if "rest_zone" in b}
     lthr = profile.lthr_for(sport)
     targets = {z: zone_target(z, sport, lthr, profile.css) for z in sorted(zones)}
@@ -266,25 +271,24 @@ def build_session(kind: str, sport: str, profile: Profile, volume: float = 1.0) 
         if targets.get("Z1") and z2_lo > hr_cap:
             targets["Z1"] = f"< {hr_cap} ppm"
     return {
-        "sport": sport, "type": kind, "name": NAMES[kind], "goal": GOALS[kind],
-        "duration_min": sum(b["reps"] * (b["minutes"] + b.get("rest_minutes", 0)) for b in blocks),
+        "id": entry["id"], "sport": sport, "type": kind, "name": NAMES[kind], "goal": GOALS[kind],
+        "duration_min": round(sum(b["reps"] * (b["minutes"] + b.get("rest_minutes", 0)) for b in blocks)),
         "tss": round(_blocks_tss(blocks)), "blocks": blocks,
         "targets": {z: t for z, t in targets.items() if t}, "hr_cap": hr_cap,
     }
 
 
 def build_strength(goal_sport: str, profile: Profile, phase: str) -> dict:
-    """Fuerza adaptada al deporte (RF-08). Carga = rTSS con el RPE planificado."""
+    """Fuerza por fase (MOTOR §5). Carga = rTSS con el RPE planificado."""
+    dose, rpe, minutes = STRENGTH_DOSE[phase]
+    kit = "gym" if profile.strength == "gym" else "bodyweight"
     upper = goal_sport in SWIM or goal_sport == "triathlon"
-    gym = profile.strength == "gym"
-    exercises = (["Sentadilla con barra 4x6", "Peso muerto rumano 3x8", "Zancada búlgara 3x8/pierna", "Elevación de gemelo 3x12"]
-                 if gym else ["Sentadilla goblet o búlgara 4x10", "Puente de glúteo a una pierna 3x12", "Step-up 3x10/pierna", "Gemelo a una pierna 3x15"])
-    if upper:
-        exercises += (["Jalón al pecho 3x8", "Remo con mancuerna 3x10"] if gym else ["Dominadas o remo invertido 3x8", "Flexiones 3x12"])
-    exercises += ["Plancha frontal 3x40 s", "Pallof press o plancha lateral 3x30 s/lado"]
-    minutes, rpe = (40, 6) if phase == "peak" else (45, 7)
+    exercises = LOWER[kit] + (PLYO[kit] if phase == "build" else []) + (UPPER[kit] if upper else []) + CORE
+    # Eddens 2018: fuerza antes favorece la fuerza; en build/peak prima la calidad de la sesión de resistencia
+    order = "antes" if phase in ("base_early", "base") else "después"
     return {"sport": "strength", "type": "strength", "name": NAMES["strength"], "duration_min": minutes,
-            "rpe_planned": rpe, "tss": round(strength_tss(rpe, minutes)), "exercises": exercises}
+            "dose": dose, "rpe_planned": rpe, "tss": round(strength_tss(rpe, minutes)), "exercises": exercises,
+            "order": f"{order} de la sesión de resistencia si van seguidas"}
 
 
 def main_sport(weekday: str, goal: Goal | None, profile: Profile) -> str:
@@ -296,12 +300,14 @@ def main_sport(weekday: str, goal: Goal | None, profile: Profile) -> str:
     return profile.active_sports[0]
 
 
-def propose_day(day: date, profile: Profile, goal: Goal | None, state: DayState | None = None) -> dict:
+def propose_day(day: date, profile: Profile, goal: Goal | None, state: DayState | None = None,
+                scale: float = 1.0) -> dict:
     """Propuesta diaria (RF-05): sesión principal + alternativas por deporte activo + fuerza."""
     weekday = WEEKDAYS[day.weekday()]
+    week = day.isocalendar().week
     phase, recovery_week = phase_for(day, goal, profile.plan_start)
     kind = "rest" if weekday in profile.rest_days else TEMPLATES[phase].get(weekday, "rest")
-    volume, reasons, why = PHASE_VOLUME[phase], [], []
+    volume, reasons, why = PHASE_VOLUME[phase] * scale, [], []
     if recovery_week:
         volume *= 0.7
         if kind in QUALITY and weekday == "THU":
@@ -316,15 +322,22 @@ def propose_day(day: date, profile: Profile, goal: Goal | None, state: DayState 
            "reasons": reasons, "main": None, "alternatives": [], "strength": None}
     if kind == "rest":
         return out
-    sport = main_sport(weekday, goal, profile)
-    out["main"] = build_session(kind, sport, profile, volume)
-    for other in profile.active_sports:
-        if other == sport:
-            continue
-        # Alternativa equivalente en carga: se escala el volumen hasta igualar el TSS
-        alt = build_session(kind, other, profile, volume)
-        if alt["tss"]:
-            alt = build_session(kind, other, profile, volume * out["main"]["tss"] / alt["tss"])
+    preferred = main_sport(weekday, goal, profile)
+    sessions = {s: build_session(kind, s, profile, volume, phase, week)
+                for s in [preferred] + [s for s in profile.active_sports if s != preferred]}
+    sessions = {s: v for s, v in sessions.items() if v}
+    if not sessions:
+        return out
+    sport, out["main"] = next(iter(sessions.items()))
+    target = out["main"]["tss"]
+    for other, alt in list(sessions.items())[1:]:
+        # Alternativa equivalente en carga (±15 %): el TSS no es lineal con la duración, se itera
+        alt_volume = volume
+        for _ in range(3):
+            if not alt["tss"] or abs(alt["tss"] - target) <= 0.15 * target:
+                break
+            alt_volume *= target / alt["tss"]
+            alt = build_session(kind, other, profile, alt_volume, phase, week)
         out["alternatives"].append(alt)
     # Sin fuerza si el estado del día ha obligado a bajar la carga
     if profile.strength != "none" and weekday in STRENGTH_DAYS[phase] and not why:
@@ -332,6 +345,30 @@ def propose_day(day: date, profile: Profile, goal: Goal | None, state: DayState 
     return out
 
 
+# Rampa de CTL objetivo por semana según el CTL actual (MOTOR §9.1) [Práctica: TrainingPeaks]
+RAMP = ((45, 3), (70, 4), (float("inf"), 5))
+
+
+def weekly_tss_target(ctl: float, recovery_week: bool = False) -> float:
+    """TSS semanal para subir el CTL la rampa objetivo: 7 × (CTL + r / (1 - e^(-7/42)))."""
+    ramp = next(r for limit, r in RAMP if ctl <= limit)
+    target = 7 * (ctl + ramp / (1 - exp(-7 / 42)))
+    return target * 0.65 if recovery_week else target  # [Práctica] descarga = -35 %
+
+
+def day_tss(day: dict) -> float:
+    return sum(s["tss"] for s in (day["main"], day["strength"]) if s)
+
+
 def plan(start: date, days: int, profile: Profile, goal: Goal | None, today_state: DayState | None = None) -> list[dict]:
-    """Plan de N días. Solo el primer día se ajusta con el estado real; el resto se recalcula a diario."""
-    return [propose_day(start + timedelta(d), profile, goal, today_state if d == 0 else None) for d in range(days)]
+    """Plan de N días escalado a la rampa de CTL. Solo el primer día se ajusta con el estado real."""
+    scale = 1.0
+    phase, recovery_week = phase_for(start, goal, profile.plan_start)
+    if today_state is not None and phase != "taper":  # el taper ya fija su propio volumen
+        template = sum(day_tss(propose_day(start + timedelta(d), profile, goal)) for d in range(7))
+        if template:
+            # [Inferencia] límites 0,5-1,5 para no deformar las sesiones del catálogo
+            scale = min(max(weekly_tss_target(today_state.ctl, recovery_week) / template, 0.5), 1.5)
+    # shortcut: días 8-14 usan la escala del CTL de hoy; proyectar CTL por semana cuando se muestre el TSB proyectado
+    # shortcut: escala uniforme, sin los pesos por tipo de sesión de MOTOR §9.1 (la larga pesa ~40 %); aplicarlos si la larga resulta excesiva
+    return [propose_day(start + timedelta(d), profile, goal, today_state if d == 0 else None, scale) for d in range(days)]

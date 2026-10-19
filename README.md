@@ -16,7 +16,10 @@ Backend FastAPI monousuario con el motor de entrenamiento (sección 8 de la memo
 - Objetivo = carrera A/B/C más próxima del calendario de intervals.icu.
 
 Lo marcado `[Inferencia]` en `backend/app/services/training_engine.py` no tiene evidencia publicada
-(ver `docs/MOTOR_ENTRENAMIENTO.md` §11.2). El catálogo completo de sesiones del documento aún no está en el código.
+(ver `docs/MOTOR_ENTRENAMIENTO.md` §11.2).
+
+- Catálogo de 43 sesiones (`backend/app/services/session_catalog.py`) con rotación semanal, biblioteca de fuerza por fase
+  y volumen semanal escalado a la rampa de CTL (TrainingPeaks). Pendiente: neuromusculares, tests de campo y bricks.
 
 ## Arrancar
 

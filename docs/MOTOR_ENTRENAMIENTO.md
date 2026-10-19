@@ -1,6 +1,6 @@
 # MOTOR DE ENTRENAMIENTO — TrainSync
 
-> **Versión:** 0.2 — Reconstrucción de `PROMPT_MOTOR_ENTRENAMIENTO.md` (original no localizado), contrastada con fuentes
+> **Versión:** 0.3 — Reconstrucción de `PROMPT_MOTOR_ENTRENAMIENTO.md` (original no localizado), contrastada con fuentes
 > **Fecha:** 2026-10-19
 > **Estado:** Verificado por Claude contra bibliografía (sección 11). Cambios de §11.1 aprobados el 2026-10-19 y aplicados en Memoria v0.4
 > **Complementa a:** `MEMORIA_TECNICA.md` §8 (fórmulas de TSS, CTL/ATL/TSB, zonas, HRV). Este documento no las repite: define **qué sesiones existen, cómo se eligen y cómo se organizan**.
@@ -212,6 +212,7 @@ Zonas según `MEMORIA_TECNICA.md` §8.3 (FC: % LTHR; natación: % CSS). Rango de
 | C-THR-OU | threshold | 3×(4×(2′ Z4 / 1′ Z5)), 5′ entre series | 75–95′ | build, peak | high | [Práctica] |
 | C-CLIMB | threshold | 2–4 subidas de 8–20′ en Z4, bajada de recuperación | 90–180′ | build, peak | high | [Práctica]; usa puertos locales si el perfil los define |
 | C-RACE-SIM | race_specific | Larga con 2–3 bloques de 20–30′ a ritmo de evento | 180–300′ | peak | high | [Práctica]; Z3 permitida si el evento es gran fondo |
+| C-OPENER | race_specific | 3×3′ Z4 a ritmo de carrera, rec. 3′ | 45–75′ | taper | high | [Práctica]; añadida en v0.3: el taper de ciclismo no tenía sesión race_specific |
 | C-BRICK | brick | Bici a ritmo de carrera + R-BRICK inmediato | 60–150′ | build, peak | high | [Práctica]; solo triatlón/duatlón |
 | C-TEST | test | LTHR 30′ (sin potencia) · FTP 20′ o rampa (con potencia) | 50–60′ | onboarding, cada 8–12 semanas | high | [Memoria 7.4] |
 
@@ -235,7 +236,7 @@ Sin CSS conocido, las zonas se prescriben por RPE (Z2 = 4–5/10, Z4 = 7/10, Z5 
 | S-VO2-100 | vo2max | 8×100 Z5, desc. 30″ | 2.000–2.600 m | base, build, peak | high | [Práctica] |
 | S-SPRINT | neuromuscular | 8×25 Z6, desc. 45″ | 1.500–2.000 m | base, build | medium | [Práctica] |
 | S-OW | race_specific | Aguas abiertas: Z2 con orientación cada 6–9 brazadas + 4×3′ Z4 | 30–60′ | build, peak | high | [Práctica]; solo con `swimming_open` activo |
-| S-RACE | race_specific | Distancia de triatlón a ritmo de carrera, dividida en 2–3 bloques | distancia × 0.6–1.0 | peak | high | [Práctica] |
+| S-RACE | race_specific | Distancia de triatlón a ritmo de carrera, dividida en 2–3 bloques | distancia × 0.6–1.0 | peak, taper | high | [Práctica]; taper añadido en v0.3 |
 | S-TEST-CSS | test | 400 m + 200 m máximos; CSS (s/100 m) = (T400 − T200) / 2 | 1.500 m | onboarding, cada 8–12 semanas | high | [Verificado: velocidad crítica, Wakayoshi 1992; protocolo 200/400 fiable en los 4 estilos, error típico ≤ 0,04 m/s (estudio 2023); sobreestima algo frente a protocolos más largos] |
 
 ---
@@ -515,5 +516,6 @@ Clave: `plan:{user_id}:{fecha}`. Se invalida cuando: [Memoria RF-05/Fase 3 + Inf
 
 | Versión | Fecha | Cambios |
 |---|---|---|
+| 0.3 | 2026-10-19 | Catálogo implementado en `backend/app/services/session_catalog.py`. Añadida C-OPENER y S-RACE en taper (huecos de la plantilla). En código: S-TECH cubre el slot `recovery`; natación en minutos (~1:45/100 m) mientras no se use el CSS; con poco volumen las series se reducen (mínimo 2, o 1 en bloques ≥ 10′). Pendiente en código: sesiones neuromusculares, tests de campo, bricks, notas "si te sientes mal/bien" y pesos por tipo de sesión (§9.1). |
 | 0.2 | 2026-10-19 | Verificación de todas las [Inferencia] contra bibliografía. Nuevas reglas de HRV (§3.1) y TSB (§3.2); zonas de running separadas; techo LTHR − 30 en sesiones fáciles; Z4 contada como moderada; rampa de CTL según TrainingPeaks; TSB de carrera +15/+25; taper B/C; regla de Daniels para la tirada larga; orden fuerza/resistencia (Eddens 2018); descartado 30/15 en carrera; 14 referencias nuevas. Sección 11 reescrita sin revisor externo. |
 | 0.1 | 2026-10-19 | Reconstrucción completa: estructuras de entrada, pipeline diario, catálogo de 51 sesiones (18 running, 17 ciclismo, 16 natación), biblioteca de fuerza por fase, plantillas semanales, zona gris, periodización y taper, progresión por TSS, proyección a 14 días, invalidación de caché y referencias verificadas. |
