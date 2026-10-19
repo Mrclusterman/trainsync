@@ -243,6 +243,7 @@ def test_missing_physiology_schedules_test_once():
     days = e.plan(date(2026, 10, 19), 14, profile, GOAL)
     tests = [d for d in days if d["main"] and d["main"]["type"] == "test"]
     assert len(tests) == 1 and tests[0]["main"]["id"] == "R-TEST-LTHR"
+    assert tests[0]["main"]["targets"] == {}  # sin objetivos de FC: se corre al máximo sostenible
 
 
 def test_intermittent_duty_lowers_tss():

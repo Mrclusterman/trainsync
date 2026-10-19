@@ -1060,6 +1060,8 @@ trainsync/
 | DD-09 | Deportes activos configurables en onboarding | No tiene sentido mostrar alternativas de natación a alguien sin acceso a piscina | Mostrar siempre todos los deportes y que el usuario ignore lo que no aplica |
 | DD-11 | rTSS basado en RPE × duración para fuerza | intervals.icu no calcula carga para fuerza. RPE es subjetivo pero suficientemente preciso para que la fatiga de fuerza entre en el modelo CTL/ATL | Ignorar la fuerza (plan desajustado), usar TRIMP adaptado (requiere FC, no siempre disponible en gym) |
 | DD-12 | Duatlón como tipo de objetivo, no como deporte | El duatlón combina running y ciclismo, que ya son deportes activos. Añadirlo como deporte sería redundante | Añadir "duatlón" como deporte activo separado |
+| DD-13 | Next.js 16 + Tailwind CSS 4 en lugar de Next 14 + Tailwind 3.4 | Next 14 ya no recibe soporte de seguridad (2026-10). Tailwind 4 define los tokens del diseño en CSS (`@theme`) | Next 14 (sin parches), Tailwind 3 (config en JS duplicando los tokens) |
+| DD-14 | Frontend antes que Fase 1 | Validar el producto con la interfaz antes de fijar el modelo de datos multiusuario; el backend monousuario ya da los datos | Seguir el roadmap original (Fase 1 primero) |
 
 ---
 

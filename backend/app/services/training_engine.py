@@ -350,7 +350,8 @@ def build_session(kind: str, sport: str, profile: Profile, volume: float = 1.0, 
             b["guide"] = "Guíate por RPE: en series cortas la FC tarda en subir"  # [Práctica]
     zones = {b["zone"] for b in blocks} | {b["rest_zone"] for b in blocks if "rest_zone" in b}
     lthr = profile.lthr_for(sport)
-    targets = {z: zone_target(z, sport, lthr, profile.css) for z in sorted(zones)}
+    # Un test se hace al máximo sostenible: un objetivo calculado con la LTHR que se quiere medir lo sesgaría
+    targets = {} if kind == "test" else {z: zone_target(z, sport, lthr, profile.css) for z in sorted(zones)}
     # Techo de sesión fácil = umbral aeróbico estimado (LTHR - 30, Friel) hasta que se mida
     hr_cap = round(lthr - 30) if lthr and kind not in QUALITY and sport not in SWIM else None
     if hr_cap and targets.get("Z2"):

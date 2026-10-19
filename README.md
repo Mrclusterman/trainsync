@@ -27,7 +27,7 @@ Lo marcado `[Inferencia]` en `backend/app/services/training_engine.py` no tiene 
 
 ```bash
 cp .env.example .env          # rellena INTERVALS_ATHLETE_ID e INTERVALS_API_KEY
-# Con Docker (Windows/WSL):
+# Con Docker (Windows/WSL): backend en :8000 y web en :3000
 docker compose up --build
 # Sin Docker:
 cd backend && python3 -m venv .venv && .venv/bin/pip install -e '.[dev]'
@@ -41,6 +41,20 @@ Swagger UI: http://localhost:8000/docs
 | `GET /state` | CTL, ATL, TSB, HRV, sueño, fase, objetivo y análisis de zona gris de la última actividad |
 | `GET /plan/today` | Propuesta de hoy ajustada a tu estado |
 | `GET /plan?days=14` | Plan de N días (solo hoy usa el estado real; se recalcula a diario) |
+
+## Frontend web (`frontend-web/`)
+
+Next.js 16 + TypeScript + Tailwind CSS 4 con el sistema de diseño "Athletic Precision": pantallas **Hoy** (estado de
+forma, sesión del día con estructura, RPE y alternativas, próximos días, última actividad con zonas) y **Plan**
+(14 días con bottom sheet). Los datos se piden desde Server Components, así que el navegador no habla con el backend.
+
+```bash
+cd frontend-web && npm install
+npm run dev                 # http://localhost:3000 (backend en :8000)
+npm run gen:types           # regenera src/lib/api-types.ts desde el OpenAPI del backend
+```
+
+`TRAINSYNC_API_URL` cambia la URL del backend (por defecto `http://localhost:8000`).
 
 ## Tests
 

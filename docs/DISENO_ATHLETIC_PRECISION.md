@@ -255,3 +255,14 @@ Antes de implementar cualquier pantalla:
 [ ] Ningún elemento usa morado como acento
 [ ] Las animaciones tienen duración < 300 ms (excepto count-up de números)
 [ ] El modo oscuro es primario y no hay fondos blancos en modo dark
+
+---
+
+## Notas de implementación (2026-10-19, frontend v0.1)
+
+- **Color del TSB:** se adapta a la Memoria v0.4, donde TSB entre −10 y −30 es carga productiva y no fatiga. Escala: > +5 verde (fresco) · −10 a +5 neutro · −30 a −10 azul acento (cargando) · < −30 rojo (riesgo alto). El naranja queda para zona gris y avisos.
+- **HRV:** sin estado "elevated" (Memoria v0.4); verde si está dentro de su rango, naranja si sale. Sin punto pulsante.
+- **Barra inferior:** 2 pestañas (Hoy, Plan); Objetivos y Perfil llegan con la Fase 1. La contracción al hacer scroll usa una transición CSS, no física de muelle.
+- **Sesión detallada:** se muestra dentro de la tarjeta (estructura desplegable) y en el bottom sheet del plan; no hay ruta propia.
+- **Sin implementar todavía:** barra de TSS planificado vs real (solo planificado), botón "Empezar sesión", textura noise en el hero.
+

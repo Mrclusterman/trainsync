@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+/* Athletic Precision — docs/DISENO_ATHLETIC_PRECISION.md. Modo oscuro primario, sin morados.
+   Los tokens del diseño viven en @theme (static: siempre emitidos) y generan las utilidades (bg-surface-1, text-alert…). */
+@theme static {
+  --color-canvas: #0a0a0f;
+  --color-surface-1: #12121a;
+  --color-surface-2: #1a1a26;
+  --color-surface-3: #22223a;
+  --color-accent: #3d7eff;
+  --color-bio: #00e5a0;
+  --color-alert: #ff8c42;
+  --color-danger: #ff4d6d;
+  --color-primary: #f0f0ff;
+  --color-secondary: #8888aa;
+
+  /* Zonas: color constante en toda la app (Z3 siempre naranja) */
+  --color-z1: #4ecdc4;
+  --color-z2: #45b7d1;
+  --color-z3: #ffa500;
+  --color-z4: #ff6b35;
+  --color-z5: #ff4757;
+  --color-z6: #c0392b;
+
+  --radius-chip: 8px;
+  --radius-card: 14px;
+  --radius-module: 20px;
+  --radius-modal: 28px;
+}
+
+@theme inline {
+  --font-mono: var(--font-dm-mono);
+  --font-ui: var(--font-geist);
+  --font-body: var(--font-instrument);
+}
+
+/* Alias con los nombres exactos del documento de diseño */
+:root {
+  --color-bg-base: var(--color-canvas);
+  --color-text-primary: var(--color-primary);
+  --color-text-secondary: var(--color-secondary);
+  --color-glass-bg: rgba(18, 18, 26, 0.75);
+  --color-accent-glow: rgba(61, 126, 255, 0.25);
+  --zone-1: var(--color-z1);
+  --zone-2: var(--color-z2);
+  --zone-3: var(--color-z3);
+  --zone-4: var(--color-z4);
+  --zone-5: var(--color-z5);
+  --zone-6: var(--color-z6);
+}
+
+body {
+  background: var(--color-bg-base);
+  color: var(--color-text-primary);
+  font-family: var(--font-instrument), system-ui, sans-serif;
+}
+
+/* Glassmorphism: solo navegación y modales */
+.glass-surface {
+  background: var(--color-glass-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.metric-glow {
+  box-shadow: 0 0 24px var(--color-accent-glow), 0 0 0 1px rgba(61, 126, 255, 0.1);
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--color-surface-1) 25%, var(--color-surface-2) 50%, var(--color-surface-1) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-card);
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+.shake-once { animation: shake 300ms ease-in-out 1; }
+
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
