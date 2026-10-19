@@ -11,6 +11,8 @@ const instrument = Instrument_Sans({ variable: "--font-instrument", subsets: ["l
 export const metadata: Metadata = {
   title: "TrainSync",
   description: "Planes de entrenamiento de resistencia gratuitos sobre tus datos de intervals.icu",
+  // La app ya es oscura: Dark Reader la dejaba igual pero alteraba los SVG y rompía la hidratación de React
+  other: { "darkreader-lock": "true" },
 };
 
 export const viewport: Viewport = { themeColor: "#0a0a0f", colorScheme: "dark" };
