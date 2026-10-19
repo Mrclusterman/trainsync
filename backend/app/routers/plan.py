@@ -4,7 +4,7 @@ from functools import lru_cache
 
 from fastapi import APIRouter, HTTPException, Query
 
-from app import config
+from app import config, schemas
 from app.services import training_engine as engine
 from app.services.intervals_client import IntervalsClient
 
@@ -117,7 +117,7 @@ def load_warnings(srpe: dict) -> list[str]:
     return []
 
 
-@router.get("/state")
+@router.get("/state", response_model=schemas.State)
 def state():
     today = date.today()
     profile, goal, s, activities = load_context(today)
@@ -136,14 +136,14 @@ def state():
             "last_activity": last_activity(activities)}
 
 
-@router.get("/plan/today")
+@router.get("/plan/today", response_model=schemas.Day)
 def plan_today():
     today = date.today()
     profile, goal, s, _ = load_context(today)
     return engine.plan(today, 1, profile, goal, s)[0]
 
 
-@router.get("/plan")
+@router.get("/plan", response_model=schemas.Plan)
 def plan(days: int = Query(14, ge=1, le=42)):
     today = date.today()
     profile, goal, s, _ = load_context(today)
