@@ -10,7 +10,7 @@ export default function ErrorPage({ error, retry }: { error: unknown; retry: () 
         Comprueba que el backend está arrancado y que la API key de intervals.icu es válida.
       </p>
       {detail && <p className="mt-2 font-mono text-xs text-alert">{detail}</p>}
-      <button onClick={() => retry()} className="mt-4 rounded-full bg-accent px-5 py-2 font-ui text-sm text-primary">
+      <button onClick={() => retry()} className="mt-4 rounded-full bg-accent px-5 py-2 font-ui text-sm font-medium text-canvas">
         Reintentar
       </button>
     </div>

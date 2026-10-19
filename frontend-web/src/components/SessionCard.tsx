@@ -12,7 +12,8 @@ function Pill({ children }: { children: React.ReactNode }) {
 
 export function ZoneChip({ zone }: { zone: Zone }) {
   return (
-    <span className="rounded-chip px-1.5 py-0.5 font-mono text-xs font-medium text-canvas"
+    // Z6 es el único color de zona oscuro: texto claro para mantener contraste AA (4,8:1)
+    <span className={`rounded-chip px-1.5 py-0.5 font-mono text-xs font-medium ${zone === "Z6" ? "text-primary" : "text-canvas"}`}
       style={{ background: ZONE_COLOR[zone] }}>
       {zone}
     </span>
