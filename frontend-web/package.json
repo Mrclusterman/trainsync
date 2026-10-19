@@ -24,5 +24,6 @@
     "openapi-typescript": "^7.13.0",
     "tailwindcss": "^4",
     "typescript": "^5"
-  }
+  },
+  "license": "AGPL-3.0-only"
 }

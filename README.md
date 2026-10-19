@@ -61,3 +61,12 @@ npm run gen:types           # regenera src/lib/api-types.ts desde el OpenAPI del
 ```bash
 cd backend && .venv/bin/pytest
 ```
+
+## Licencia
+
+Copyright (C) 2026 Gabriel Miralles Alvarez.
+
+TrainSync es software libre bajo la [GNU Affero General Public License v3.0](LICENSE) (`AGPL-3.0-only`).
+Puedes usarlo, estudiarlo, modificarlo y redistribuirlo; si ofreces una versión modificada como servicio
+en red, debes publicar su código fuente bajo la misma licencia. Componentes de terceros: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
