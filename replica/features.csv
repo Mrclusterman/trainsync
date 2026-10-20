@@ -1,0 +1,8 @@
+feature,area,priority,original,clone,notes
+Enviar la sesión propuesta al calendario de intervals.icu como entrenamiento estructurado,plan,must,no,no,fixes.md #1. Sincronización (54 TP / 234 GC). Comprobar antes que la API de intervals.icu lo permite
+Compromiso público: gratis sin niveles de pago ni anuncios ni notificaciones comerciales,producto,must,no,no,fixes.md #2. Connect+ (53 GC) y nagware de TP (hasta 31)
+Mover y cambiar sesiones desde el móvil con recálculo de la semana,plan,must,no,no,fixes.md #3. 19 + 5 TP (fino por fuente)
+Días disponibles y emparejado de sesión hecha con planificada,motor,should,no,no,fixes.md #4. 11 GC + 6 TP (fino)
+Mostrar los motivos de cada propuesta y la evidencia de cada regla,frontend,should,no,no,fixes.md #5. 16 GC + 12 TP (fino)
+Web ligera con la semana en caché para usarla sin conexión (PWA),frontend,should,no,no,fixes.md #6. Lenta 39 TP / 92 GC; sin conexión 17 GC
+Español completo incluidos los textos de las sesiones,frontend,could,no,no,fixes.md #7. 8 TP (fino)

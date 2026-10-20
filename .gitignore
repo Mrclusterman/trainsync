@@ -3,3 +3,8 @@
 __pycache__/
 *.egg-info/
 .pytest_cache/
+
+# Reseñas en bruto de terceros (replica-entrepreneur): se regeneran, no se publican
+replica/*-appstore.csv
+replica/*-hn.csv
+replica/reviews-*.csv
