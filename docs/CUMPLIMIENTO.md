@@ -1,6 +1,6 @@
 # CUMPLIMIENTO — TrainSync
 
-> **Versión:** 0.1 · **Fecha:** 2026-10-19
+> **Versión:** 0.2 · **Fecha:** 2026-10-20
 > **Ámbito:** app gratuita y open source, responsable en España, usuarios en la UE, que trata datos de salud (FC, HRV, sueño) importados de intervals.icu.
 > **No es asesoramiento legal.** Las referencias legales se han contrastado con resúmenes y fuentes secundarias, no siempre con el texto del BOE o del DOUE; antes de publicar la app conviene revisarlas con un profesional.
 
@@ -51,6 +51,7 @@ Etiquetas: **[Verificado]** comprobado en el código o en la app real · **[Fuen
 | Seguridad (art. 32 RGPD) | Ya previsto en la Memoria: API keys cifradas (AES-256), contraseñas con bcrypt, TLS |
 | Producto sanitario | Un planificador de entrenamiento sin finalidad médica en principio no es producto sanitario [No verificado]. Evitar afirmaciones de diagnóstico o tratamiento |
 | Proveedor de datos (intervals.icu) | Revisar los términos de su API para uso multiusuario antes de publicar [No verificado] |
+| Historial de git con datos personales | La Memoria guardaba el ID de atleta y datos fisiológicos del desarrollador. Se anonimizaron y se reescribió todo el historial (2026-10-20) [Verificado: ningún commit los contiene]. Pero tras reescribir y hacer force push, los commits antiguos siguen accesibles en GitHub "directamente por su SHA-1 en vistas en caché" [Fuente: GitHub Docs]. No hay forks ni PR que los referencien [Verificado: 0 y 0]. **Antes de hacer público el repo:** borrarlo en GitHub y volver a crearlo con el historial limpio, para que esos commits no sean accesibles [Inferencia: GitHub Docs solo propone contactar con Soporte, que "no eliminará datos no sensibles"]. Comprobar después que una URL de commit antiguo da 404 |
 
 ---
 
@@ -65,4 +66,5 @@ Etiquetas: **[Verificado]** comprobado en el código o en la app real · **[Fuen
 - Google Fonts y RGPD: [The Hacker News](https://thehackernews.com/2022/01/german-court-rules-websites-embedding.html), [Captain Compliance](https://captaincompliance.com/education/google-fonts-and-gdpr-what-the-munich-ruling-requires-and-how-to-self-host-your-way-out-of-exposure/)
 - Reseñas (Ómnibus): [Make Influence](https://www.makeinfluence.com/en/academy/fake-and-manipulated-reviews-what-the-eu-omnibus-directive-bans), [Mondaq](https://mondaq.com/dodd-frank-consumer-protection-act/1189542/the-omnibus-directive-consumer-reviews)
 - European Accessibility Act: [e-include](https://e-include.eu/web-accessibility/european-accessibility-act/), [Herzog](https://herzoglaw.co.il/en/news-and-insights/the-european-accessibility-act-key-considerations-for-e-commerce-providers/)
+- Datos sensibles en el historial de git: [GitHub Docs, Removing sensitive data from a repository](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/removing-sensitive-data-from-a-repository)
 - Licencias de fuentes: [DM Mono](https://gitee.com/doneself/dm-mono), [Geist](https://fr.github.com/vercel/geist-font), [Instrument Sans](https://fonts.google.com/specimen/Instrument%2BSans/about)
