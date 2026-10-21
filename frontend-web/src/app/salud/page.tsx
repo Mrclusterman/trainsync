@@ -10,12 +10,27 @@ import { minutes, SPORT_LABEL, WEEKDAY_LABEL } from "@/lib/format";
 
 const GOAL_LABEL: Record<string, string> = { fitness: "Ponerme en forma", strength: "Fuerza y músculo" };
 
+// Sin jerga (Z2, VO2max, umbral…): nombre y cómo saber si vas bien, con la prueba del habla [Práctica: ACSM]
+const PLAIN: Record<string, [string, string]> = {
+  recovery: ["Suave", "Muy tranquilo: podrías ir cantando."],
+  aerobic: ["Ritmo cómodo", "Puedes mantener una conversación sin quedarte sin aire."],
+  long: ["Larga a ritmo cómodo", "Más tiempo que otros días, pero siempre pudiendo hablar."],
+  threshold: ["Ritmo exigente", "Constante y exigente: solo puedes decir frases cortas."],
+  vo2max: ["Series intensas", "En cada serie casi no puedes hablar; entre series, muy suave."],
+};
+
+function pulse(s: HealthCardio) {
+  const zone = s.blocks.find((b) => b.block === "principal")?.zone;
+  const target = zone && s.targets[zone];
+  return target?.endsWith("ppm") ? `Pulso: ${target.replace("ppm", "pulsaciones por minuto")}` : null;
+}
+
 function Session({ s, date, past, done, watch }: { s: HealthStrength | HealthCardio; date: string; past: boolean; done: boolean; watch: boolean }) {
   return (
     <article className="rounded-card bg-surface-2 p-3">
       <div className="flex items-center gap-2">
         <SportIcon sport={s.sport} size={18} />
-        <h4 className="font-ui text-sm font-medium">{s.sport === "strength" ? s.name : `${SPORT_LABEL[s.sport] ?? s.sport} · ${s.name}`}</h4>
+        <h4 className="font-ui text-sm font-medium">{s.sport === "strength" ? s.name : `${SPORT_LABEL[s.sport] ?? s.sport} · ${PLAIN[s.type]?.[0] ?? s.name}`}</h4>
         <span className="ml-auto font-mono text-xs text-secondary">{minutes(s.duration_min)}</span>
       </div>
       {"exercises" in s ? (
@@ -24,7 +39,9 @@ function Session({ s, date, past, done, watch }: { s: HealthStrength | HealthCar
           <p className="mt-2 text-xs text-secondary">{s.notes}</p>
         </>
       ) : (
-        <p className="mt-1 text-sm text-secondary">{s.goal} · {s.equivalent_min} min moderados equivalentes</p>
+        <p className="mt-1 text-sm text-secondary">
+          {PLAIN[s.type]?.[1] ?? s.goal}{pulse(s) && <><br />{pulse(s)}</>}
+        </p>
       )}
       {done && <p className="mt-2 font-ui text-xs text-bio">{watch ? "Hecha · detectada en tu reloj" : "Hecha"}</p>}
       {past && !done && (
@@ -114,9 +131,12 @@ async function SaludView() {
         <Link href="/salud/perfil" className="font-ui text-sm text-accent">Perfil</Link>
       </header>
       <p className="text-sm text-secondary">
-        Bloque {plan.block + 1}, semana {plan.week_in_block + 1} de 4{deload && " (descarga)"} · {plan.equivalent_min} de{" "}
-        {plan.dose.aerobic} min aeróbicos · fuerza {plan.dose.strength_days} días
+        Esta semana: {plan.equivalent_min} min de actividad y fuerza {plan.dose.strength_days} días
+        {deload && " · semana más suave para recuperar"}
       </p>
+      {plan.equivalent_min >= 150 && plan.dose.strength_days >= 2 && (
+        <p className="font-ui text-sm text-bio">✓ Cumple la recomendación de la OMS para tu salud</p>
+      )}
       {plan.changed && (
         <form action={resetWeekAction} className="flex items-center gap-3 text-sm">
           <span className="text-secondary">Semana modificada: el resto se ha recalculado.</span>
@@ -124,6 +144,7 @@ async function SaludView() {
         </form>
       )}
       {plan.warnings.map((w) => <p key={w} className="rounded-card border-l-2 border-alert bg-surface-1 p-3 text-sm">{w}</p>)}
+      {plan.info?.map((i) => <p key={i} className="text-sm text-secondary">{i}</p>)}
       <ReadinessForm />
       <SendHealthToday />
       <div className="space-y-3">

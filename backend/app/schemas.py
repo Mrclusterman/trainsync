@@ -211,7 +211,8 @@ class HealthPlan(BaseModel):
     dose: HealthDose
     equivalent_min: int
     days: list[HealthDay]
-    warnings: list[str]
+    warnings: list[str] = Field(description="Lo que conviene cambiar (p. ej. no llegar al mínimo de la OMS)")
+    info: list[str] = Field([], description="Información en tono neutro (p. ej. el tiempo no da para toda la dosis)")
 
 
 # ---- Cuenta y perfil (Fase 1)

@@ -147,15 +147,23 @@ def strength_session(p: HealthProfile, patterns: tuple, sets_per_exercise: int, 
     kit = 1 if p.strength == "bodyweight" else 0
     # El core es isométrico: se prescribe por tiempo, no por repeticiones ni RIR [Práctica]
     exercises = [f"{PATTERNS[pt][kit]}: {sets_per_exercise} × 20–45″ por lado" if pt == "core"
-                 else f"{PATTERNS[pt][kit]}: {sets_per_exercise} × {reps}, RIR {rir}" for pt in patterns]
+                 else f"{PATTERNS[pt][kit]}: {sets_per_exercise} × {reps} repeticiones" for pt in patterns]
     if p.age is not None and p.age >= 65:
         exercises.append(BALANCE)
     minutes = round(10 + len(patterns) * sets_per_exercise * MIN_PER_SET)  # 10′ de calentamiento
     return {"sport": "strength", "type": "strength", "name": "Fuerza", "patterns": list(patterns),
             "sets_per_exercise": sets_per_exercise, "exercises": exercises, "rir": rir, "duration_min": minutes,
             "tss": round(engine.strength_tss(10 - rir, minutes)),
-            "notes": "Progresión doble: cuando completes el tope de repeticiones con ese RIR en todas las series, "
-                     "sube la carga un 2–10 % y vuelve al mínimo de repeticiones."}
+            "notes": effort_note(rir, p.strength)}
+
+
+def effort_note(rir: int, kit: str) -> str:
+    """El RIR (repeticiones en reserva) y la progresión doble, sin jerga (punto 5 del roast)."""
+    spare = "1 repetición" if rir == 1 else f"{rir} repeticiones"
+    effort = f"Termina cada serie cuando aún podrías hacer unas {spare} más." if rir else "Haz cada serie hasta no poder más."
+    harder = "pasa a una versión más difícil del ejercicio" if kit == "bodyweight" else "sube un poco el peso (2–10 %)"
+    return (f"{effort} Cuando llegues al máximo de repeticiones en todas las series, {harder} "
+            "y vuelve al mínimo de repeticiones.")
 
 
 def strength_week(p: HealthProfile, days: list[str], sets: int, budget: dict[str, int] | None = None) -> dict[str, dict]:
@@ -312,7 +320,7 @@ def week_plan(p: HealthProfile, start: date, adherence: list[float] | None = Non
     # Si ninguna semana llega al suelo, la que más minutos da con todos los días disponibles
     strength, plan_days, done_eq, extra_rest = chosen or floor_ok or most
 
-    warnings = []
+    warnings, info = [], []  # warnings: algo que conviene cambiar; info: lo demás, en tono neutro (punto 6 del roast)
     if p.strength == "none":
         warnings.append("Sin fuerza no se cumple la recomendación de la OMS (2 días o más por semana).")
     if any(s["duration_min"] > p.days[d] for d, s in strength.items()):
@@ -320,11 +328,17 @@ def week_plan(p: HealthProfile, start: date, adherence: list[float] | None = Non
     planned_sets = {pt: sum(s["sets_per_exercise"] for s in strength.values() if pt in s["patterns"])
                     for pt in ("sentadilla", "bisagra", "empuje horizontal", "tracción horizontal")}
     if strength and min(planned_sets.values()) < dose["sets"]:
-        warnings.append(f"Con el tiempo disponible haces {min(planned_sets.values())} de {dose['sets']} series "
-                        "semanales por grupo muscular.")
-    if done_eq + 5 < dose["aerobic"]:
-        warnings.append(f"Con los días y minutos disponibles llegas a {done_eq:.0f} de {dose['aerobic']} min "
-                        "aeróbicos equivalentes esta semana.")
+        info.append(f"Con tu tiempo haces {min(planned_sets.values())} series por grupo muscular a la semana; "
+                    "si algún día tienes más, el plan añade más.")
+    if done_eq + 5 < dose["aerobic"] and done_eq < FLOOR_AEROBIC and p.level == "beginner":
+        info.append(f"Empiezas con {done_eq:.0f} min de actividad a la semana. Para llegar a los {FLOOR_AEROBIC} que "
+                    "recomienda la OMS, más adelante te vendrá bien sumar un día o unos minutos.")
+    elif done_eq + 5 < dose["aerobic"] and done_eq < FLOOR_AEROBIC:
+        warnings.append(f"Con tus días y minutos llegas a {done_eq:.0f} min de actividad a la semana. La OMS recomienda "
+                        f"al menos {FLOOR_AEROBIC}: si puedes, añade un día o unos minutos.")
+    elif done_eq + 5 < dose["aerobic"]:
+        info.append(f"Con tu tiempo llegas a {done_eq:.0f} min de actividad a la semana: ya cumples la recomendación "
+                    f"de la OMS ({FLOOR_AEROBIC} min). Si algún día tienes más tiempo, el plan lo aprovecha.")
 
     out = []
     for d in range(7):
@@ -334,11 +348,11 @@ def week_plan(p: HealthProfile, start: date, adherence: list[float] | None = Non
         if p.goal == "strength" and len(sessions) == 2:
             pass  # fuerza primero: es el objetivo (§5.4)
         elif len(sessions) == 2:
-            sessions.reverse()  # forma y pérdida de grasa: la sesión aeróbica primero (§5.4)
+            sessions.reverse()  # ponerse en forma: la sesión aeróbica primero (§5.4)
         out.append({"date": day.isoformat(), "weekday": wd, "sessions": sessions}
                    | ({"note": REST_NOTE} if wd == extra_rest else {}))
     return {"goal": p.goal, "week_in_block": week_in_block, "dose": dose, "days": out, "warnings": warnings,
-            "equivalent_min": round(done_eq)}
+            "info": info, "equivalent_min": round(done_eq)}
 
 
 # ---------------------------------------------------------------- §8 ajuste diario sin reloj

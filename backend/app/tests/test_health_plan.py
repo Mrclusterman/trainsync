@@ -86,7 +86,7 @@ def test_strength_shrinks_to_fit_without_dropping_main_patterns(goal, minutes):
     week = hp.week_plan(profile(goal=goal, level="advanced", days=days), MONDAY)
     for s in sessions(week, "strength"):
         assert s["sets_per_exercise"] >= 1 and len(s["patterns"]) >= 2
-    assert week["warnings"]
+    assert any("series" in i for i in week["info"])
 
 
 def test_no_strength_is_allowed_but_flagged():
@@ -107,7 +107,7 @@ def test_without_clearance_for_vigorous_there_is_no_vigorous_work():
 
 def test_core_is_prescribed_by_time():
     s = hp.strength_session(profile(), hp.FULL_BODY, 2)
-    assert any("Plancha" in e and "″" in e and "RIR" not in e for e in s["exercises"])
+    assert any("Plancha" in e and "″" in e and "repeticiones" not in e for e in s["exercises"])
 
 
 # ---- §8 sin reloj y §1 determinismo
@@ -225,3 +225,14 @@ def test_match_day_explains_what_counts():
     assert [m["matched"] for m in hp.match_day([bike], [manual("cycling"), watch("running", 60)])] == ["cycling"]
     extra = hp.match_day([], [watch("walking", 30)])[0]
     assert extra["matched"] is None and "extra" in extra["why"]
+
+
+def test_only_warns_below_the_who_floor():
+    roomy = hp.week_plan(profile(goal="fitness", level="advanced", days={d: 60 for d in ALL_DAYS if d != "SUN"}), MONDAY)
+    assert roomy["equivalent_min"] >= hp.FLOOR_AEROBIC  # cumple la OMS aunque no llegue a la dosis: sin regañar
+    assert not any("llegas a" in w for w in roomy["warnings"]) and any("ya cumples" in i for i in roomy["info"])
+    tight = hp.week_plan(profile(goal="fitness", level="advanced", days={"MON": 30, "THU": 30}), MONDAY)
+    assert any("al menos 150" in w for w in tight["warnings"])
+    starting = hp.week_plan(profile(level="beginner", days={"MON": 45, "WED": 45, "SAT": 60}), MONDAY)
+    assert not starting["warnings"] and any("Empiezas con" in i for i in starting["info"])  # sin naranja al empezar
+    assert "RIR" not in hp.strength_session(profile(), hp.FULL_BODY, 2)["notes"]

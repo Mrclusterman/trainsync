@@ -694,8 +694,17 @@ export interface components {
             equivalent_min: number;
             /** Days */
             days: components["schemas"]["HealthDay"][];
-            /** Warnings */
+            /**
+             * Warnings
+             * @description Lo que conviene cambiar (p. ej. no llegar al mínimo de la OMS)
+             */
             warnings: string[];
+            /**
+             * Info
+             * @description Información en tono neutro (p. ej. el tiempo no da para toda la dosis)
+             * @default []
+             */
+            info: string[];
         };
         /** HealthPlanRequest */
         HealthPlanRequest: {
@@ -703,7 +712,7 @@ export interface components {
              * Goal
              * @enum {string}
              */
-            goal: "fitness" | "strength" | "fat_loss";
+            goal: "fitness" | "strength";
             /**
              * Days
              * @description Minutos disponibles por día
@@ -861,7 +870,7 @@ export interface components {
              * Goal
              * @enum {string}
              */
-            goal: "fitness" | "strength" | "fat_loss";
+            goal: "fitness" | "strength";
             /** Days */
             days: {
                 [key: string]: number;
@@ -1171,8 +1180,17 @@ export interface components {
             equivalent_min: number;
             /** Days */
             days: components["schemas"]["HealthDay"][];
-            /** Warnings */
+            /**
+             * Warnings
+             * @description Lo que conviene cambiar (p. ej. no llegar al mínimo de la OMS)
+             */
             warnings: string[];
+            /**
+             * Info
+             * @description Información en tono neutro (p. ej. el tiempo no da para toda la dosis)
+             * @default []
+             */
+            info: string[];
             /** Block */
             block: number;
             /** Adherence */

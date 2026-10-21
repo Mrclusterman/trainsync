@@ -55,7 +55,7 @@ def check(name: str, p: hp.HealthProfile, adherence_label: str, weeks: list[dict
     target = hp.TARGET[p.goal]
     stable = [wk for wk in weeks if wk["week_in_block"] < 3 and wk["dose"]["aerobic"] >= target["aerobic"]]
     loading = [wk for wk in weeks if wk["week_in_block"] < 3]
-    short = lambda wk: any("llegas a" in w for w in wk["warnings"])  # avisa de que no cabe la dosis
+    short = lambda wk: any("llegas a" in w for w in wk["warnings"] + wk["info"])  # avisa de que no cabe la dosis
     r = {}
 
     # V1 suelo OMS (≥ 150 min equivalentes y ≥ 2 días de fuerza) en todas las semanas estables. No depende de la meta
@@ -82,7 +82,7 @@ def check(name: str, p: hp.HealthProfile, adherence_label: str, weeks: list[dict
     if p.goal == "strength":
         times = all(sum(pt in s["patterns"] for s in sessions(wk, "strength")) >= 2 for wk in weeks for pt in MAIN)
         sets_ok = all(min(sum(s["sets_per_exercise"] for s in sessions(wk, "strength") if pt in s["patterns"])
-                          for pt in MAIN) >= wk["dose"]["sets"] or any("series" in w for w in wk["warnings"])
+                          for pt in MAIN) >= wk["dose"]["sets"] or any("series" in w for w in wk["info"])
                       for wk in weeks)
         r["V3"] = (times and sets_ok, "cada patrón principal ≥ 2 veces/semana; series = dosis o aviso")
 
