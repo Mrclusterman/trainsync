@@ -10,7 +10,7 @@ import { minutes, SPORT_LABEL, WEEKDAY_LABEL } from "@/lib/format";
 
 const GOAL_LABEL: Record<string, string> = { fitness: "Ponerme en forma", strength: "Fuerza y músculo", fat_loss: "Perder grasa" };
 
-function Session({ s, date, past, done }: { s: HealthStrength | HealthCardio; date: string; past: boolean; done: boolean }) {
+function Session({ s, date, past, done, watch }: { s: HealthStrength | HealthCardio; date: string; past: boolean; done: boolean; watch: boolean }) {
   return (
     <article className="rounded-card bg-surface-2 p-3">
       <div className="flex items-center gap-2">
@@ -26,7 +26,7 @@ function Session({ s, date, past, done }: { s: HealthStrength | HealthCardio; da
       ) : (
         <p className="mt-1 text-sm text-secondary">{s.goal} · {s.equivalent_min} min moderados equivalentes</p>
       )}
-      {done && <p className="mt-2 font-ui text-xs text-bio">Hecha</p>}
+      {done && <p className="mt-2 font-ui text-xs text-bio">{watch ? "Hecha · detectada en tu reloj" : "Hecha"}</p>}
       {past && !done && (
         <form action={logSessionAction} className="mt-2">
           <input type="hidden" name="date" value={date} />
@@ -82,7 +82,7 @@ function Day({ day, today, upcoming }: { day: HealthDay; today: string; upcoming
       {day.note && <p className="mt-1 text-sm text-alert">{day.note}</p>}
       {day.sessions.length === 0 ? <p className="mt-1 text-sm text-secondary">Descanso</p> : (
         <div className="mt-2 space-y-2">
-          {day.sessions.map((s) => <Session key={s.sport} s={s} date={day.date} past={day.date <= today} done={day.done?.includes(s.sport) ?? false} />)}
+          {day.sessions.map((s) => <Session key={s.sport} s={s} date={day.date} past={day.date <= today} done={day.done?.includes(s.sport) ?? false} watch={day.done_from_watch?.includes(s.sport) ?? false} />)}
         </div>
       )}
       {day.date >= today && !day.done?.length && <DayChanges day={day} upcoming={upcoming} />}

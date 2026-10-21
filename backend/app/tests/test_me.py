@@ -82,7 +82,8 @@ import httpx  # noqa: E402
 from sqlalchemy import select  # noqa: E402
 
 from app import crypto, db  # noqa: E402
-from app.routers import me  # noqa: E402
+from app import links  # noqa: E402
+from app.routers import me as me_router  # noqa: E402
 from app.services.intervals_client import IntervalsClient  # noqa: E402
 
 
@@ -103,6 +104,10 @@ def test_link_intervals_and_send_today(monkeypatch):
     posted = []
 
     def fake(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/activities"):  # una caminata de 30 min hoy y un paseo de 5 que no cuenta
+            return httpx.Response(200, json=[
+                {"type": "Walk", "moving_time": 1800, "start_date_local": f"{date.today().isoformat()}T08:00:00"},
+                {"type": "Walk", "moving_time": 300, "start_date_local": f"{(date.today() - timedelta(1)).isoformat()}T08:00:00"}])
         if request.method == "POST":
             events = json.loads(request.content)
             posted.extend(events)
@@ -110,13 +115,18 @@ def test_link_intervals_and_send_today(monkeypatch):
         return httpx.Response(200, json={"icu_resting_hr": 50, "sportSettings": [
             {"types": ["Run"], "lthr": 170, "max_hr": 190}, {"types": ["Ride"], "lthr": 165, "max_hr": 190}]})
 
-    monkeypatch.setattr(me, "make_client", lambda a, k: IntervalsClient(a, k, httpx.MockTransport(fake)))
+    monkeypatch.setattr(links, "make_client", lambda a, k: IntervalsClient(a, k, httpx.MockTransport(fake)))
     h = auth("reloj@x.es")
     every_day = {d: 60 for d in ("MON", "TUE", "WED", "THU", "FRI", "SAT")}
     api.put("/me/profile", json=PROFILE | {"days": every_day, "cardio": ["walking", "cycling"]}, headers=h)
     assert api.post("/me/plan/today/send", headers=h).status_code == 409  # sin vincular
     assert api.put("/me/intervals", json={"athlete_id": "i123", "api_key": "clave-de-pruebas-1234"},
                    headers=h).status_code == 204
+    plan = api.get("/me/plan", headers=h).json()
+    days = {d["date"]: d for d in plan["days"]}
+    assert days[date.today().isoformat()]["done_from_watch"] == ["walking"]  # detectada sin pulsar nada
+    yesterday = (date.today() - timedelta(1)).isoformat()
+    assert yesterday not in days or days[yesterday]["done_from_watch"] == []  # 5 minutos no cuentan
     with db.SessionLocal() as s:  # la clave no se guarda en claro
         stored = s.get(db.IntervalsLink, s.scalar(select(db.User.id).where(db.User.email == "reloj@x.es")))
         assert "clave-de-pruebas" not in stored.api_key_encrypted
@@ -149,3 +159,10 @@ def test_move_and_change_days_this_week():
                         headers=h).status_code == 422  # el domingo ya quedó libre
     assert api.delete("/me/week", headers=h).status_code == 204
     assert api.get("/me/plan", headers=h).json()["changed"] is False
+
+
+def test_watch_detection_never_breaks_the_plan():
+    class Down:
+        def activities(self, *_):
+            raise httpx.ConnectError("sin red")
+    assert me_router.watch_sessions(Down(), date.today()) == {}

@@ -506,10 +506,16 @@ export interface components {
             note?: string | null;
             /**
              * Done
-             * @description Deportes de ese día ya marcados como hechos
+             * @description Deportes de ese día ya hechos (marcados a mano o detectados en el reloj)
              * @default []
              */
             done: string[];
+            /**
+             * Done From Watch
+             * @description Los detectados en las actividades del reloj
+             * @default []
+             */
+            done_from_watch: string[];
         };
         /** HealthDose */
         HealthDose: {

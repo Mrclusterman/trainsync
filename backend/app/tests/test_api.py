@@ -5,11 +5,28 @@ from datetime import date, timedelta
 import httpx
 from fastapi.testclient import TestClient
 
+from app import links
 from app.main import app
 from app.routers import plan as plan_router
 from app.services.intervals_client import IntervalsClient
 
 TODAY = date.today()
+api = TestClient(app)
+
+
+def linked_user(monkeypatch, handler) -> dict:
+    """Usuario nuevo con su cuenta de intervals.icu (simulada) vinculada; devuelve la cabecera de sesión."""
+    import base64
+    import os
+    import uuid
+
+    monkeypatch.setenv("ENCRYPTION_KEY", base64.b64encode(os.urandom(32)).decode())
+    monkeypatch.setattr(links, "make_client", lambda a, k: IntervalsClient(a, k, httpx.MockTransport(handler)))
+    token = api.post("/auth/register", json={"email": f"{uuid.uuid4().hex}@x.es", "password": "una-clave-larga",
+                                             "birth_year": 1990, "accept_terms": True, "health_consent": True}).json()["token"]
+    h = {"Authorization": f"Bearer {token}"}
+    assert api.put("/me/intervals", json={"athlete_id": "i1", "api_key": "clave-de-pruebas-1234"}, headers=h).status_code == 204
+    return h
 
 
 def fake_intervals(request: httpx.Request) -> httpx.Response:
@@ -30,20 +47,19 @@ def fake_intervals(request: httpx.Request) -> httpx.Response:
 
 
 def test_endpoints(monkeypatch):
-    monkeypatch.setattr(plan_router, "client", lambda: IntervalsClient("i1", "k", httpx.MockTransport(fake_intervals)))
-    api = TestClient(app)
+    h = linked_user(monkeypatch, fake_intervals)
 
-    state = api.get("/state").json()
+    state = api.get("/state", headers=h).json()
     assert state["tsb"] == -5 and state["hrv_status"] == "outside_swc" and state["physiology"]["lthr"] == 174
     assert state["goal"]["name"] == "Maratón de Valencia" and state["last_activity"]["gray_zone"]
     assert state["goal"]["distance_km"] == 42.195 and state["srpe_week"]["load"] == 200
 
-    today = api.get("/plan/today").json()
+    today = api.get("/plan/today", headers=h).json()
     if today["main"]:  # HRV fuera de rango + sueño 45: recuperación
         assert today["main"]["type"] == "recovery"
         assert today["strength"] is None
 
-    assert len(api.get("/plan?days=14").json()["days"]) == 14
+    assert len(api.get("/plan?days=14", headers=h).json()["days"]) == 14
 
 
 def test_send_today(monkeypatch):
@@ -55,8 +71,8 @@ def test_send_today(monkeypatch):
             return httpx.Response(200, json=[{"id": 99, **json.loads(request.content)[0]}])
         return fake_intervals(request)
 
-    monkeypatch.setattr(plan_router, "client", lambda: IntervalsClient("i1", "k", httpx.MockTransport(handler)))
-    r = TestClient(app).post("/plan/today/send")
+    h = linked_user(monkeypatch, handler)
+    r = api.post("/plan/today/send", headers=h)
     if r.status_code == 409:  # el día de la semana del test es de descanso
         assert not sent
         return
@@ -78,10 +94,14 @@ def test_implausible_lthr_is_replaced_and_flagged():
     assert "running" not in profile.lthr_by_sport and len(profile.warnings) == 1
 
 
-def test_missing_credentials_returns_503(monkeypatch):
-    monkeypatch.setattr(plan_router.config, "INTERVALS_API_KEY", "")
-    plan_router.client.cache_clear()
-    assert TestClient(app).get("/plan/today").status_code == 503
+def test_race_plan_needs_session_and_own_linked_account(monkeypatch):
+    """Nunca se usa una cuenta del servidor: sin sesión 401; con sesión pero sin vincular, 409."""
+    for path in ("/state", "/plan/today", "/plan"):
+        assert api.get(path).status_code == 401
+    token = api.post("/auth/register", json={"email": "sin-reloj@x.es", "password": "una-clave-larga",
+                                             "birth_year": 1990, "accept_terms": True, "health_consent": True}).json()["token"]
+    assert api.get("/state", headers={"Authorization": f"Bearer {token}"}).status_code == 409
+    assert api.post("/plan/today/send", headers={"Authorization": f"Bearer {token}"}).status_code == 409
 
 
 def test_run_model_warns_when_lthr_and_threshold_pace_disagree(monkeypatch):
@@ -99,8 +119,8 @@ def test_run_model_warns_when_lthr_and_threshold_pace_disagree(monkeypatch):
                                                                 "threshold_pace": 1000 / 281}]})
         return fake_intervals(request)
 
-    monkeypatch.setattr(plan_router, "client", lambda: IntervalsClient("i1", "k", httpx.MockTransport(handler)))
-    plan_router.run_samples.cache_clear()
-    state = TestClient(app).get("/state").json()
+    h = linked_user(monkeypatch, handler)
+    plan_router._SAMPLES.clear()
+    state = api.get("/state", headers=h).json()
     # 174 ppm → ~5:06/km con esta recta (punto medio de cada tramo de 5 ppm) frente a 4:41/km: más de un 5 %
     assert any("5:06/km" in w and "4:41/km" in w for w in state["warnings"]), state["warnings"]

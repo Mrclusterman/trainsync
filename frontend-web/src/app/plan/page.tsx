@@ -1,11 +1,22 @@
 import { Suspense } from "react";
 import { PlanStrip } from "@/components/PlanStrip";
 import { PlanSkeleton } from "@/components/Skeletons";
-import { getPlan } from "@/lib/api";
+import { redirect } from "next/navigation";
+import { LinkIntervals } from "@/components/LinkIntervals";
+import { ApiError, hasSession } from "@/lib/account";
+import { getPlan, type Plan } from "@/lib/api";
 import { PHASE_LABEL, shortDate } from "@/lib/format";
 
 async function PlanView() {
-  const plan = await getPlan(14);
+  if (!(await hasSession())) redirect("/entrar");
+  let plan: Plan;
+  try {
+    plan = await getPlan(14);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 401) redirect("/entrar");
+    if (e instanceof ApiError && e.status === 409) return <LinkIntervals />;
+    throw e;
+  }
   return (
     <>
       <p className="font-ui text-sm text-secondary">

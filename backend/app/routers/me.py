@@ -5,15 +5,14 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from app import auth, crypto, db, schemas
+from app import auth, crypto, db, links, schemas
+from app.links import linked_client
 from app.routers import plan as event_plan
 from app.routers.health import build_plan, profile_from
 from app.services import health_plan as hp
 from app.services import training_engine as engine
 from app.services import workout_text
 from app.services.intervals_client import IntervalsClient
-
-make_client = IntervalsClient  # se sustituye en los tests
 
 router = APIRouter()
 TERMS_VERSION = "2026-10-21"
@@ -64,28 +63,50 @@ def put_profile(req: schemas.ProfileIn, user: db.User = Depends(auth.current_use
     return Response(status_code=204)
 
 
-def linked_client(user: db.User, session: Session) -> IntervalsClient | None:
-    link = session.get(db.IntervalsLink, user.id)
-    return make_client(link.athlete_id, crypto.decrypt(link.api_key_encrypted)) if link else None
-
-
 def physiology(client: IntervalsClient) -> engine.Profile:
     """LTHR, FC máx., CSS y ritmo umbral de la cuenta vinculada (mismas reglas que el plan de eventos)."""
     return event_plan.fill_physiology(engine.Profile(active_sports=["running", "cycling"]), client.athlete())
 
 
-def user_plan(user: db.User, session: Session, monday: date, ephys: engine.Profile | None = None) -> dict:
+# Tipos de actividad de intervals.icu → deportes del plan de salud, para detectar sesiones hechas sin pulsar nada
+ACTIVITY_SPORTS = {"Run": "running", "TrailRun": "running", "VirtualRun": "running", "Ride": "cycling",
+                   "VirtualRide": "cycling", "GravelRide": "cycling", "MountainBikeRide": "cycling", "EBikeRide": "cycling",
+                   "Swim": "swimming_pool", "OpenWaterSwim": "swimming_pool", "Walk": "walking", "Hike": "walking",
+                   "WeightTraining": "strength"}
+MIN_ACTIVITY_S = 600  # menos de 10 min no cuenta como sesión [Inferencia]
+
+
+def watch_sessions(client: IntervalsClient, oldest: date) -> dict[str, set[str]]:
+    """Deportes hechos cada día según el reloj; vacío si intervals.icu falla (el plan sigue con lo marcado a mano)."""
+    try:
+        activities = client.activities(oldest, date.today())
+    except Exception:  # red o intervals.icu caído: no debe tumbar el plan
+        return {}
+    if not isinstance(activities, list):  # respuesta inesperada: mejor no detectar nada que inventar
+        return {}
+    done: dict[str, set[str]] = {}
+    for a in activities:
+        sport = ACTIVITY_SPORTS.get(a.get("type"))
+        if sport and (a.get("moving_time") or 0) >= MIN_ACTIVITY_S and a.get("start_date_local"):
+            done.setdefault(a["start_date_local"][:10], set()).add(sport)
+    return done
+
+
+def user_plan(user: db.User, session: Session, monday: date, ephys: engine.Profile | None = None,
+              client: IntervalsClient | None = None) -> dict:
     row = session.get(db.HealthProfileRow, user.id)
     if row is None:
         raise HTTPException(404, "Primero completa tu perfil (PUT /me/profile)")
     req = schemas.HealthPlanRequest(**row.plan, age=date.today().year - user.birth_year, screening=row.screening or None)
     block, week = hp.position(row.block_start, monday)
     logs = session.scalars(select(db.SessionLog).where(db.SessionLog.user_id == user.id)).all()
-    done: dict[str, int] = {}
-    done_sports: dict[str, list[str]] = {}
+    watch = watch_sessions(client, row.block_start) if client else {}
+    manual: dict[str, set[str]] = {}
     for log in logs:
-        done[log.date.isoformat()] = done.get(log.date.isoformat(), 0) + 1
-        done_sports.setdefault(log.date.isoformat(), []).append(log.sport)
+        manual.setdefault(log.date.isoformat(), set()).add(log.sport)
+    # Lo marcado a mano y lo detectado en el reloj, sin contar dos veces el mismo deporte el mismo día
+    done_sports = {d: manual.get(d, set()) | watch.get(d, set()) for d in manual.keys() | watch.keys()}
+    done = {d: len(sports) for d, sports in done_sports.items()}
     physio = {"lthr": ephys.lthr, "max_hr": ephys.max_hr, "css": ephys.css} if ephys else None
     changes = {c.week_start.isoformat(): (c.changes, c.since) for c in
                session.scalars(select(db.WeekChange).where(db.WeekChange.user_id == user.id))}
@@ -95,7 +116,8 @@ def user_plan(user: db.User, session: Session, monday: date, ephys: engine.Profi
     plan = build_plan(req, monday, adherence, week, readiness, physio, *changes.get(monday.isoformat(), (None, None)))
     plan |= {"block": block, "adherence": adherence}
     for day in plan["days"]:
-        day["done"] = done_sports.get(day["date"], [])
+        day["done"] = sorted(done_sports.get(day["date"], set()))
+        day["done_from_watch"] = sorted(watch.get(day["date"], set()))
     return plan
 
 
@@ -105,7 +127,7 @@ def get_plan(start: date | None = None, user: db.User = Depends(auth.current_use
     today = date.today()
     monday = (start or today) - timedelta((start or today).weekday())
     client = linked_client(user, session)
-    return user_plan(user, session, monday, physiology(client) if client else None)
+    return user_plan(user, session, monday, physiology(client) if client else None, client)
 
 
 def check_this_week(day: date) -> date:
@@ -180,7 +202,7 @@ def link_intervals(req: schemas.IntervalsLinkIn, user: db.User = Depends(auth.cu
                    session: Session = Depends(db.get_session)):
     """Vincula intervals.icu una vez: se comprueba la clave y se guarda cifrada."""
     try:
-        make_client(req.athlete_id, req.api_key).athlete()
+        links.make_client(req.athlete_id, req.api_key).athlete()
     except Exception:
         raise HTTPException(422, "intervals.icu no acepta ese ID de atleta o esa clave")
     session.merge(db.IntervalsLink(user_id=user.id, athlete_id=req.athlete_id, api_key_encrypted=crypto.encrypt(req.api_key)))
@@ -203,7 +225,7 @@ def send_today(user: db.User = Depends(auth.current_user), session: Session = De
         raise HTTPException(409, "Vincula primero tu cuenta de intervals.icu (PUT /me/intervals)")
     ephys = physiology(client)
     today = date.today()
-    plan = user_plan(user, session, today - timedelta(today.weekday()), ephys)
+    plan = user_plan(user, session, today - timedelta(today.weekday()), ephys, client)
     sessions = next(d["sessions"] for d in plan["days"] if d["date"] == today.isoformat())
     if not sessions:
         raise HTTPException(409, "Hoy no hay sesiones que enviar")

@@ -13,8 +13,6 @@ def _num(name: str) -> float | None:
     return float(os.environ[name]) if os.getenv(name) else None
 
 
-INTERVALS_ATHLETE_ID = os.getenv("INTERVALS_ATHLETE_ID", "")
-INTERVALS_API_KEY = os.getenv("INTERVALS_API_KEY", "")
 
 
 def load_profile() -> Profile:

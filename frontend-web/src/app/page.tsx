@@ -6,7 +6,10 @@ import { SendToWatch } from "@/components/SendToWatch";
 import { DashboardSkeleton } from "@/components/Skeletons";
 import { SportIcon } from "@/components/SportIcon";
 import { ZoneBars } from "@/components/ZoneBars";
-import { getPlan, getState } from "@/lib/api";
+import { redirect } from "next/navigation";
+import { LinkIntervals } from "@/components/LinkIntervals";
+import { ApiError, hasSession } from "@/lib/account";
+import { getPlan, getState, type Plan, type State } from "@/lib/api";
 import { athleteMood, minutes, PHASE_LABEL, shortDate, SPORT_LABEL, tsbTone, WEEKDAY_LABEL } from "@/lib/format";
 
 const MOOD = {
@@ -16,7 +19,15 @@ const MOOD = {
 };
 
 async function Dashboard() {
-  const [state, plan] = await Promise.all([getState(), getPlan(14)]);
+  if (!(await hasSession())) redirect("/entrar");
+  let state: State, plan: Plan;
+  try {
+    [state, plan] = await Promise.all([getState(), getPlan(14)]);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 401) redirect("/entrar");
+    if (e instanceof ApiError && e.status === 409) return <LinkIntervals />;
+    throw e;
+  }
   const [today, ...rest] = plan.days;
   const mood = MOOD[athleteMood(state, today)];
   const tsb = tsbTone(state.tsb);

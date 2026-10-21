@@ -1,10 +1,15 @@
-"""Endpoints del plan: estado del atleta, propuesta de hoy y plan de N días."""
-from datetime import date, timedelta
-from functools import lru_cache
+"""Endpoints del plan de carrera: estado del atleta, propuesta de hoy y plan de N días.
 
-from fastapi import APIRouter, HTTPException, Query
+Cada usuario con sesión usa su propia cuenta de intervals.icu vinculada (app/links.py), nunca la del servidor.
+shortcut: deportes activos, días de descanso e inicio del plan salen aún del .env (config.load_profile); pasarlos al
+perfil de cada usuario cuando el modo carrera tenga formulario propio.
+"""
+from datetime import date, timedelta
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app import config, schemas
+from app.links import user_client
 from app.services import training_engine as engine, workout_text
 from app.services.intervals_client import IntervalsClient
 
@@ -13,13 +18,6 @@ router = APIRouter()
 SPORT_TYPES = {"Run": "running", "TrailRun": "running", "VirtualRun": "running",
                "Ride": "cycling", "VirtualRide": "cycling", "GravelRide": "cycling", "MountainBikeRide": "cycling",
                "Swim": "swimming_pool", "OpenWaterSwim": "swimming_open", "WeightTraining": "strength"}
-
-
-@lru_cache
-def client() -> IntervalsClient:
-    if not (config.INTERVALS_ATHLETE_ID and config.INTERVALS_API_KEY):
-        raise HTTPException(503, "Faltan INTERVALS_ATHLETE_ID / INTERVALS_API_KEY en .env")
-    return IntervalsClient(config.INTERVALS_ATHLETE_ID, config.INTERVALS_API_KEY)
 
 
 def goal_from_races(races: list[dict], today: date) -> engine.Goal | None:
@@ -113,23 +111,30 @@ def last_activity(activities: list[dict]) -> dict | None:
             "hr_zone_secs": zones, "gray_zone": engine.gray_zone(zones)}
 
 
-@lru_cache(maxsize=64)
-def run_samples(activity_id: str) -> tuple:
+_SAMPLES: dict[tuple[str, str], tuple] = {}  # (cuenta, actividad) → muestras: nunca se mezclan datos entre usuarios
+
+
+def run_samples(c: IntervalsClient, activity_id: str) -> tuple:
     """(FC, velocidad, pendiente) segundo a segundo, sin los 5 primeros minutos (la FC va con retraso)."""
-    st = client().streams(activity_id)
-    return tuple(zip(st.get("heartrate", []), st.get("velocity_smooth", []), st.get("grade_smooth", [])))[300:]
+    key = (str(c.http.base_url), activity_id)
+    if key not in _SAMPLES:
+        if len(_SAMPLES) > 512:  # shortcut: caché en memoria del proceso; pasar a Redis con varios servidores
+            _SAMPLES.clear()
+        st = c.streams(activity_id)
+        _SAMPLES[key] = tuple(zip(st.get("heartrate", []), st.get("velocity_smooth", []), st.get("grade_smooth", [])))[300:]
+    return _SAMPLES[key]
 
 
 RUNS_FOR_MODEL = 12  # carreras recientes para la relación FC-velocidad [Inferencia]
 
 
-def fit_run_model(profile: engine.Profile, activities: list[dict]) -> None:
+def fit_run_model(profile: engine.Profile, activities: list[dict], c: IntervalsClient) -> None:
     """Relación FC-velocidad de tus carreras (como Garmin: ritmos desde la FC) y aviso si choca con la LTHR."""
     runs = sorted((a for a in activities if a.get("type") == "Run" and a.get("average_heartrate")),
                   key=lambda a: a["start_date_local"])[-RUNS_FOR_MODEL:]
     if "running" not in profile.active_sports or not runs:
         return
-    profile.run_model = engine.hr_pace_model([x for a in runs for x in run_samples(str(a["id"]))])
+    profile.run_model = engine.hr_pace_model([x for a in runs for x in run_samples(c, str(a["id"]))])
     lthr = profile.lthr_for("running")
     if profile.run_model and lthr and profile.run_pace:
         predicted = engine.pace_at(lthr, profile.run_model)
@@ -142,12 +147,11 @@ def fit_run_model(profile: engine.Profile, activities: list[dict]) -> None:
                 "de LTHR (R-TEST-LTHR).")
 
 
-def load_context(today: date):
-    c = client()
+def load_context(c: IntervalsClient, today: date):
     profile = fill_physiology(config.load_profile(), c.athlete())
     wellness = c.wellness(today - timedelta(35), today)  # 7 d + 28 d de línea base HRV
     activities = c.activities(today - timedelta(365), today)  # 28 d de reparto de carga; carreras para el modelo
-    fit_run_model(profile, activities)
+    fit_run_model(profile, activities, c)
     goal = goal_from_races(c.races(today, today + timedelta(days=365)), today)
     week = [a for a in activities if a.get("start_date_local", "")[:10] >= (today - timedelta(7)).isoformat()]
     return profile, goal, day_state(wellness, activities, today), week
@@ -161,9 +165,9 @@ def load_warnings(srpe: dict) -> list[str]:
 
 
 @router.get("/state", response_model=schemas.State)
-def state():
+def state(c: IntervalsClient = Depends(user_client)):
     today = date.today()
-    profile, goal, s, activities = load_context(today)
+    profile, goal, s, activities = load_context(c, today)
     phase, recovery_week = engine.phase_for(today, goal, profile.plan_start)
     daily = [sum(a.get("session_rpe") or 0 for a in activities if a.get("start_date_local", "")[:10] == (today - timedelta(d)).isoformat())
              for d in range(6, -1, -1)]
@@ -180,27 +184,27 @@ def state():
 
 
 @router.get("/plan/today", response_model=schemas.Day)
-def plan_today():
+def plan_today(c: IntervalsClient = Depends(user_client)):
     today = date.today()
-    profile, goal, s, _ = load_context(today)
+    profile, goal, s, _ = load_context(c, today)
     return engine.plan(today, 1, profile, goal, s)[0]
 
 
 @router.get("/plan", response_model=schemas.Plan)
-def plan(days: int = Query(14, ge=1, le=42)):
+def plan(days: int = Query(14, ge=1, le=42), c: IntervalsClient = Depends(user_client)):
     today = date.today()
-    profile, goal, s, _ = load_context(today)
+    profile, goal, s, _ = load_context(c, today)
     return {"goal": goal, "days": engine.plan(today, days, profile, goal, s)}
 
 
 @router.post("/plan/today/send", response_model=schemas.Sent)
-def send_today():
+def send_today(c: IntervalsClient = Depends(user_client)):
     """Envía la sesión principal de hoy al calendario de intervals.icu (reenviar la sustituye, no la duplica)."""
     today = date.today()
-    profile, goal, s, _ = load_context(today)
+    profile, goal, s, _ = load_context(c, today)
     main = engine.plan(today, 1, profile, goal, s)[0]["main"]
     if main is None:
         raise HTTPException(409, "Hoy toca descanso: no hay sesión que enviar")
     event = workout_text.event(main, today.isoformat(), profile)
-    created = client().upsert_workouts([event])[0]
+    created = c.upsert_workouts([event])[0]
     return {"id": created["id"], "date": today, "name": event["name"], "description": event["description"]}

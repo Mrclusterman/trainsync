@@ -184,7 +184,8 @@ class HealthDay(BaseModel):
     weekday: Weekday
     sessions: list[HealthStrength | HealthCardio]
     note: str | None = None
-    done: list[str] = Field([], description="Deportes de ese día ya marcados como hechos")
+    done: list[str] = Field([], description="Deportes de ese día ya hechos (marcados a mano o detectados en el reloj)")
+    done_from_watch: list[str] = Field([], description="Los detectados en las actividades del reloj")
 
 
 class HealthDose(BaseModel):

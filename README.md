@@ -32,7 +32,7 @@ Lo marcado `[Inferencia]` en `backend/app/services/training_engine.py` no tiene 
 ## Arrancar
 
 ```bash
-cp .env.example .env          # rellena INTERVALS_ATHLETE_ID e INTERVALS_API_KEY
+cp .env.example .env          # rellena JWT_SECRET y ENCRYPTION_KEY; cada usuario vincula su intervals.icu en la web
 # Con Docker (Windows/WSL): backend en :8000 y web en :3000
 docker compose up --build
 # Sin Docker:
@@ -54,6 +54,7 @@ Swagger UI: http://localhost:8000/docs
 | `POST /me/sessions`, `POST /me/readiness` | Marcar una sesión como hecha; estado del día sin reloj |
 | `PUT /me/intervals`, `POST /me/plan/today/send` | Vincular intervals.icu una vez (clave cifrada con AES-256-GCM) y enviar al reloj las sesiones de hoy |
 | `GET /me/export`, `DELETE /me` | Exportar todos tus datos (RGPD art. 20) y borrar la cuenta (art. 17) |
+| `GET /state`, `GET /plan`, `GET /plan/today` | Plan de carrera con la sesión del usuario y **su** cuenta de intervals.icu vinculada (401 sin sesión; 409 sin vincular). Nunca se usa una cuenta del servidor |
 | `POST /plan/today/send` | Envía la sesión de hoy al calendario de intervals.icu como entrenamiento estructurado; intervals.icu la pasa al reloj si tienes activada la sincronización (Garmin, Wahoo, Zwift). Reenviar la actualiza (`external_id` por día) |
 
 ## Frontend web (`frontend-web/`)
