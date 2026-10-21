@@ -149,7 +149,7 @@ class ScreeningOut(BaseModel):
 
 
 class HealthPlanRequest(BaseModel):
-    goal: Literal["fitness", "strength", "fat_loss"]
+    goal: Literal["fitness", "strength"]
     days: dict[Weekday, int] = Field(description="Minutos disponibles por día")
     strength: Literal["gym", "bodyweight", "none"] = "gym"
     cardio: list[Literal["walking", "running", "cycling", "swimming_pool"]] = ["walking"]
@@ -252,7 +252,7 @@ class Account(BaseModel):
 
 
 class ProfileIn(BaseModel):
-    goal: Literal["fitness", "strength", "fat_loss"]
+    goal: Literal["fitness", "strength"]
     days: dict[Weekday, int]
     strength: Literal["gym", "bodyweight", "none"] = "gym"
     cardio: list[Literal["walking", "running", "cycling", "swimming_pool"]] = ["walking"]

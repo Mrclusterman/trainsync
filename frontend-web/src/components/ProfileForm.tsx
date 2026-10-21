@@ -12,7 +12,6 @@ export type SavedProfile = {
 const GOALS = [
   ["fitness", "Ponerme en forma", "Resistencia y fuerza equilibradas"],
   ["strength", "Fuerza y músculo", "Más gimnasio; la resistencia, de complemento"],
-  ["fat_loss", "Perder grasa", "Más minutos de actividad aeróbica y fuerza para conservar músculo"],
 ] as const;
 const CARDIO = [["walking", "Caminar"], ["running", "Correr"], ["cycling", "Bici"], ["swimming_pool", "Nadar"]] as const;
 const legend = "font-ui text-sm text-secondary";

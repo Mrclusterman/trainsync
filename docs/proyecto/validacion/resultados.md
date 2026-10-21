@@ -1,6 +1,6 @@
 # Resultados de la validación (2026-01-05, 24 semanas)
 
-109 de 110 comprobaciones aplicables cumplen (10 no aplican). Generado con `python -m validation.run`.
+103 de 104 comprobaciones aplicables cumplen (10 no aplican). Generado con `python -m validation.run`.
 
 | Perfil | Adherencia | Criterio | Cumple | Detalle |
 |---|---|---|---|---|
@@ -79,50 +79,44 @@
 | corredor | baja | V7 | sí | día de descanso: True; pierna en días seguidos: False |
 | corredor | baja | V9 | sí | sin límite de tiempo: máx. 1.99 (9 semanas); limitadas por tiempo: máx. 2.00 (9 semanas) |
 | corredor | baja | V10 | sí | dos ejecuciones idénticas |
-| pérdida de grasa | alta | V1 | sí | 15 semanas estables; mín. 158 min equivalentes |
-| pérdida de grasa | alta | V4 | sí | semanas estables: 15; con aviso: 15 |
-| pérdida de grasa | alta | V5 | sí | subida máx. +10.0%; descarga cada 4.ª semana: True |
-| pérdida de grasa | alta | V7 | sí | día de descanso: True; pierna en días seguidos: False |
-| pérdida de grasa | alta | V9 | sí | sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 1.58 (18 semanas) |
-| pérdida de grasa | alta | V10 | sí | dos ejecuciones idénticas |
-| pérdida de grasa | media | V1 | no aplica | no aplica: sin semanas estables (la progresión aún no ha llegado a la meta) |
-| pérdida de grasa | media | V4 | sí | semanas estables: 0; con aviso: 0 |
-| pérdida de grasa | media | V5 | sí | subida máx. +10.0%; descarga cada 4.ª semana: True |
-| pérdida de grasa | media | V7 | sí | día de descanso: True; pierna en días seguidos: False |
-| pérdida de grasa | media | V9 | sí | sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 1.58 (18 semanas) |
-| pérdida de grasa | media | V10 | sí | dos ejecuciones idénticas |
-| pérdida de grasa | baja | V1 | no aplica | no aplica: sin semanas estables (la progresión aún no ha llegado a la meta) |
-| pérdida de grasa | baja | V4 | sí | semanas estables: 0; con aviso: 0 |
-| pérdida de grasa | baja | V5 | sí | subida máx. +10.0%; descarga cada 4.ª semana: True |
-| pérdida de grasa | baja | V7 | sí | día de descanso: True; pierna en días seguidos: False |
-| pérdida de grasa | baja | V9 | sí | sin límite de tiempo: máx. 1.98 (13 semanas); limitadas por tiempo: máx. 1.58 (5 semanas) |
-| pérdida de grasa | baja | V10 | sí | dos ejecuciones idénticas |
+| seis días | alta | V1 | sí | 15 semanas estables; mín. 158 min equivalentes |
+| seis días | alta | V5 | sí | subida máx. +10.0%; descarga cada 4.ª semana: True |
+| seis días | alta | V7 | sí | día de descanso: True; pierna en días seguidos: False |
+| seis días | alta | V9 | sí | sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 2.00 (18 semanas) |
+| seis días | alta | V10 | sí | dos ejecuciones idénticas |
+| seis días | media | V1 | no aplica | no aplica: sin semanas estables (la progresión aún no ha llegado a la meta) |
+| seis días | media | V5 | sí | subida máx. +10.0%; descarga cada 4.ª semana: True |
+| seis días | media | V7 | sí | día de descanso: True; pierna en días seguidos: False |
+| seis días | media | V9 | sí | sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 1.58 (18 semanas) |
+| seis días | media | V10 | sí | dos ejecuciones idénticas |
+| seis días | baja | V1 | no aplica | no aplica: sin semanas estables (la progresión aún no ha llegado a la meta) |
+| seis días | baja | V5 | sí | subida máx. +10.0%; descarga cada 4.ª semana: True |
+| seis días | baja | V7 | sí | día de descanso: True; pierna en días seguidos: False |
+| seis días | baja | V9 | sí | sin límite de tiempo: máx. 1.95 (10 semanas); limitadas por tiempo: máx. 1.58 (8 semanas) |
+| seis días | baja | V10 | sí | dos ejecuciones idénticas |
 | cribado con tope | alta | V1 | sí | 18 semanas estables; mín. 156 min equivalentes |
-| cribado con tope | alta | V4 | sí | semanas estables: 18; con aviso: 18 |
 | cribado con tope | alta | V5 | sí | subida máx. +0.0%; descarga cada 4.ª semana: True |
 | cribado con tope | alta | V6 | sí | sin Z4+ ni RIR < 3 |
 | cribado con tope | alta | V7 | sí | día de descanso: True; pierna en días seguidos: False |
 | cribado con tope | alta | V9 | sí | sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 1.99 (18 semanas) |
 | cribado con tope | alta | V10 | sí | dos ejecuciones idénticas |
 | cribado con tope | media | V1 | sí | 18 semanas estables; mín. 156 min equivalentes |
-| cribado con tope | media | V4 | sí | semanas estables: 18; con aviso: 18 |
 | cribado con tope | media | V5 | sí | subida máx. +0.0%; descarga cada 4.ª semana: True |
 | cribado con tope | media | V6 | sí | sin Z4+ ni RIR < 3 |
 | cribado con tope | media | V7 | sí | día de descanso: True; pierna en días seguidos: False |
 | cribado con tope | media | V9 | sí | sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 1.99 (18 semanas) |
 | cribado con tope | media | V10 | sí | dos ejecuciones idénticas |
 | cribado con tope | baja | V1 | sí | 3 semanas estables; mín. 156 min equivalentes |
-| cribado con tope | baja | V4 | sí | semanas estables: 3; con aviso: 3 |
 | cribado con tope | baja | V5 | sí | subida máx. +10.0%; descarga cada 4.ª semana: True |
 | cribado con tope | baja | V6 | sí | sin Z4+ ni RIR < 3 |
 | cribado con tope | baja | V7 | sí | día de descanso: True; pierna en días seguidos: False |
-| cribado con tope | baja | V9 | **no** | sin límite de tiempo: máx. 2.34 (10 semanas); limitadas por tiempo: máx. 1.99 (8 semanas) |
+| cribado con tope | baja | V9 | **no** | sin límite de tiempo: máx. 2.26 (7 semanas); limitadas por tiempo: máx. 1.99 (11 semanas) |
 | cribado con tope | baja | V10 | sí | dos ejecuciones idénticas |
 | principiante sedentario | baja vs alta | V11 | sí | último bloque: 60 min (baja) frente a 300 (alta) |
 | persona mayor (70) | baja vs alta | V11 | sí | último bloque: 60 min (baja) frente a 300 (alta) |
 | gimnasio | baja vs alta | V11 | sí | último bloque: 60 min (baja) frente a 150 (alta) |
 | corredor | baja vs alta | V11 | sí | último bloque: 98 min (baja) frente a 300 (alta) |
-| pérdida de grasa | baja vs alta | V11 | sí | último bloque: 66 min (baja) frente a 250 (alta) |
-| cribado con tope | baja vs alta | V11 | sí | último bloque: 82 min (baja) frente a 250 (alta) |
+| seis días | baja vs alta | V11 | sí | último bloque: 79 min (baja) frente a 300 (alta) |
+| cribado con tope | baja vs alta | V11 | sí | último bloque: 98 min (baja) frente a 300 (alta) |
 
 Caso real: LTHR 174, FC máx. 192 → techo fácil 144 ppm = 75.0 % de la FC máx.; 4 sesiones aeróbicas, objetivos 50.0–75.0 % HR: cumple

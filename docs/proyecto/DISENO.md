@@ -18,7 +18,7 @@
 
 | Entrada | Valores | Origen |
 |---|---|---|
-| Objetivo | `event`, `fitness` (ponerse en forma), `strength` (fuerza y músculo), `fat_loss` (perder grasa) | Usuario |
+| Objetivo | `event`, `fitness` (ponerse en forma), `strength` (fuerza y músculo). `fat_loss` (perder grasa) se retirado el 2026-10-21: con usuarios desde 14 años, un objetivo de perder peso cruza mal con los trastornos de la conducta alimentaria | Usuario |
 | Fuerza | `gym`, `bodyweight`, `none` | Usuario |
 | Resistencia | subconjunto de `walking`, `running`, `cycling`, `swimming` (puede estar vacío) | Usuario |
 | Días disponibles | días de la semana + minutos por sesión | Usuario |
@@ -38,14 +38,14 @@ Minutos aeróbicos en **minutos moderados equivalentes** (1 min vigoroso = 2 mod
 | Suelo (todos) | ≥ 150 min | ≥ 2 | ≥ 4 [Inferencia: 2 días × 2 series] | moderado o más | OMS (EA §1) |
 | `fitness` | 150 → 300 min | 2–3 | 6 → 10 | RIR 2–3 | OMS, ACSM 2026 (EA §1–2) |
 | `strength` | 150 min (bici o natación preferentes) | 3–4 (cada grupo 2 veces) | 10 → 20 | RIR 1–3 | ACSM 2026, Schoenfeld 2017, Schumann 2022 (EA §2–3) |
-| `fat_loss` | 150 → 250+ min | 2–3 | 6 → 10 | RIR 2–3 | Donnelly 2009, Willis 2012 (EA §4) |
+| ~~`fat_loss`~~ (retirado) | ~~150 → 250+ min~~ | ~~2–3~~ | ~~6 → 10~~ | ~~RIR 2–3~~ | Donnelly 2009, Willis 2012 (EA §4) |
 | `event` | según MOTOR (TSS y rampa de CTL) | MOTOR §5 | MOTOR §5 | MOTOR §5 | MOTOR |
 | Mayores de 65 (se suma) | — | equilibrio + fuerza ≥ 3 días | — | — | OMS (EA §1) |
 
 - **Punto de partida** (semana 1): principiante 60 % de la meta del objetivo (mínimo 60 min aeróbicos y 2 días de fuerza
   con 1–2 series por grupo); intermedio 80 %; avanzado 100 %. [Inferencia, apoyada en la OMS: empezar poco y subir]
 - **Intensidad aeróbica:** principiantes, solo moderada; el resto, distribución polarizada (≈ 80 % fácil) de MOTOR §1, con
-  algo de vigorosa en `fat_loss` para ganar tiempo. [Práctica: MOTOR; Inferencia para `fat_loss`]
+  sesiones de umbral como trabajo de calidad. [Práctica: MOTOR]
 
 ## 4. Bloques sin fecha (mesociclos)
 
@@ -67,7 +67,7 @@ Entrada: días disponibles, minutos por sesión, dosis de la semana. Algoritmo d
 2. **Fuerza:** se colocan los días de fuerza lo más separados posible (≥ 48 h entre sesiones del mismo grupo).
    ≤ 3 días → cuerpo completo; 4 días → torso/pierna. [Práctica, coherente con 2 veces por grupo (ACSM 2026)]
 3. **Resistencia:** en los días restantes; si faltan días, se combina con fuerza en el mismo día.
-4. **Orden en días combinados:** primero lo prioritario del objetivo (`strength` → fuerza antes; `fitness`/`fat_loss` → la
+4. **Orden en días combinados:** primero lo prioritario del objetivo (`strength` → fuerza antes; `fitness` → la
    sesión aeróbica de calidad antes). En `strength`, sin carrera intensa el mismo día que pierna y, si hay deportes
    alternativos, preferir bici o natación. [Schumann 2022, Lundberg 2022 (EA §3); Inferencia en el detalle]
 5. **Elección de la semana:** se prueban semanas candidatas y se elige la primera que cumple el suelo aeróbico de la OMS
@@ -82,7 +82,7 @@ Entrada: días disponibles, minutos por sesión, dosis de la semana. Algoritmo d
 - **Patrones de movimiento** en lugar de músculos sueltos: sentadilla, bisagra de cadera, empuje horizontal y vertical,
   tracción horizontal y vertical, zancada/unilateral, core; con biblioteca por material (`gym` / `bodyweight`). Cuerpo completo =
   un ejercicio por patrón principal. [Práctica]
-- **Prescripción por objetivo y nivel:** principiante 10–15 repeticiones a RIR 3; `fitness`/`fat_loss` 8–12 a RIR 2–3;
+- **Prescripción por objetivo y nivel:** principiante 10–15 repeticiones a RIR 3; `fitness` 8–12 a RIR 2–3;
   `strength` 6–12 a RIR 1–2, con una serie pesada (≈ 4–6 repeticiones) en los multiarticulares para fuerza máxima.
   [ACSM 2009 y 2026 (EA §2); rangos exactos: Inferencia]
 - **Progresión doble:** al completar el tope de repeticiones con el RIR objetivo en todas las series, subir la carga un 2–10 %
@@ -130,7 +130,7 @@ grasa, cribado con tope) durante 24 semanas:
 | V1 | En el bloque estable, todo plan cumple el suelo OMS (≥ 150 min aeróbicos equivalentes y ≥ 2 días de fuerza) | EA §1 |
 | V2 | Mayores de 65: ≥ 3 días con equilibrio y fuerza | EA §1 |
 | V3 | Cada grupo muscular se trabaja ≥ 2 veces por semana en `strength` y las series semanales quedan en la meta | EA §2 |
-| V4 | `fat_loss` alcanza ≥ 250 min si los días disponibles lo permiten; si no, lo avisa | EA §4 |
+| ~~V4~~ | Retirado con el objetivo `fat_loss` (2026-10-21) | — |
 | V5 | La subida semanal de volumen no pasa del 10 % y cada 4.ª semana es de descarga | Diseño §4 |
 | V6 | Con tope ligero-moderado del cribado nunca aparece intensidad vigorosa, Z4+ ni RIR < 3; con "parar", ninguna sesión | EA §5 |
 | V7 | Al menos 1 día de descanso por semana; nunca dos sesiones de pierna pesadas en días seguidos | Diseño §5 |

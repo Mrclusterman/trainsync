@@ -1,4 +1,4 @@
-"""Planes de salud sin fecha: ponerse en forma, fuerza y músculo, perder grasa (docs/proyecto/DISENO.md).
+"""Planes de salud sin fecha: ponerse en forma y fuerza y músculo (docs/proyecto/DISENO.md).
 
 POST /health-plan recibe el perfil en la petición (sin cuenta); con cuenta, /me/plan lo lee de la base de datos.
 """

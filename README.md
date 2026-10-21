@@ -47,7 +47,7 @@ Swagger UI: http://localhost:8000/docs
 | `GET /state` | CTL, ATL, TSB, HRV, sueño, fase, objetivo y análisis de zona gris de la última actividad |
 | `GET /plan/today` | Propuesta de hoy ajustada a tu estado |
 | `GET /plan?days=14` | Plan de N días (solo hoy usa el estado real; se recalcula a diario) |
-| `POST /health-plan` | Plan semanal sin fecha para ponerse en forma, fuerza y músculo o perder grasa: gimnasio o peso corporal, solo o con caminar, correr, bici o natación ([`docs/proyecto/DISENO.md`](docs/proyecto/DISENO.md)). El perfil va en la petición hasta que haya usuarios (Fase 1) |
+| `POST /health-plan` | Plan semanal sin fecha para ponerse en forma o ganar fuerza y músculo: gimnasio o peso corporal, solo o con caminar, correr, bici o natación ([`docs/proyecto/DISENO.md`](docs/proyecto/DISENO.md)). El perfil va en la petición hasta que haya usuarios (Fase 1) |
 | `POST /auth/register`, `POST /auth/login` | Cuenta con consentimiento explícito y separado para datos de salud y edad mínima de 14 años |
 | `POST /auth/forgot`, `POST /auth/reset`, `POST /auth/verify`, `GET /me`, `POST /me/verify` | Recuperar la contraseña (enlace de 1 h, de un solo uso, cierra las demás sesiones; la respuesta no revela si la cuenta existe) y confirmar el email. Login limitado a 10 intentos por cuenta cada 15 min. Emails por SMTP (`.env.example`); sin SMTP se escriben en el log, solo para desarrollo |
 | `PUT /me/profile`, `GET /me/plan` | Perfil guardado (objetivo, días, actividades, cribado del ACSM) y plan de la semana; la adherencia de cada bloque sale de las sesiones registradas |

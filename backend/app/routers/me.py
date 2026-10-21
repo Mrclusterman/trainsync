@@ -144,7 +144,9 @@ def user_plan(user: db.User, session: Session, monday: date, ephys: engine.Profi
     row = session.get(db.HealthProfileRow, user.id)
     if row is None:
         raise HTTPException(404, "Primero completa tu perfil (PUT /me/profile)")
-    req = schemas.HealthPlanRequest(**row.plan, age=date.today().year - user.birth_year, screening=row.screening or None)
+    # Perfiles guardados con "perder grasa" (retirado el 2026-10-21) siguen con "ponerse en forma"
+    saved = row.plan | ({"goal": "fitness"} if row.plan.get("goal") == "fat_loss" else {})
+    req = schemas.HealthPlanRequest(**saved, age=date.today().year - user.birth_year, screening=row.screening or None)
     block, week = hp.position(row.block_start, monday)
     logs = session.scalars(select(db.SessionLog).where(db.SessionLog.user_id == user.id)).all()
     watch = watch_sessions(client, row.block_start) if client else {}

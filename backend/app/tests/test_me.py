@@ -206,3 +206,14 @@ def test_login_attempts_are_limited():
         assert api.post("/auth/login", json={"email": "fuerza@x.es", "password": "mala-clave-123"}).status_code == 401
     blocked = api.post("/auth/login", json={"email": "fuerza@x.es", "password": "una-clave-larga"})
     assert blocked.status_code == 429 and int(blocked.headers["Retry-After"]) > 0
+
+
+def test_saved_fat_loss_profiles_fall_back_to_fitness():
+    h = auth("grasa@x.es")
+    assert api.put("/me/profile", json=PROFILE | {"goal": "fat_loss"}, headers=h).status_code == 422  # ya no se ofrece
+    api.put("/me/profile", json=PROFILE, headers=h)
+    with db.SessionLocal() as s:  # perfil guardado antes de retirarlo
+        row = s.get(db.HealthProfileRow, s.scalar(select(db.User.id).where(db.User.email == "grasa@x.es")))
+        row.plan = row.plan | {"goal": "fat_loss"}
+        s.commit()
+    assert api.get("/me/plan", headers=h).json()["goal"] == "fitness"

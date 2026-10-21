@@ -40,8 +40,8 @@ def test_next_block_follows_adherence(adherence, direction):
 
 
 def test_dose_never_passes_the_goal_target():
-    p = profile(goal="fat_loss", level="advanced")
-    assert all(hp.week_dose(p, [1.0] * k, w)["aerobic"] <= 250 for k in range(6) for w in range(4))
+    p = profile(goal="fitness", level="advanced")
+    assert all(hp.week_dose(p, [1.0] * k, w)["aerobic"] <= 300 for k in range(6) for w in range(4))
 
 
 def test_older_adults_get_three_strength_days_with_balance():
@@ -76,7 +76,7 @@ def test_strength_goal_never_runs_on_leg_day_if_there_is_an_alternative():
 
 
 def test_warns_instead_of_stretching_sessions_when_days_are_short():
-    week = hp.week_plan(profile(goal="fat_loss", level="advanced", days={"MON": 30, "THU": 30}), MONDAY)
+    week = hp.week_plan(profile(goal="fitness", level="advanced", days={"MON": 30, "THU": 30}), MONDAY)
     assert week["warnings"] and all(s["duration_min"] <= 30 for s in sessions(week))
 
 
@@ -97,7 +97,7 @@ def test_no_strength_is_allowed_but_flagged():
 # ---- §6 fuerza y §9 seguridad
 
 def test_without_clearance_for_vigorous_there_is_no_vigorous_work():
-    p = profile(goal="fat_loss", level="advanced", intensity_cap="light_moderate", cardio=["running", "cycling"],
+    p = profile(goal="fitness", level="advanced", intensity_cap="light_moderate", cardio=["running", "cycling"],
                 days=ALL_DAYS, lthr=174, max_hr=192)
     week = hp.week_plan(p, MONDAY)
     cardio = [s for s in sessions(week) if s["sport"] != "strength"]
@@ -127,7 +127,7 @@ def test_easy_day_is_shorter_and_lighter():
 
 
 def test_deterministic():
-    p = profile(goal="fat_loss", level="intermediate", cardio=["walking", "cycling"])
+    p = profile(goal="fitness", level="intermediate", cardio=["walking", "cycling"])
     assert hp.week_plan(p, MONDAY, [0.9], 1) == hp.week_plan(p, MONDAY, [0.9], 1)
 
 
@@ -160,7 +160,7 @@ def test_endpoint_without_screening_uses_no_cap():
 
 
 def test_six_day_weeks_keep_the_floor_and_vary_the_load():
-    p = profile(goal="fat_loss", level="intermediate", strength="gym", cardio=["walking", "cycling"],
+    p = profile(goal="fitness", level="intermediate", strength="gym", cardio=["walking", "cycling"],
                 days={d: 60 for d in ("MON", "TUE", "WED", "THU", "FRI", "SAT")}, lthr=165, max_hr=185)
     week = hp.week_plan(p, MONDAY, [0.95], 1)
     strength = {d["weekday"]: s for d in week["days"] for s in d["sessions"] if s["sport"] == "strength"}

@@ -16,7 +16,7 @@ Las aplicaciones de planificación del entrenamiento más extendidas son de pago
 suscripción, y casi todas están pensadas para preparar una competición: una vez superada, el usuario pierde el motivo para
 seguir usándolas. Este trabajo presenta TrainSync, una aplicación gratuita y de código abierto cuyo núcleo es un motor de
 planificación **determinista y explicable**, sin inteligencia artificial en tiempo de uso, que genera planes semanales para
-cuatro objetivos: preparar un evento, ponerse en forma, ganar fuerza y músculo y perder grasa. Los tres últimos no tienen
+tres objetivos: preparar un evento, ponerse en forma y ganar fuerza y músculo. Los dos últimos no tienen
 fecha de fin: se organizan en bloques de cuatro semanas que se renuevan según la adherencia real del usuario.
 
 El modelo parte de un suelo común derivado de las recomendaciones de la Organización Mundial de la Salud (OMS, 2020) —150
@@ -26,8 +26,8 @@ respalda. Se implementó un backend en Python (FastAPI) con cuentas de usuario, 
 y cifrado de credenciales, una aplicación web (Next.js) y la integración con intervals.icu para enviar las sesiones al
 reloj como entrenamientos estructurados.
 
-La validación combina 175 pruebas automáticas, una simulación de seis perfiles con tres niveles de adherencia durante 24
-semanas frente a once criterios derivados de la evidencia, y un caso real. Cumplen 109 de las 110 comprobaciones
+La validación combina 194 pruebas automáticas, una simulación de seis perfiles con tres niveles de adherencia durante 24
+semanas frente a diez criterios derivados de la evidencia, y un caso real. Cumplen 103 de las 104 comprobaciones
 aplicables; la simulación descubrió seis defectos del motor que los tests unitarios no detectaban y que se corrigieron. La
 comprobación que no se cumple es un conflicto estructural documentado entre el suelo de la OMS y la variedad de la carga en
 un caso límite. La eficacia en personas queda como trabajo futuro.
@@ -46,8 +46,8 @@ the World Health Organization 2020 guidelines (150 minutes of moderate-equivalen
 on two or more days per week) and the 2026 ACSM resistance-training position stand, and every rule is tagged with its level
 of evidence. The system comprises a Python/FastAPI backend with user accounts, explicit consent for health data and
 encrypted credentials, a Next.js web app, and an intervals.icu integration that sends sessions to the user's watch as
-structured workouts. Validation combines 175 automated tests, a 24-week simulation of six profiles at three adherence levels
-against eleven evidence-based criteria, and a real-account case: 109 of 110 applicable checks pass. The simulation exposed
+structured workouts. Validation combines 194 automated tests, a 24-week simulation of six profiles at three adherence levels
+against ten evidence-based criteria, and a real-account case: 103 of 104 applicable checks pass. The simulation exposed
 six engine defects that unit tests had missed, all fixed; the remaining failure is a documented structural conflict between
 the WHO floor and load variety in an edge case. Efficacy in people is left as future work.
 
@@ -323,14 +323,15 @@ El método y los resultados completos están en `docs/proyecto/VALIDACION.md` y 
 
 ### 7.1 Método
 
-1. **Verificación:** 175 pruebas automáticas.
-2. **Simulación:** 6 perfiles (principiante sedentario, persona de 70 años, gimnasio, corredor avanzado, pérdida de grasa y
-   pérdida de grasa con tope de intensidad) × 3 adherencias (95, 75 y 40 %) × 24 semanas, frente a once criterios.
+1. **Verificación:** 194 pruebas automáticas.
+2. **Simulación:** 6 perfiles (principiante sedentario, persona de 70 años, gimnasio, corredor avanzado, seis días por
+   semana y seis días con tope de intensidad) × 3 adherencias (95, 75 y 40 %) × 24 semanas, frente a diez criterios. El
+   objetivo de perder grasa y su criterio V4 se retiraron el 2026-10-21 por su riesgo con usuarios desde 14 años.
 3. **Caso real:** el motor con la fisiología de la cuenta de intervals.icu del autor.
 
 ### 7.2 Resultados
 
-**109 de 110 comprobaciones aplicables cumplen**; 10 no aplican, bien porque con adherencia media o baja la progresión aún no
+**103 de 104 comprobaciones aplicables cumplen**; 10 no aplican, bien porque con adherencia media o baja la progresión aún no
 ha alcanzado la meta, bien porque el perfil no tiene tiempo físico para 150 minutos (estimación independiente del motor).
 
 | Criterio | Resultado |
@@ -338,7 +339,6 @@ ha alcanzado la meta, bien porque el perfil no tiene tiempo físico para 150 min
 | V1 Suelo de la OMS en semanas estables | Cumple en todos los casos aplicables |
 | V2 Mayores de 65: equilibrio y fuerza ≥ 3 días | Cumple |
 | V3 Fuerza: cada patrón ≥ 2 veces por semana | Cumple |
-| V4 Pérdida de grasa: ≥ 250 min o aviso | Cumple |
 | V5 Subida ≤ 10 % semanal y descarga cada 4.ª semana | Cumple |
 | V6 Tope de intensidad | Cumple |
 | V7 Descanso semanal; pierna nunca en días seguidos | Cumple |
@@ -391,8 +391,8 @@ usuario siga la prueba del habla; y, sobre todo, ausencia de validación de efic
 
 Se ha construido un motor de planificación determinista y explicable que traduce las guías de la OMS y del ACSM a reglas
 cuantificables, para objetivos de salud sin fecha y para eventos, integrado en una aplicación gratuita y conforme a los
-requisitos de privacidad del RGPD (OE1–OE3). Se definieron once criterios medibles derivados de la evidencia y una validación
-reproducible que los comprueba (OE4), y cuyo resultado —109 de 110 comprobaciones aplicables, seis defectos encontrados y
+requisitos de privacidad del RGPD (OE1–OE3). Se definieron once criterios medibles (diez tras retirar el objetivo de perder grasa) derivados de la evidencia y una validación
+reproducible que los comprueba (OE4), y cuyo resultado —103 de 104 comprobaciones aplicables, seis defectos encontrados y
 corregidos, y un conflicto estructural explicado— muestra que la validación por simulación detecta errores que las pruebas
 unitarias no ven. Los límites del modelo y de su validación quedan documentados (OE5).
 

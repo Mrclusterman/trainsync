@@ -27,10 +27,10 @@ PROFILES = {
                                  cardio=["cycling", "running"], level="intermediate", lthr=170, max_hr=190),
     "corredor": hp.HealthProfile("fitness", {"MON": 60, "TUE": 75, "WED": 60, "THU": 75, "SAT": 120, "SUN": 90},
                                  strength="gym", cardio=["running", "cycling"], level="advanced", lthr=172, max_hr=190),
-    "pérdida de grasa": hp.HealthProfile("fat_loss", {d: 60 for d in ("MON", "TUE", "WED", "THU", "FRI", "SAT")},
-                                         strength="gym", cardio=["walking", "cycling"], level="intermediate",
-                                         lthr=165, max_hr=185),
-    "cribado con tope": hp.HealthProfile("fat_loss", {d: 60 for d in ("MON", "TUE", "WED", "THU", "FRI", "SAT")},
+    "seis días": hp.HealthProfile("fitness", {d: 60 for d in ("MON", "TUE", "WED", "THU", "FRI", "SAT")},
+                                  strength="gym", cardio=["walking", "cycling"], level="intermediate",
+                                  lthr=165, max_hr=185),
+    "cribado con tope": hp.HealthProfile("fitness", {d: 60 for d in ("MON", "TUE", "WED", "THU", "FRI", "SAT")},
                                          strength="gym", cardio=["running", "cycling"], level="advanced",
                                          intensity_cap="light_moderate", lthr=170, max_hr=190),
 }
@@ -86,11 +86,7 @@ def check(name: str, p: hp.HealthProfile, adherence_label: str, weeks: list[dict
                       for wk in weeks)
         r["V3"] = (times and sets_ok, "cada patrón principal ≥ 2 veces/semana; series = dosis o aviso")
 
-    # V4 pérdida de grasa: ≥ 250 min si caben; si no, aviso
-    if p.goal == "fat_loss":
-        top = [wk for wk in stable]
-        ok = all(wk["equivalent_min"] >= 250 or short(wk) for wk in top)
-        r["V4"] = (ok, f"semanas estables: {len(top)}; con aviso: {sum(short(wk) for wk in top)}")
+    # V4 (pérdida de grasa) se retiró con el objetivo el 2026-10-21
 
     # V5 progresión ≤ 10 % semanal dentro del bloque y entre bloques; semana 4 de descarga
     aero = [wk["dose"]["aerobic"] for wk in weeks]

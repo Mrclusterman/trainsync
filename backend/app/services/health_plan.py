@@ -1,4 +1,4 @@
-"""Planes de salud sin fecha: ponerse en forma, fuerza y músculo, perder grasa (docs/proyecto/DISENO.md).
+"""Planes de salud sin fecha: ponerse en forma y fuerza y músculo (docs/proyecto/DISENO.md).
 
 Determinista: mismas entradas, mismo plan. Cada regla cita su apartado del diseño (§n), que a su vez cita su fuente en
 docs/proyecto/ESTADO_DEL_ARTE.md. Las sesiones de resistencia salen del catálogo del motor (training_engine.build_session).
@@ -11,14 +11,15 @@ from math import ceil, floor
 from app.services import training_engine as engine
 from app.services.training_engine import WEEKDAYS
 
-GOALS = ("fitness", "strength", "fat_loss")
+# "perder grasa" se retiró el 2026-10-21: con usuarios desde 14 años, mal cruce con los TCA (DISENO §2)
+GOALS = ("fitness", "strength")
 LEVELS = ("beginner", "intermediate", "advanced")
 CARDIO = ("walking", "running", "cycling", "swimming_pool")
 
 
 @dataclass
 class HealthProfile:
-    goal: str  # fitness / strength / fat_loss
+    goal: str  # fitness / strength
     days: dict[str, int]  # día disponible (MON..SUN) -> minutos
     strength: str = "gym"  # gym / bodyweight / none
     cardio: list[str] = field(default_factory=lambda: ["walking"])
@@ -42,7 +43,6 @@ class HealthProfile:
 TARGET = {
     "fitness": {"aerobic": 300, "strength_days": (2, 3), "sets": 10},  # OMS 150–300; ACSM 2026 ~10 series
     "strength": {"aerobic": 150, "strength_days": (3, 4), "sets": 20},  # Schoenfeld 2017: más series, más músculo
-    "fat_loss": {"aerobic": 250, "strength_days": (2, 3), "sets": 10},  # Donnelly 2009: > 250 min
 }
 FLOOR_AEROBIC, FLOOR_STRENGTH_DAYS = 150, 2  # suelo de la OMS para todos (§1)
 START = {"beginner": 0.6, "intermediate": 0.8, "advanced": 1.0}  # [Inferencia] §3
@@ -135,7 +135,7 @@ LOWER = ("sentadilla", "bisagra", "zancada", "core")
 ACCESSORY = ("core", "zancada", "empuje vertical", "tracción vertical")  # lo primero que sale si falta tiempo
 BALANCE = "Equilibrio: apoyo a una pierna 3 × 30″ por lado y marcha en tándem 3 × 10 pasos"
 # Repeticiones y RIR por objetivo y nivel (§6) [ACSM 2009/2026; rangos: Inferencia]
-REPS = {"beginner": ("10–15", 3), "fitness": ("8–12", 2), "fat_loss": ("8–12", 2), "strength": ("6–12", 1)}
+REPS = {"beginner": ("10–15", 3), "fitness": ("8–12", 2), "strength": ("6–12", 1)}
 MIN_PER_SET = 2.5  # serie + descanso [Inferencia]
 
 
@@ -225,9 +225,8 @@ def cardio_kinds(p: HealthProfile, n: int) -> list[str]:
     (una de calidad cada 3 sesiones, como mucho dos). [MOTOR §1; Inferencia en el reparto]"""
     if p.level == "beginner" or p.intensity_cap != "vigorous" or n < 3:
         return ["aerobic"] * n
-    quality = "vo2max" if p.goal == "fat_loss" else "threshold"
     hard = min(n // 3, 2)
-    return [quality if i < hard else "aerobic" for i in range(n)]
+    return ["threshold" if i < hard else "aerobic" for i in range(n)]
 
 
 # ---------------------------------------------------------------- semana completa

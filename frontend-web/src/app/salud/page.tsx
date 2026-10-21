@@ -8,7 +8,7 @@ import { api, ApiError, hasSession, type HealthCardio, type HealthDay, type Heal
 import { changeDayAction, logSessionAction, moveSessionAction, resetWeekAction } from "@/lib/account-actions";
 import { minutes, SPORT_LABEL, WEEKDAY_LABEL } from "@/lib/format";
 
-const GOAL_LABEL: Record<string, string> = { fitness: "Ponerme en forma", strength: "Fuerza y músculo", fat_loss: "Perder grasa" };
+const GOAL_LABEL: Record<string, string> = { fitness: "Ponerme en forma", strength: "Fuerza y músculo" };
 
 function Session({ s, date, past, done, watch }: { s: HealthStrength | HealthCardio; date: string; past: boolean; done: boolean; watch: boolean }) {
   return (

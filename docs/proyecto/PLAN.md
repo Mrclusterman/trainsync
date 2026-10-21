@@ -7,7 +7,7 @@
 
 1. TrainSync deja de ser solo un planificador de carreras: es una **ayuda diaria de salud para todo tipo de público**.
    Si el único objetivo es un evento, al terminarlo desaparece el motivo para seguir usando la app.
-2. **Objetivos:** preparar un evento (lo que ya existe), **ponerse en forma**, **fuerza y músculo** y **perder grasa**.
+2. **Objetivos:** preparar un evento (lo que ya existe), **ponerse en forma**, **fuerza y músculo** y **perder grasa** (este último retirado el 2026-10-21, `DISENO.md` §2).
    Los tres nuevos no tienen fecha: bloques continuos que se renuevan.
 3. **Modalidades combinables:** solo gimnasio (o peso corporal), o gimnasio complementado con correr, nadar o bici.
 4. **Sin depender de intervals.icu:** modo manual por sensación (RPE) e integraciones con las marcas de reloj más

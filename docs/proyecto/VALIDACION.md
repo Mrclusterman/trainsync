@@ -7,12 +7,13 @@
 
 Se distinguen tres niveles, de menor a mayor alcance:
 
-1. **Verificación** (¿el código hace lo que dice el diseño?): 175 tests automáticos (`pytest`) sobre las reglas del
+1. **Verificación** (¿el código hace lo que dice el diseño?): 194 tests automáticos (`pytest`) sobre las reglas del
    diseño, el cribado del ACSM (sus ocho ramas), la API, las cuentas y los derechos RGPD.
 2. **Validación por simulación** (¿los planes cumplen la evidencia?): 6 perfiles × 3 niveles de adherencia (95 %,
    75 % y 40 % de las sesiones hechas) durante 24 semanas (6 bloques), contra los criterios V1–V11 de `DISENO.md` §11.
-   Perfiles: principiante sedentario, persona de 70 años, gimnasio (fuerza y músculo), corredor avanzado, pérdida de
-   grasa y pérdida de grasa con tope de intensidad del cribado.
+   Perfiles: principiante sedentario, persona de 70 años, gimnasio (fuerza y músculo), corredor avanzado, seis días por
+   semana y seis días con tope de intensidad del cribado. Los dos últimos eran de pérdida de grasa hasta que se retiró ese
+   objetivo (2026-10-21); con él se retiró el criterio V4.
 3. **Caso real**: el motor con la fisiología de una cuenta real de intervals.icu (cuenta de pruebas del autor).
 
 Queda fuera, como trabajo futuro, la **validación de eficacia** (si las personas mejoran su forma física siguiendo los
@@ -20,14 +21,14 @@ planes): exige un estudio con participantes y aprobación de un comité de étic
 
 ## 2. Resultados
 
-**109 de 110 comprobaciones aplicables cumplen**; 10 no aplican.
+**103 de 104 comprobaciones aplicables cumplen**; 10 no aplican.
 
 | Criterio | Resultado |
 |---|---|
 | V1 Suelo OMS (≥ 150 min equivalentes y ≥ 2 días de fuerza) en semanas estables | Cumple en todos los casos aplicables. No aplica en 10: sin semanas estables con adherencia media o baja (la progresión aún no ha llegado a la meta), o perfiles en los que es físicamente imposible (el principiante tiene 150 min a la semana en total, fuerza incluida) |
 | V2 Mayores de 65: equilibrio y fuerza ≥ 3 días | Cumple |
 | V3 Fuerza y músculo: cada patrón ≥ 2 veces por semana; series en la dosis o aviso | Cumple |
-| V4 Pérdida de grasa: ≥ 250 min o aviso | Cumple |
+| ~~V4 Pérdida de grasa~~ | Retirado con el objetivo |
 | V5 Subida semanal ≤ 10 % y descarga cada 4.ª semana | Cumple |
 | V6 Tope del cribado: sin Z4+ ni RIR < 3 | Cumple |
 | V7 Descanso semanal; pierna pesada nunca en días seguidos | Cumple |
