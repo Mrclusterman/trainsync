@@ -114,3 +114,25 @@ export async function resetWeekAction() {
   await api("/me/week", { method: "DELETE" });
   revalidatePath("/salud");
 }
+
+// Carreras objetivo creadas en la app (el plan de carrera también lee las de intervals.icu)
+export async function createGoalAction(_: FormState, form: FormData): Promise<FormState> {
+  const distance = form.get("distance_km");
+  try {
+    await api("/me/goals", {
+      method: "POST", body: JSON.stringify({
+        name: form.get("name"), sport: form.get("sport"), date: form.get("date"), priority: form.get("priority"),
+        distance_km: distance ? Number(distance) : null, trail: form.get("trail") === "on",
+      }),
+    });
+  } catch (e) { return fail(e); }
+  revalidatePath("/salud/perfil");
+  revalidatePath("/");
+  return { message: "Objetivo guardado: el plan de carrera se organiza hacia él" };
+}
+
+export async function deleteGoalAction(form: FormData) {
+  await api(`/me/goals/${Number(form.get("id"))}`, { method: "DELETE" });
+  revalidatePath("/salud/perfil");
+  revalidatePath("/");
+}

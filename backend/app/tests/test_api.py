@@ -141,3 +141,32 @@ def test_race_plan_follows_the_user_profile(monkeypatch):
     only_walking = profile | {"cardio": ["walking"]}
     api.put("/me/profile", json=only_walking, headers=h)
     assert api.get("/plan", headers=h).status_code == 409
+
+
+def test_pick_goal_prefers_priority_then_nearest():
+    today = date(2026, 10, 21)
+    g = lambda name, days, prio: plan_router.engine.Goal(name=name, sport="running", date=today + timedelta(days), priority=prio)
+    goals = [g("B cercana", 20, "B"), g("A lejana", 200, "A"), g("A cercana", 100, "A"), g("pasada", -5, "A")]
+    assert plan_router.pick_goal(goals, today).name == "A cercana"
+    assert plan_router.pick_goal([g("pasada", -1, "A")], today) is None
+
+
+def test_goal_created_in_the_app_drives_the_race_plan(monkeypatch):
+    def no_races(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/events"):
+            return httpx.Response(200, json=[])  # nada en el calendario de intervals.icu
+        return fake_intervals(request)
+
+    h = linked_user(monkeypatch, no_races)
+    assert api.get("/state", headers=h).json()["goal"] is None
+    race = {"name": "Medio maratón de Alicante", "sport": "running", "date": (TODAY + timedelta(weeks=12)).isoformat(),
+            "priority": "A", "distance_km": 21.1}
+    r = api.post("/me/goals", json=race, headers=h)
+    assert r.status_code == 201
+    state = api.get("/state", headers=h).json()
+    assert state["goal"]["name"] == "Medio maratón de Alicante" and state["goal"]["distance_km"] == 21.1
+    assert api.post("/me/goals", json=race | {"date": (TODAY - timedelta(1)).isoformat()}, headers=h).status_code == 422
+    other = linked_user(monkeypatch, no_races)
+    assert api.delete(f"/me/goals/{r.json()['id']}", headers=other).status_code == 404  # no es suyo
+    assert api.delete(f"/me/goals/{r.json()['id']}", headers=h).status_code == 204
+    assert api.get("/me/goals", headers=h).json() == []

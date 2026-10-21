@@ -16,7 +16,7 @@ Backend FastAPI monousuario con el motor de entrenamiento (sección 8 de la memo
 - Periodización base temprana (VO2max) → base → construcción → peak → taper, con semanas 3+1.
 - Plantilla polarizada 80/20; Z3 nunca es objetivo; detección de zona gris en la última actividad.
 - Propuesta diaria: sesión principal + alternativa de igual TSS por deporte activo + fuerza.
-- Objetivo = carrera A/B/C más próxima del calendario de intervals.icu.
+- Objetivo = carrera A/B/C más próxima, creada en la app o en el calendario de intervals.icu.
 - Como las sugerencias de Garmin, pero con la fórmula a la vista ([`MOTOR_ENTRENAMIENTO.md`](docs/MOTOR_ENTRENAMIENTO.md) §12–§15):
   la calidad del día cubre el tipo de carga que te falta (aeróbico bajo, alto o anaeróbico, 28 días), sesiones tempo y
   anaeróbicas, vuelta a la base tras 7 días sin entrenar y ritmos de carrera calculados desde tu FC con tus propias carreras.
@@ -50,6 +50,7 @@ Swagger UI: http://localhost:8000/docs
 | `POST /health-plan` | Plan semanal sin fecha para ponerse en forma, fuerza y músculo o perder grasa: gimnasio o peso corporal, solo o con caminar, correr, bici o natación ([`docs/proyecto/DISENO.md`](docs/proyecto/DISENO.md)). El perfil va en la petición hasta que haya usuarios (Fase 1) |
 | `POST /auth/register`, `POST /auth/login` | Cuenta con consentimiento explícito y separado para datos de salud y edad mínima de 14 años |
 | `PUT /me/profile`, `GET /me/plan` | Perfil guardado (objetivo, días, actividades, cribado del ACSM) y plan de la semana; la adherencia de cada bloque sale de las sesiones registradas |
+| `GET /me/goals`, `POST /me/goals`, `DELETE /me/goals/{id}` | Carreras objetivo creadas en la app (nombre, deporte, fecha, distancia, prioridad A/B/C, trail). El plan de carrera elige entre estas y las del calendario de intervals.icu: prioridad A > B > C y, a igual prioridad, la más cercana |
 | `POST /me/week/move`, `POST /me/week/day`, `DELETE /me/week` | Mover una sesión a otro día, "no puedo este día" o "puedo entrenar": la semana se recalcula desde hoy; los días pasados no cambian |
 | `POST /me/sessions`, `POST /me/readiness` | Marcar una sesión como hecha; estado del día sin reloj |
 | `PUT /me/intervals`, `POST /me/plan/today/send` | Vincular intervals.icu una vez (clave cifrada con AES-256-GCM) y enviar al reloj las sesiones de hoy |

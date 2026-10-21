@@ -197,6 +197,34 @@ def reset_week(user: db.User = Depends(auth.current_user), session: Session = De
     return Response(status_code=204)
 
 
+@router.get("/me/goals", response_model=list[schemas.RaceGoalOut])
+def list_goals(user: db.User = Depends(auth.current_user), session: Session = Depends(db.get_session)):
+    rows = session.scalars(select(db.RaceGoal).where(db.RaceGoal.user_id == user.id).order_by(db.RaceGoal.date)).all()
+    return [schemas.RaceGoalOut.model_validate(r, from_attributes=True) for r in rows]
+
+
+@router.post("/me/goals", response_model=schemas.RaceGoalOut, status_code=201)
+def create_goal(req: schemas.RaceGoalIn, user: db.User = Depends(auth.current_user),
+                session: Session = Depends(db.get_session)):
+    """Carrera objetivo creada en la app: el plan de carrera la tiene en cuenta igual que las de intervals.icu."""
+    if not date.today() <= req.date <= date.today() + timedelta(days=730):
+        raise HTTPException(422, "La fecha tiene que estar entre hoy y dentro de dos años")
+    row = db.RaceGoal(user_id=user.id, **req.model_dump())
+    session.add(row)
+    session.commit()
+    return schemas.RaceGoalOut.model_validate(row, from_attributes=True)
+
+
+@router.delete("/me/goals/{goal_id}", status_code=204)
+def delete_goal(goal_id: int, user: db.User = Depends(auth.current_user), session: Session = Depends(db.get_session)):
+    row = session.get(db.RaceGoal, goal_id)
+    if row is None or row.user_id != user.id:  # nunca se borra el objetivo de otro usuario
+        raise HTTPException(404, "No existe ese objetivo")
+    session.delete(row)
+    session.commit()
+    return Response(status_code=204)
+
+
 @router.put("/me/intervals", status_code=204)
 def link_intervals(req: schemas.IntervalsLinkIn, user: db.User = Depends(auth.current_user),
                    session: Session = Depends(db.get_session)):
@@ -265,10 +293,13 @@ def export(user: db.User = Depends(auth.current_user), session: Session = Depend
     logs = session.scalars(select(db.SessionLog).where(db.SessionLog.user_id == user.id)).all()
     ready = session.scalars(select(db.ReadinessLog).where(db.ReadinessLog.user_id == user.id)).all()
     link = session.get(db.IntervalsLink, user.id)  # la clave no se exporta: es un secreto, no un dato personal
+    goals = session.scalars(select(db.RaceGoal).where(db.RaceGoal.user_id == user.id)).all()
     return {"account": {"email": user.email, "birth_year": user.birth_year, "created_at": user.created_at.isoformat(),
                         "health_consent_at": user.health_consent_at.isoformat(), "terms_version": user.terms_version},
             "profile": {"plan": row.plan, "screening": row.screening, "block_start": row.block_start.isoformat()} if row else None,
             "intervals": {"athlete_id": link.athlete_id, "linked_at": link.linked_at.isoformat()} if link else None,
+            "goals": [{"name": g.name, "sport": g.sport, "date": g.date.isoformat(), "priority": g.priority,
+                       "distance_km": g.distance_km, "trail": g.trail} for g in goals],
             "sessions": [{"date": x.date.isoformat(), "sport": x.sport, "rpe": x.rpe} for x in logs],
             "readiness": [{"date": x.date.isoformat(), "sleep": x.sleep, "energy": x.energy, "soreness": x.soreness}
                           for x in ready]}
@@ -277,7 +308,7 @@ def export(user: db.User = Depends(auth.current_user), session: Session = Depend
 @router.delete("/me", status_code=204)
 def delete_account(user: db.User = Depends(auth.current_user), session: Session = Depends(db.get_session)):
     """Borrado inmediato de la cuenta y de todos sus datos (RGPD art. 17, CUMPLIMIENTO #20)."""
-    for model in (db.SessionLog, db.ReadinessLog, db.HealthProfileRow, db.IntervalsLink, db.WeekChange):
+    for model in (db.SessionLog, db.ReadinessLog, db.HealthProfileRow, db.IntervalsLink, db.WeekChange, db.RaceGoal):
         session.execute(delete(model).where(model.user_id == user.id))
     session.delete(session.get(db.User, user.id))
     session.commit()

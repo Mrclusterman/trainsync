@@ -221,6 +221,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/goals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Goals */
+        get: operations["list_goals_me_goals_get"];
+        put?: never;
+        /**
+         * Create Goal
+         * @description Carrera objetivo creada en la app: el plan de carrera la tiene en cuenta igual que las de intervals.icu.
+         */
+        post: operations["create_goal_me_goals_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/goals/{goal_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Goal */
+        delete: operations["delete_goal_me_goals__goal_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/intervals": {
         parameters: {
             query?: never;
@@ -725,6 +763,64 @@ export interface components {
              */
             level: "beginner" | "intermediate" | "advanced";
             screening?: components["schemas"]["ScreeningIn"] | null;
+        };
+        /** RaceGoalIn */
+        RaceGoalIn: {
+            /** Name */
+            name: string;
+            /**
+             * Sport
+             * @enum {string}
+             */
+            sport: "running" | "cycling" | "triathlon" | "duathlon" | "swimming_pool" | "swimming_open";
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Priority
+             * @default A
+             * @enum {string}
+             */
+            priority: "A" | "B" | "C";
+            /** Distance Km */
+            distance_km?: number | null;
+            /**
+             * Trail
+             * @default false
+             */
+            trail: boolean;
+        };
+        /** RaceGoalOut */
+        RaceGoalOut: {
+            /** Name */
+            name: string;
+            /**
+             * Sport
+             * @enum {string}
+             */
+            sport: "running" | "cycling" | "triathlon" | "duathlon" | "swimming_pool" | "swimming_open";
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Priority
+             * @default A
+             * @enum {string}
+             */
+            priority: "A" | "B" | "C";
+            /** Distance Km */
+            distance_km?: number | null;
+            /**
+             * Trail
+             * @default false
+             */
+            trail: boolean;
+            /** Id */
+            id: number;
         };
         /** Readiness */
         Readiness: {
@@ -1303,6 +1399,88 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    list_goals_me_goals_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RaceGoalOut"][];
+                };
+            };
+        };
+    };
+    create_goal_me_goals_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RaceGoalIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RaceGoalOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_goal_me_goals__goal_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goal_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

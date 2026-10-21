@@ -244,6 +244,19 @@ class UserPlan(HealthPlan):
     changed: bool = False
 
 
+class RaceGoalIn(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    sport: Literal["running", "cycling", "triathlon", "duathlon", "swimming_pool", "swimming_open"]
+    date: date
+    priority: Literal["A", "B", "C"] = "A"
+    distance_km: float | None = Field(None, gt=0, le=1000)
+    trail: bool = False
+
+
+class RaceGoalOut(RaceGoalIn):
+    id: int
+
+
 class DayChangeIn(BaseModel):
     date: date
     minutes: int = Field(ge=0, le=240, description="0 = ese día no puedes")

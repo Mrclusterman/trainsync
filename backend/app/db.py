@@ -56,6 +56,19 @@ class SessionLog(Base):
     rpe: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
 
+class RaceGoal(Base):
+    """Carrera u objetivo con fecha creado en la app (el modo carrera también lee los del calendario de intervals.icu)."""
+    __tablename__ = "race_goals"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(80))
+    sport: Mapped[str] = mapped_column(String(20))
+    date: Mapped[date] = mapped_column(Date)
+    priority: Mapped[str] = mapped_column(String(1))
+    distance_km: Mapped[float | None] = mapped_column(nullable=True)
+    trail: Mapped[bool] = mapped_column(default=False)
+
+
 class WeekChange(Base):
     """Cambios de disponibilidad de una semana concreta (mover una sesión, "hoy no puedo"): minutos por día."""
     __tablename__ = "week_changes"

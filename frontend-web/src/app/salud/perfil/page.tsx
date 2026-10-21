@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { GoalsForm } from "@/components/GoalsForm";
 import { IntervalsLinkForm } from "@/components/IntervalsLinkForm";
 import { ProfileForm, type SavedProfile } from "@/components/ProfileForm";
-import { api, ApiError, hasSession } from "@/lib/account";
+import { api, ApiError, hasSession, type RaceGoal } from "@/lib/account";
 import { deleteAccountAction, logoutAction } from "@/lib/account-actions";
 
 type Export = { profile: { plan: NonNullable<SavedProfile> } | null;
@@ -18,10 +19,18 @@ async function PerfilView() {
     throw e;
   }
   const saved = data.profile?.plan ?? null;
+  const goals = await api<RaceGoal[]>("/me/goals");
   return (
     <div className="space-y-6 pt-4">
       <h1 className="font-ui text-2xl font-bold">Tu perfil</h1>
       <ProfileForm saved={saved} />
+
+      <section aria-labelledby="objetivos" className="rounded-module bg-surface-1 p-4">
+        <h2 id="objetivos" className="font-ui text-sm text-secondary">Carreras objetivo</h2>
+        <p className="mt-1 text-xs text-secondary">El plan de carrera se organiza hacia la de mayor prioridad y más cercana,
+          junto con las que tengas en el calendario de intervals.icu.</p>
+        <div className="mt-3"><GoalsForm goals={goals} /></div>
+      </section>
 
       <section aria-labelledby="reloj" className="rounded-module bg-surface-1 p-4">
         <h2 id="reloj" className="font-ui text-sm text-secondary">Reloj (intervals.icu)</h2>

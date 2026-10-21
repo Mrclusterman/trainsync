@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Suspense } from "react";
 import { PlanStrip } from "@/components/PlanStrip";
 import { PlanSkeleton } from "@/components/Skeletons";
@@ -20,7 +21,7 @@ async function PlanView() {
   return (
     <>
       <p className="font-ui text-sm text-secondary">
-        {plan.goal ? `${plan.goal.name} · ${shortDate(plan.goal.date)} · ` : "Sin objetivo · "}
+        {plan.goal ? `${plan.goal.name} · ${shortDate(plan.goal.date)} · ` : <><Link href="/salud/perfil" className="text-accent">Añade tu carrera objetivo</Link>{" · "}</>}
         {PHASE_LABEL[plan.days[0].phase]}
       </p>
       <div className="mt-4"><PlanStrip days={plan.days} /></div>

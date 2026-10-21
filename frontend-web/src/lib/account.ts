@@ -31,3 +31,4 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
 export async function hasSession() {
   return Boolean((await cookies()).get(TOKEN_COOKIE)?.value);
 }
+export type RaceGoal = components["schemas"]["RaceGoalOut"];

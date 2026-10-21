@@ -6,6 +6,7 @@ preferencias del perfil de Salud: deportes, días y minutos disponibles y fuerza
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app import auth, db, schemas
@@ -20,12 +21,14 @@ SPORT_TYPES = {"Run": "running", "TrailRun": "running", "VirtualRun": "running",
                "Swim": "swimming_pool", "OpenWaterSwim": "swimming_open", "WeightTraining": "strength"}
 
 
-def goal_from_races(races: list[dict], today: date) -> engine.Goal | None:
-    """Objetivo prioritario: la carrera futura de mayor prioridad (A > B > C) y más cercana."""
-    upcoming = [r for r in races if r.get("start_date_local", "")[:10] >= today.isoformat()]
-    if not upcoming:
-        return None
-    r = min(upcoming, key=lambda r: (r.get("category", "RACE_C"), r["start_date_local"]))
+def pick_goal(goals: list[engine.Goal], today: date) -> engine.Goal | None:
+    """Objetivo prioritario: la carrera futura de mayor prioridad (A > B > C) y, a igual prioridad, la más cercana."""
+    upcoming = [g for g in goals if g.date >= today]
+    return min(upcoming, key=lambda g: (g.priority, g.date)) if upcoming else None
+
+
+def race_to_goal(r: dict) -> engine.Goal:
+    """Carrera del calendario de intervals.icu (RACE_A/B/C) como objetivo."""
     name = r.get("name") or "Objetivo"
     lowered = name.lower()
     # [Inferencia] intervals.icu no tiene tipo triatlón/duatlón: se deduce del nombre
@@ -150,6 +153,13 @@ def fit_run_model(profile: engine.Profile, activities: list[dict], c: IntervalsC
 RACE_SPORTS = ("running", "cycling", "swimming_pool")  # caminar no existe en el motor de carrera
 
 
+def own_goals(user: db.User = Depends(auth.current_user), session: Session = Depends(db.get_session)) -> list[engine.Goal]:
+    """Carreras creadas en la app por el usuario."""
+    rows = session.scalars(select(db.RaceGoal).where(db.RaceGoal.user_id == user.id)).all()
+    return [engine.Goal(name=r.name, sport=r.sport, date=r.date, priority=r.priority, distance_km=r.distance_km,
+                        trail=r.trail) for r in rows]
+
+
 def race_base(user: db.User = Depends(auth.current_user), session: Session = Depends(db.get_session)) -> engine.Profile:
     """Preferencias del perfil de Salud del usuario; sin perfil, valores por defecto (nunca los de otra persona)."""
     row = session.get(db.HealthProfileRow, user.id)
@@ -164,12 +174,13 @@ def race_base(user: db.User = Depends(auth.current_user), session: Session = Dep
                           rest_days=[d for d in engine.WEEKDAYS if d not in days], day_minutes=days)
 
 
-def load_context(c: IntervalsClient, today: date, base: engine.Profile):
+def load_context(c: IntervalsClient, today: date, base: engine.Profile, goals: list[engine.Goal] | None = None):
     profile = fill_physiology(base, c.athlete())
     wellness = c.wellness(today - timedelta(35), today)  # 7 d + 28 d de línea base HRV
     activities = c.activities(today - timedelta(365), today)  # 28 d de reparto de carga; carreras para el modelo
     fit_run_model(profile, activities, c)
-    goal = goal_from_races(c.races(today, today + timedelta(days=365)), today)
+    # Objetivo: entre las carreras creadas en la app y las del calendario de intervals.icu
+    goal = pick_goal([race_to_goal(r) for r in c.races(today, today + timedelta(days=365))] + (goals or []), today)
     week = [a for a in activities if a.get("start_date_local", "")[:10] >= (today - timedelta(7)).isoformat()]
     return profile, goal, day_state(wellness, activities, today), week
 
@@ -182,9 +193,10 @@ def load_warnings(srpe: dict) -> list[str]:
 
 
 @router.get("/state", response_model=schemas.State)
-def state(c: IntervalsClient = Depends(user_client), base: engine.Profile = Depends(race_base)):
+def state(c: IntervalsClient = Depends(user_client), base: engine.Profile = Depends(race_base),
+         goals: list[engine.Goal] = Depends(own_goals)):
     today = date.today()
-    profile, goal, s, activities = load_context(c, today, base)
+    profile, goal, s, activities = load_context(c, today, base, goals)
     phase, recovery_week = engine.phase_for(today, goal, profile.plan_start)
     daily = [sum(a.get("session_rpe") or 0 for a in activities if a.get("start_date_local", "")[:10] == (today - timedelta(d)).isoformat())
              for d in range(6, -1, -1)]
@@ -201,25 +213,28 @@ def state(c: IntervalsClient = Depends(user_client), base: engine.Profile = Depe
 
 
 @router.get("/plan/today", response_model=schemas.Day)
-def plan_today(c: IntervalsClient = Depends(user_client), base: engine.Profile = Depends(race_base)):
+def plan_today(c: IntervalsClient = Depends(user_client), base: engine.Profile = Depends(race_base),
+         goals: list[engine.Goal] = Depends(own_goals)):
     today = date.today()
-    profile, goal, s, _ = load_context(c, today, base)
+    profile, goal, s, _ = load_context(c, today, base, goals)
     return engine.plan(today, 1, profile, goal, s)[0]
 
 
 @router.get("/plan", response_model=schemas.Plan)
 def plan(days: int = Query(14, ge=1, le=42), c: IntervalsClient = Depends(user_client),
-         base: engine.Profile = Depends(race_base)):
+         base: engine.Profile = Depends(race_base),
+         goals: list[engine.Goal] = Depends(own_goals)):
     today = date.today()
-    profile, goal, s, _ = load_context(c, today, base)
+    profile, goal, s, _ = load_context(c, today, base, goals)
     return {"goal": goal, "days": engine.plan(today, days, profile, goal, s)}
 
 
 @router.post("/plan/today/send", response_model=schemas.Sent)
-def send_today(c: IntervalsClient = Depends(user_client), base: engine.Profile = Depends(race_base)):
+def send_today(c: IntervalsClient = Depends(user_client), base: engine.Profile = Depends(race_base),
+         goals: list[engine.Goal] = Depends(own_goals)):
     """Envía la sesión principal de hoy al calendario de intervals.icu (reenviar la sustituye, no la duplica)."""
     today = date.today()
-    profile, goal, s, _ = load_context(c, today, base)
+    profile, goal, s, _ = load_context(c, today, base, goals)
     main = engine.plan(today, 1, profile, goal, s)[0]["main"]
     if main is None:
         raise HTTPException(409, "Hoy toca descanso: no hay sesión que enviar")
