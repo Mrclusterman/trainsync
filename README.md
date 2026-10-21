@@ -1,6 +1,9 @@
 # TrainSync
 
 Planes de entrenamiento de resistencia gratuitos y open source sobre los datos de intervals.icu.
+
+**Compromiso:** TrainSync es y será gratis, **sin niveles de pago, sin anuncios y sin notificaciones comerciales**.
+Ninguna función se bloquea para empujar a pagar. Se revisa en cada versión ([`docs/CUMPLIMIENTO.md`](docs/CUMPLIMIENTO.md), punto 9).
 Especificación: [`docs/MEMORIA_TECNICA.md`](docs/MEMORIA_TECNICA.md) · Motor: [`docs/MOTOR_ENTRENAMIENTO.md`](docs/MOTOR_ENTRENAMIENTO.md) · Diseño: [`docs/DISENO_ATHLETIC_PRECISION.md`](docs/DISENO_ATHLETIC_PRECISION.md)
 
 ## Estado (v0.1)

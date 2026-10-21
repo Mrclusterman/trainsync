@@ -1,6 +1,6 @@
 feature,area,priority,original,clone,notes
 Enviar la sesión propuesta al calendario de intervals.icu como entrenamiento estructurado,plan,must,no,yes,fixes.md #1. Hecho 2026-10-21: POST /plan/today/send y botón «Enviar a mi reloj»
-Compromiso público: gratis sin niveles de pago ni anuncios ni notificaciones comerciales,producto,must,no,no,fixes.md #2. Connect+ (53 GC) y nagware de TP (hasta 31)
+Compromiso público: gratis sin niveles de pago ni anuncios ni notificaciones comerciales,producto,must,no,yes,fixes.md #2. Hecho 2026-10-21: README + pie de la web + CUMPLIMIENTO #9. Connect+ (53 GC) y nagware de TP (hasta 31)
 Mover y cambiar sesiones desde el móvil con recálculo de la semana,plan,must,no,no,fixes.md #3. 19 + 5 TP (fino por fuente)
 Días disponibles y emparejado de sesión hecha con planificada,motor,should,no,no,fixes.md #4. 11 GC + 6 TP (fino)
 Mostrar los motivos de cada propuesta y la evidencia de cada regla,frontend,should,no,no,fixes.md #5. 16 GC + 12 TP (fino)

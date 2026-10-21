@@ -1,6 +1,6 @@
 # CUMPLIMIENTO — TrainSync
 
-> **Versión:** 0.2 · **Fecha:** 2026-10-20
+> **Versión:** 0.3 · **Fecha:** 2026-10-21
 > **Ámbito:** app gratuita y open source, responsable en España, usuarios en la UE, que trata datos de salud (FC, HRV, sueño) importados de intervals.icu.
 > **No es asesoramiento legal.** Las referencias legales se han contrastado con resúmenes y fuentes secundarias, no siempre con el texto del BOE o del DOUE; antes de publicar la app conviene revisarlas con un profesional.
 
@@ -27,7 +27,7 @@ Etiquetas: **[Verificado]** comprobado en el código o en la app real · **[Fuen
 | 6 | Consentimientos en formularios | Sí | Pendiente (no hay formularios) | Fase 1 (registro) | Casillas **sin marcar**; consentimiento de datos de salud **separado** de términos y privacidad; registrar fecha y versión aceptada |
 | 7 | Sin datos innecesarios | Sí | Parcial | Fase 1 | Hoy no se guarda nada; `/athlete` de intervals.icu devuelve email y otros datos que el código no usa ni guarda [Verificado]. **Conflicto:** el modelo de la Memoria guarda `raw_data` JSONB completo de actividades y wellness "para auditoría": revisar en Fase 1 y guardar solo los campos usados |
 | 8 | Auditar SDKs de terceros | Sí | Hecho para el frontend | Revisar en cada dependencia nueva | [Verificado: el navegador solo contacta con el propio dominio]. Las fuentes se sirven desde el propio servidor (`next/font`), lo que evita el problema de la sentencia de Múnich de 2022 sobre Google Fonts [Fuente]. Sin analítica ni trackers. Backend: solo intervals.icu (y Ollama local, opcional) |
-| 9 | Eliminar dark patterns | Sí (principio) | Sin incidencias | Siempre | Sin casillas premarcadas, sin urgencias falsas, borrar la cuenta igual de fácil que crearla |
+| 9 | Eliminar dark patterns | Sí (principio) | Sin incidencias | Siempre | Sin casillas premarcadas, sin urgencias falsas, borrar la cuenta igual de fácil que crearla. **Compromiso público** (README y pie de la web, 2026-10-21): gratis, sin niveles de pago, sin anuncios y sin notificaciones comerciales. Nace del análisis de reseñas (`replica/fixes.md`): es la queja principal contra Garmin Connect+ y la versión gratis de TrainingPeaks. **Revisar en cada versión:** ninguna función bloqueada ni contenido difuminado para empujar a pagar, ningún SDK de anuncios o analítica (ver #8) y ninguna notificación que no sea del propio entrenamiento |
 | 10 | Eliminar costes ocultos | **No** (gratis) | — | Si hay pagos | — |
 | 11 | Eliminar reseñas falsas | No hay reseñas | — | Si se muestran testimonios | Directiva Ómnibus: prohibido publicar reseñas sin verificar que son de usuarios reales; hay que indicar cómo se verifican [Fuente] |
 | 12 | Eliminar afirmaciones sin respaldo | **Sí** | Parcial | Antes de publicar | El motor etiqueta cada regla ([Verificado]/[Práctica]/[Inferencia]). Revisar textos públicos: la Memoria dice "científicamente fundamentados" y parte de las reglas son práctica o inferencia. Usar "basado en literatura citada" |
