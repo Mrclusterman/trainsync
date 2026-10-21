@@ -255,6 +255,7 @@ class RaceGoalIn(BaseModel):
 
 class RaceGoalOut(RaceGoalIn):
     id: int
+    synced: bool | None = Field(None, description="Al crearla: si se copió al calendario de intervals.icu")
 
 
 class DayChangeIn(BaseModel):

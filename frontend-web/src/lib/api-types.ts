@@ -821,6 +821,11 @@ export interface components {
             trail: boolean;
             /** Id */
             id: number;
+            /**
+             * Synced
+             * @description Al crearla: si se copió al calendario de intervals.icu
+             */
+            synced?: boolean | null;
         };
         /** Readiness */
         Readiness: {

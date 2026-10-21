@@ -36,6 +36,12 @@ class IntervalsClient:
         r.raise_for_status()
         return {s["type"]: s.get("data") or [] for s in r.json()}
 
+    def events(self, oldest: date, newest: date) -> list[dict]:
+        return self._get("/events", oldest=oldest, newest=newest)
+
+    def delete_event(self, event_id: int) -> None:
+        self.http.delete(f"/events/{event_id}").raise_for_status()
+
     def upsert_workouts(self, events: list[dict]) -> list[dict]:
         """Crea o actualiza (por external_id) entrenamientos del calendario; intervals.icu los pasa al reloj si está configurado."""
         r = self.http.post("/events/bulk", params={"upsert": "true", "upsertOnUid": "false", "updatePlanApplied": "false"}, json=events)

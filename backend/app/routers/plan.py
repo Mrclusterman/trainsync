@@ -179,8 +179,11 @@ def load_context(c: IntervalsClient, today: date, base: engine.Profile, goals: l
     wellness = c.wellness(today - timedelta(35), today)  # 7 d + 28 d de línea base HRV
     activities = c.activities(today - timedelta(365), today)  # 28 d de reparto de carga; carreras para el modelo
     fit_run_model(profile, activities, c)
-    # Objetivo: entre las carreras creadas en la app y las del calendario de intervals.icu
-    goal = pick_goal([race_to_goal(r) for r in c.races(today, today + timedelta(days=365))] + (goals or []), today)
+    # Objetivo: entre las carreras creadas en la app y las del calendario de intervals.icu; las copias que la app sube a
+    # intervals.icu (external_id trainsync-goal-…) se ignoran, porque esas carreras ya llegan desde la app
+    races = [r for r in c.races(today, today + timedelta(days=365))
+             if not (r.get("external_id") or "").startswith("trainsync-goal-")]
+    goal = pick_goal([race_to_goal(r) for r in races] + (goals or []), today)
     week = [a for a in activities if a.get("start_date_local", "")[:10] >= (today - timedelta(7)).isoformat()]
     return profile, goal, day_state(wellness, activities, today), week
 

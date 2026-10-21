@@ -197,6 +197,40 @@ def reset_week(user: db.User = Depends(auth.current_user), session: Session = De
     return Response(status_code=204)
 
 
+GOAL_TYPES = {"running": "Run", "cycling": "Ride", "swimming_pool": "Swim", "swimming_open": "OpenWaterSwim",
+              "triathlon": "Ride", "duathlon": "Run"}  # intervals.icu no tiene tipo triatlón/duatlón
+
+
+def goal_event(g: db.RaceGoal) -> dict:
+    """La carrera como evento del calendario de intervals.icu (llega al reloj por su sincronización)."""
+    sport_type = "TrailRun" if g.trail and g.sport == "running" else GOAL_TYPES[g.sport]
+    event = {"category": f"RACE_{g.priority}", "start_date_local": f"{g.date.isoformat()}T00:00:00", "type": sport_type,
+             "name": g.name, "external_id": f"trainsync-goal-{g.id}"}
+    return event | ({"distance": round(g.distance_km * 1000)} if g.distance_km else {})
+
+
+def push_goals(client: IntervalsClient | None, goals: list[db.RaceGoal]) -> bool:
+    """Copia (o actualiza) las carreras en intervals.icu. False si no hay cuenta vinculada o intervals.icu falla."""
+    if client is None or not goals:
+        return False
+    try:
+        client.upsert_workouts([goal_event(g) for g in goals])
+        return True
+    except Exception:  # la carrera queda guardada en la app aunque intervals.icu no responda
+        return False
+
+
+def remove_goal_event(client: IntervalsClient | None, g: db.RaceGoal) -> None:
+    if client is None:
+        return
+    try:
+        for event in client.events(g.date, g.date):
+            if event.get("external_id") == f"trainsync-goal-{g.id}":
+                client.delete_event(event["id"])
+    except Exception:  # si falla, la copia queda en intervals.icu y se puede borrar allí
+        pass
+
+
 @router.get("/me/goals", response_model=list[schemas.RaceGoalOut])
 def list_goals(user: db.User = Depends(auth.current_user), session: Session = Depends(db.get_session)):
     rows = session.scalars(select(db.RaceGoal).where(db.RaceGoal.user_id == user.id).order_by(db.RaceGoal.date)).all()
@@ -212,7 +246,8 @@ def create_goal(req: schemas.RaceGoalIn, user: db.User = Depends(auth.current_us
     row = db.RaceGoal(user_id=user.id, **req.model_dump())
     session.add(row)
     session.commit()
-    return schemas.RaceGoalOut.model_validate(row, from_attributes=True)
+    synced = push_goals(linked_client(user, session), [row])
+    return schemas.RaceGoalOut.model_validate(row, from_attributes=True).model_copy(update={"synced": synced})
 
 
 @router.delete("/me/goals/{goal_id}", status_code=204)
@@ -220,6 +255,7 @@ def delete_goal(goal_id: int, user: db.User = Depends(auth.current_user), sessio
     row = session.get(db.RaceGoal, goal_id)
     if row is None or row.user_id != user.id:  # nunca se borra el objetivo de otro usuario
         raise HTTPException(404, "No existe ese objetivo")
+    remove_goal_event(linked_client(user, session), row)
     session.delete(row)
     session.commit()
     return Response(status_code=204)
@@ -235,6 +271,9 @@ def link_intervals(req: schemas.IntervalsLinkIn, user: db.User = Depends(auth.cu
         raise HTTPException(422, "intervals.icu no acepta ese ID de atleta o esa clave")
     session.merge(db.IntervalsLink(user_id=user.id, athlete_id=req.athlete_id, api_key_encrypted=crypto.encrypt(req.api_key)))
     session.commit()
+    # Las carreras creadas antes de vincular también pasan al calendario
+    push_goals(linked_client(user, session),
+               session.scalars(select(db.RaceGoal).where(db.RaceGoal.user_id == user.id)).all())
     return Response(status_code=204)
 
 

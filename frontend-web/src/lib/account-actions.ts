@@ -118,17 +118,19 @@ export async function resetWeekAction() {
 // Carreras objetivo creadas en la app (el plan de carrera también lee las de intervals.icu)
 export async function createGoalAction(_: FormState, form: FormData): Promise<FormState> {
   const distance = form.get("distance_km");
+  let synced: boolean | null | undefined;
   try {
-    await api("/me/goals", {
+    ({ synced } = await api<{ synced?: boolean | null }>("/me/goals", {
       method: "POST", body: JSON.stringify({
         name: form.get("name"), sport: form.get("sport"), date: form.get("date"), priority: form.get("priority"),
         distance_km: distance ? Number(distance) : null, trail: form.get("trail") === "on",
       }),
-    });
+    }));
   } catch (e) { return fail(e); }
   revalidatePath("/salud/perfil");
   revalidatePath("/");
-  return { message: "Objetivo guardado: el plan de carrera se organiza hacia él" };
+  if (synced === false) return { error: "Guardado en la app, pero no se pudo copiar a intervals.icu. Prueba más tarde." };
+  return { message: synced ? "Guardado y copiado a tu calendario de intervals.icu" : "Objetivo guardado" };
 }
 
 export async function deleteGoalAction(form: FormData) {

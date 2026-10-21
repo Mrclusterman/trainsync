@@ -20,7 +20,8 @@ def linked_user(monkeypatch, handler) -> dict:
     import os
     import uuid
 
-    monkeypatch.setenv("ENCRYPTION_KEY", base64.b64encode(os.urandom(32)).decode())
+    if not os.getenv("ENCRYPTION_KEY"):  # una sola clave por test: todos los usuarios del test la comparten
+        monkeypatch.setenv("ENCRYPTION_KEY", base64.b64encode(os.urandom(32)).decode())
     monkeypatch.setattr(links, "make_client", lambda a, k: IntervalsClient(a, k, httpx.MockTransport(handler)))
     token = api.post("/auth/register", json={"email": f"{uuid.uuid4().hex}@x.es", "password": "una-clave-larga",
                                              "birth_year": 1990, "accept_terms": True, "health_consent": True}).json()["token"]
@@ -170,3 +171,46 @@ def test_goal_created_in_the_app_drives_the_race_plan(monkeypatch):
     assert api.delete(f"/me/goals/{r.json()['id']}", headers=other).status_code == 404  # no es suyo
     assert api.delete(f"/me/goals/{r.json()['id']}", headers=h).status_code == 204
     assert api.get("/me/goals", headers=h).json() == []
+
+
+def test_goals_are_copied_to_the_intervals_calendar_and_removed_with_them(monkeypatch):
+    calendar: dict[str, dict] = {}
+
+    def fake(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        if request.method == "POST" and path.endswith("/events/bulk"):
+            for e in json.loads(request.content):
+                calendar[e["external_id"]] = e | {"id": len(calendar) + 1}
+            return httpx.Response(200, json=list(calendar.values()))
+        if request.method == "DELETE":
+            event_id = int(path.rsplit("/", 1)[1])
+            calendar.pop(next(k for k, e in calendar.items() if e["id"] == event_id))
+            return httpx.Response(200, json={})
+        if path.endswith("/events"):
+            return httpx.Response(200, json=list(calendar.values()))
+        return fake_intervals(request)
+
+    h = linked_user(monkeypatch, fake)
+    race = {"name": "Triatlón olímpico", "sport": "triathlon", "date": (TODAY + timedelta(weeks=20)).isoformat(),
+            "priority": "A", "distance_km": 51.5}
+    created = api.post("/me/goals", json=race, headers=h).json()
+    assert created["synced"] is True
+    copy = calendar[f"trainsync-goal-{created['id']}"]
+    assert copy["category"] == "RACE_A" and copy["distance"] == 51500 and copy["start_date_local"].startswith(race["date"])
+    # La copia no duplica el objetivo: el plan de carrera lo lee de la app, con su deporte real (triatlón)
+    assert api.get("/state", headers=h).json()["goal"]["sport"] == "triathlon"
+    assert api.delete(f"/me/goals/{created['id']}", headers=h).status_code == 204
+    assert not calendar  # la copia también se borra
+
+
+def test_goal_is_kept_when_intervals_is_down(monkeypatch):
+    def down(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST":
+            return httpx.Response(503, json={})
+        return fake_intervals(request)
+
+    h = linked_user(monkeypatch, down)
+    race = {"name": "10K", "sport": "running", "date": (TODAY + timedelta(weeks=6)).isoformat()}
+    r = api.post("/me/goals", json=race, headers=h)
+    assert r.status_code == 201 and r.json()["synced"] is False
+    assert len(api.get("/me/goals", headers=h).json()) == 1
