@@ -81,13 +81,18 @@ def user_plan(user: db.User, session: Session, monday: date, ephys: engine.Profi
     block, week = hp.position(row.block_start, monday)
     logs = session.scalars(select(db.SessionLog).where(db.SessionLog.user_id == user.id)).all()
     done: dict[str, int] = {}
+    done_sports: dict[str, list[str]] = {}
     for log in logs:
         done[log.date.isoformat()] = done.get(log.date.isoformat(), 0) + 1
+        done_sports.setdefault(log.date.isoformat(), []).append(log.sport)
     physio = {"lthr": ephys.lthr, "max_hr": ephys.max_hr, "css": ephys.css} if ephys else None
     adherence = hp.adherence_history(profile_from(req, physio)[0], row.block_start, done, block)
     ready = session.get(db.ReadinessLog, (user.id, date.today()))
     readiness = schemas.Readiness(sleep=ready.sleep, energy=ready.energy, soreness=ready.soreness) if ready else None
-    return build_plan(req, monday, adherence, week, readiness, physio) | {"block": block, "adherence": adherence}
+    plan = build_plan(req, monday, adherence, week, readiness, physio) | {"block": block, "adherence": adherence}
+    for day in plan["days"]:
+        day["done"] = done_sports.get(day["date"], [])
+    return plan
 
 
 @router.get("/me/plan", response_model=schemas.UserPlan)

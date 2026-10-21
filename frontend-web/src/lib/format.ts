@@ -8,6 +8,7 @@ export const SPORT_LABEL: Record<string, string> = {
   triathlon: "Triatlón",
   duathlon: "Duatlón",
   strength: "Fuerza",
+  walking: "Caminar",
 };
 
 export const PHASE_LABEL: Record<string, string> = {

@@ -46,3 +46,12 @@ def health_plan(req: schemas.HealthPlanRequest):
     today = date.today()
     monday = req.start or today - timedelta(today.weekday())
     return build_plan(req, monday, req.adherence, req.week_in_block, req.readiness)
+
+
+@router.get("/screening/questions")
+def screening_questions():
+    """Preguntas del cribado (texto propio sobre el algoritmo del ACSM) para los formularios."""
+    return {"active": "¿Haces ejercicio planificado al menos 30 minutos a intensidad moderada, 3 días o más por semana, "
+                      "desde hace al menos 3 meses?",
+            "diseases": list(screening.DISEASES), "symptoms": list(screening.SYMPTOMS),
+            "other_conditions": "¿Tienes alguna lesión, problema de huesos o articulaciones, o estás embarazada?"}

@@ -1,0 +1,104 @@
+"use server";
+
+import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { api, ApiError, TOKEN_COOKIE } from "./account";
+
+export type FormState = { error?: string; message?: string } | null;
+const WEEKDAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+
+async function startSession(token: string) {
+  (await cookies()).set(TOKEN_COOKIE, token, {
+    httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 7 * 24 * 3600,
+  });
+}
+
+const fail = (e: unknown): FormState => ({ error: e instanceof Error ? e.message : "No se pudo completar" });
+
+export async function loginAction(_: FormState, form: FormData): Promise<FormState> {
+  try {
+    const { token } = await api<{ token: string }>("/auth/login", {
+      method: "POST", body: JSON.stringify({ email: form.get("email"), password: form.get("password") }),
+    });
+    await startSession(token);
+  } catch (e) { return fail(e); }
+  redirect("/salud");
+}
+
+export async function registerAction(_: FormState, form: FormData): Promise<FormState> {
+  try {
+    const { token } = await api<{ token: string }>("/auth/register", {
+      method: "POST", body: JSON.stringify({
+        email: form.get("email"), password: form.get("password"), birth_year: Number(form.get("birth_year")),
+        accept_terms: form.get("accept_terms") === "on", health_consent: form.get("health_consent") === "on",
+      }),
+    });
+    await startSession(token);
+  } catch (e) { return fail(e); }
+  redirect("/salud/perfil");
+}
+
+export async function logoutAction() {
+  (await cookies()).delete(TOKEN_COOKIE);
+  redirect("/entrar");
+}
+
+export async function saveProfileAction(_: FormState, form: FormData): Promise<FormState> {
+  const days = Object.fromEntries(WEEKDAYS.filter((d) => form.get(`day_${d}`) === "on")
+    .map((d) => [d, Number(form.get(`min_${d}`) || 45)]));
+  if (Object.keys(days).length === 0) return { error: "Elige al menos un día" };
+  try {
+    await api("/me/profile", {
+      method: "PUT", body: JSON.stringify({
+        goal: form.get("goal"), days, strength: form.get("strength"), level: form.get("level"),
+        cardio: form.getAll("cardio"),
+        screening: {
+          active: form.get("active") === "yes", known_disease: form.getAll("disease").length > 0,
+          symptoms: form.getAll("symptom").length > 0, other_conditions: form.get("other") === "yes",
+        },
+      }),
+    });
+  } catch (e) { return fail(e); }
+  redirect("/salud");
+}
+
+export async function logSessionAction(form: FormData) {
+  await api("/me/sessions", { method: "POST", body: JSON.stringify({ date: form.get("date"), sport: form.get("sport") }) });
+  revalidatePath("/salud");
+}
+
+export async function readinessAction(_: FormState, form: FormData): Promise<FormState> {
+  try {
+    await api("/me/readiness", {
+      method: "POST", body: JSON.stringify({
+        sleep: Number(form.get("sleep")), energy: Number(form.get("energy")), soreness: Number(form.get("soreness")),
+      }),
+    });
+  } catch (e) { return fail(e); }
+  revalidatePath("/salud");
+  return { message: "Plan de hoy actualizado" };
+}
+
+export async function sendHealthTodayAction(): Promise<FormState> {
+  try {
+    const sent = await api<{ name: string }[]>("/me/plan/today/send", { method: "POST" });
+    return { message: `Enviado a intervals.icu: ${sent.map((s) => s.name.replace("TrainSync · ", "")).join(", ")}` };
+  } catch (e) { return fail(e); }
+}
+
+export async function linkIntervalsAction(_: FormState, form: FormData): Promise<FormState> {
+  try {
+    await api("/me/intervals", {
+      method: "PUT", body: JSON.stringify({ athlete_id: form.get("athlete_id"), api_key: form.get("api_key") }),
+    });
+  } catch (e) { return fail(e); }
+  return { message: "Cuenta de intervals.icu vinculada" };
+}
+
+export async function deleteAccountAction(form: FormData) {
+  if (form.get("confirm") !== "BORRAR") return;
+  try { await api("/me", { method: "DELETE" }); } catch (e) { if (!(e instanceof ApiError && e.status === 401)) throw e; }
+  (await cookies()).delete(TOKEN_COOKIE);
+  redirect("/entrar");
+}

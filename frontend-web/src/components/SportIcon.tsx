@@ -23,6 +23,12 @@ const PATHS: Record<string, React.ReactNode> = {
     <path d="M2 9c2 0 2-1.5 4-1.5S8 9 10 9s2-1.5 4-1.5S16 9 18 9s2-1.5 4-1.5M2 15c2 0 2-1.5 4-1.5s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5" />
   ),
   strength: <path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10" />,
+  walking: (
+    <>
+      <circle cx="13" cy="4" r="2" />
+      <path d="M9 21l2-6 2 2v4M11 15l1-5 3 3 2 0M12 10l-3 2-1 3" />
+    </>
+  ),
 };
 
 export function SportIcon({ sport, size = 22, className }: { sport: string; size?: number; className?: string }) {

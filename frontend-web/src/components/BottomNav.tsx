@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 const TABS = [
   { href: "/", label: "Hoy", icon: <path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V10z" /> },
   { href: "/plan", label: "Plan", icon: <path d="M4 5h16v16H4zM4 9h16M8 3v4M16 3v4" /> },
+  { href: "/salud", label: "Salud", icon: <path d="M12 21s-7-4.5-9-9.5C1.6 8 3.6 4 7.5 4c2 0 3.5 1.2 4.5 2.6C13 5.2 14.5 4 16.5 4 20.4 4 22.4 8 21 11.5 19 16.5 12 21 12 21z" /> },
 ];
 
 // Barra inferior glass: se contrae al bajar (solo iconos) y se expande al subir.

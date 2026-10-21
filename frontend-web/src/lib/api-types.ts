@@ -92,6 +92,209 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/screening/questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Screening Questions
+         * @description Preguntas del cribado (texto propio sobre el algoritmo del ACSM) para los formularios.
+         */
+        get: operations["screening_questions_screening_questions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register */
+        post: operations["register_auth_register_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Login */
+        post: operations["login_auth_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Put Profile */
+        put: operations["put_profile_me_profile_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Plan */
+        get: operations["get_plan_me_plan_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/intervals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Link Intervals
+         * @description Vincula intervals.icu una vez: se comprueba la clave y se guarda cifrada.
+         */
+        put: operations["link_intervals_me_intervals_put"];
+        post?: never;
+        /** Unlink Intervals */
+        delete: operations["unlink_intervals_me_intervals_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/plan/today/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send Today
+         * @description Envía las sesiones de hoy al calendario de intervals.icu (resistencia estructurada; fuerza como lista).
+         */
+        post: operations["send_today_me_plan_today_send_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Log Session */
+        post: operations["log_session_me_sessions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/readiness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Log Readiness */
+        post: operations["log_readiness_me_readiness_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export
+         * @description Portabilidad (RGPD art. 20): todos los datos del usuario en JSON.
+         */
+        get: operations["export_me_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Account
+         * @description Borrado inmediato de la cuenta y de todos sus datos (RGPD art. 17, CUMPLIMIENTO #20).
+         */
+        delete: operations["delete_account_me_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -99,8 +302,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Health */
-        get: operations["health_health_get"];
+        /** Healthcheck */
+        get: operations["healthcheck_health_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -247,6 +450,12 @@ export interface components {
             sessions: (components["schemas"]["HealthStrength"] | components["schemas"]["HealthCardio"])[];
             /** Note */
             note?: string | null;
+            /**
+             * Done
+             * @description Deportes de ese día ya marcados como hechos
+             * @default []
+             */
+            done: string[];
         };
         /** HealthDose */
         HealthDose: {
@@ -261,6 +470,7 @@ export interface components {
         HealthPlan: {
             /** Goal */
             goal: string;
+            screening: components["schemas"]["ScreeningOut"];
             /** Week In Block */
             week_in_block: number;
             dose: components["schemas"]["HealthDose"];
@@ -306,11 +516,8 @@ export interface components {
             level: "beginner" | "intermediate" | "advanced";
             /** Age */
             age?: number | null;
-            /**
-             * Parq Restricted
-             * @default false
-             */
-            parq_restricted: boolean;
+            /** @description Cribado previo del ACSM (screening.py) */
+            screening: components["schemas"]["ScreeningIn"];
             /**
              * Start
              * @description Lunes de la semana; por defecto, el de esta semana
@@ -359,6 +566,13 @@ export interface components {
             /** Notes */
             notes: string;
         };
+        /** IntervalsLinkIn */
+        IntervalsLinkIn: {
+            /** Athlete Id */
+            athlete_id: string;
+            /** Api Key */
+            api_key: string;
+        };
         /** LastActivity */
         LastActivity: {
             /** Name */
@@ -378,6 +592,13 @@ export interface components {
             hr_zone_secs: number[];
             /** Gray Zone */
             gray_zone: boolean;
+        };
+        /** LoginIn */
+        LoginIn: {
+            /** Email */
+            email: string;
+            /** Password */
+            password: string;
         };
         /** Physiology */
         Physiology: {
@@ -400,6 +621,38 @@ export interface components {
             /** Days */
             days: components["schemas"]["Day"][];
         };
+        /** ProfileIn */
+        ProfileIn: {
+            /**
+             * Goal
+             * @enum {string}
+             */
+            goal: "fitness" | "strength" | "fat_loss";
+            /** Days */
+            days: {
+                [key: string]: number;
+            };
+            /**
+             * Strength
+             * @default gym
+             * @enum {string}
+             */
+            strength: "gym" | "bodyweight" | "none";
+            /**
+             * Cardio
+             * @default [
+             *       "walking"
+             *     ]
+             */
+            cardio: ("walking" | "running" | "cycling" | "swimming_pool")[];
+            /**
+             * Level
+             * @default beginner
+             * @enum {string}
+             */
+            level: "beginner" | "intermediate" | "advanced";
+            screening: components["schemas"]["ScreeningIn"];
+        };
         /** Readiness */
         Readiness: {
             /** Sleep */
@@ -408,6 +661,60 @@ export interface components {
             energy: number;
             /** Soreness */
             soreness: number;
+        };
+        /** RegisterIn */
+        RegisterIn: {
+            /** Email */
+            email: string;
+            /** Password */
+            password: string;
+            /** Birth Year */
+            birth_year: number;
+            /** Accept Terms */
+            accept_terms: boolean;
+            /**
+             * Health Consent
+             * @description Consentimiento explícito y separado para datos de salud (RGPD art. 9.2.a)
+             */
+            health_consent: boolean;
+        };
+        /** ScreeningIn */
+        ScreeningIn: {
+            /**
+             * Active
+             * @description ≥ 30 min moderados, ≥ 3 días/semana, en los últimos 3 meses
+             */
+            active: boolean;
+            /**
+             * Known Disease
+             * @description Enfermedad cardiovascular, metabólica o renal diagnosticada
+             */
+            known_disease: boolean;
+            /**
+             * Symptoms
+             * @description Algún signo o síntoma de screening.SYMPTOMS
+             */
+            symptoms: boolean;
+            /**
+             * Other Conditions
+             * @default false
+             */
+            other_conditions: boolean;
+        };
+        /** ScreeningOut */
+        ScreeningOut: {
+            /**
+             * Clearance
+             * @enum {string}
+             */
+            clearance: "none" | "recommended" | "vigorous_only" | "stop";
+            /**
+             * Intensity Cap
+             * @enum {string}
+             */
+            intensity_cap: "light_moderate" | "moderate" | "vigorous";
+            /** Message */
+            message: string;
         };
         /** Sent */
         Sent: {
@@ -422,6 +729,13 @@ export interface components {
             name: string;
             /** Description */
             description: string;
+        };
+        /** SentEvent */
+        SentEvent: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
         };
         /** Session */
         Session: {
@@ -457,6 +771,21 @@ export interface components {
             if_bad: string;
             /** If Good */
             if_good: string;
+        };
+        /** SessionLogIn */
+        SessionLogIn: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Sport
+             * @enum {string}
+             */
+            sport: "strength" | "walking" | "running" | "cycling" | "swimming_pool";
+            /** Rpe */
+            rpe?: number | null;
         };
         /** SrpeWeek */
         SrpeWeek: {
@@ -520,6 +849,30 @@ export interface components {
             exercises: string[];
             /** Order */
             order: string;
+        };
+        /** Token */
+        Token: {
+            /** Token */
+            token: string;
+        };
+        /** UserPlan */
+        UserPlan: {
+            /** Goal */
+            goal: string;
+            screening: components["schemas"]["ScreeningOut"];
+            /** Week In Block */
+            week_in_block: number;
+            dose: components["schemas"]["HealthDose"];
+            /** Equivalent Min */
+            equivalent_min: number;
+            /** Days */
+            days: components["schemas"]["HealthDay"][];
+            /** Warnings */
+            warnings: string[];
+            /** Block */
+            block: number;
+            /** Adherence */
+            adherence: number[];
         };
         /** ValidationError */
         ValidationError: {
@@ -667,7 +1020,326 @@ export interface operations {
             };
         };
     };
-    health_health_get: {
+    screening_questions_screening_questions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    register_auth_register_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Token"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    login_auth_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Token"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_profile_me_profile_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_plan_me_plan_get: {
+        parameters: {
+            query?: {
+                start?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserPlan"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_intervals_me_intervals_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntervalsLinkIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unlink_intervals_me_intervals_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    send_today_me_plan_today_send_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SentEvent"][];
+                };
+            };
+        };
+    };
+    log_session_me_sessions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SessionLogIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    log_readiness_me_readiness_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Readiness"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_me_export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    delete_account_me_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    healthcheck_health_get: {
         parameters: {
             query?: never;
             header?: never;
