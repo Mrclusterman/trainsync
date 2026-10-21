@@ -164,6 +164,16 @@ CATALOG = [
       [B("calentamiento", 10, "Z2", detail="orientación cada 6–9 brazadas"), B("principal", 3, "Z4", 4, 2),
        B("vuelta a la calma", None, "Z1")]),
 
+    # ---- Caminar: la actividad aeróbica de entrada para principiantes y mayores (docs/proyecto/DISENO.md §2 y §7)
+    # Moderado = paso vivo, se puede hablar pero no cantar (prueba del habla) [Práctica, coherente con OMS 2020]
+    S("W-EASY", "walking", "recovery", ALL, (20, 60), [B("principal", None, "Z1", detail="paseo a ritmo cómodo")]),
+    S("W-BRISK", "walking", "aerobic", ALL, (30, 90),
+      [B("calentamiento", 5, "Z1"), B("principal", None, "Z2", detail="paso vivo: puedes hablar pero no cantar"),
+       B("vuelta a la calma", 5, "Z1")]),
+    S("W-LONG", "walking", "long", ALL, (60, 180), easy("Z2")),
+    S("W-HILLS", "walking", "threshold", ALL, (35, 60),
+      intervals(6, 3, "Z4", 2, "subida a paso rápido (solo frases cortas); bajada tranquila", warmup=10)),
+
     # ---- Tempo y anaeróbico: los dos tipos de Garmin que faltaban (docs/MOTOR_ENTRENAMIENTO.md §12 y §15)
     # Tempo = ritmo de maratón, continuo o en bloques suaves; solo para media/maratón (polarizado: Z3 no es objetivo
     # salvo cuando es el ritmo de carrera). Anaeróbico = 40–60″ por encima del VO2max con recuperación larga.

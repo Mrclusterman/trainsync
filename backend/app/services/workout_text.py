@@ -11,7 +11,7 @@ pierde la segunda (forum.intervals.icu/t/run-intervals-using-pace-pace-not-synce
 """
 from app.services.training_engine import RPE_BY_ZONE, SWIM, SWIM_ZONES, Profile, hr_bounds, pace_at
 
-SPORT_TYPES = {"running": "Run", "cycling": "Ride", "swimming_pool": "Swim", "swimming_open": "Swim"}
+SPORT_TYPES = {"running": "Run", "cycling": "Ride", "swimming_pool": "Swim", "swimming_open": "Swim", "walking": "Walk"}
 # Running por ritmo sin modelo FC-velocidad: % del ritmo umbral como tiempo por km (más % = más lento). Z5 = 5a + 5b.
 # [Práctica: Friel, "Quick guide to setting zones", TrainingPeaks]; el límite lento de Z1 es [Inferencia]
 RUN_PACE_ZONES = {"Z1": (1.29, 1.60), "Z2": (1.14, 1.29), "Z3": (1.06, 1.13), "Z4": (0.99, 1.05), "Z5": (0.90, 1.00)}

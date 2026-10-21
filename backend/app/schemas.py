@@ -2,10 +2,10 @@
 from datetime import date
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 Zone = Literal["Z1", "Z2", "Z3", "Z4", "Z5", "Z6"]
-Sport = Literal["running", "cycling", "swimming_pool", "swimming_open"]
+Sport = Literal["running", "cycling", "swimming_pool", "swimming_open", "walking"]
 SessionType = Literal["recovery", "aerobic", "long", "neuromuscular", "vo2max", "threshold", "tempo", "anaerobic",
                       "race_specific", "brick", "test"]
 Phase = Literal["base_early", "base", "build", "peak", "taper"]
@@ -122,3 +122,67 @@ class Sent(BaseModel):
     date: date
     name: str
     description: str
+
+
+# ---- Planes de salud sin fecha (docs/proyecto/DISENO.md)
+
+Weekday = Literal["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
+
+
+class Readiness(BaseModel):
+    sleep: int = Field(ge=1, le=5)
+    energy: int = Field(ge=1, le=5)
+    soreness: int = Field(ge=1, le=5)
+
+
+class HealthPlanRequest(BaseModel):
+    goal: Literal["fitness", "strength", "fat_loss"]
+    days: dict[Weekday, int] = Field(description="Minutos disponibles por día")
+    strength: Literal["gym", "bodyweight", "none"] = "gym"
+    cardio: list[Literal["walking", "running", "cycling", "swimming_pool"]] = ["walking"]
+    level: Literal["beginner", "intermediate", "advanced"] = "beginner"
+    age: int | None = Field(None, ge=14, le=110)  # España: 14 años para consentir (CUMPLIMIENTO #17)
+    parq_restricted: bool = False
+    start: date | None = Field(None, description="Lunes de la semana; por defecto, el de esta semana")
+    adherence: list[float] = Field([], description="Fracción de sesiones hechas en cada bloque terminado")
+    week_in_block: int = Field(0, ge=0, le=3)
+    readiness: Readiness | None = Field(None, description="Estado de hoy sin reloj (§8)")
+
+
+class HealthCardio(Session):
+    equivalent_min: int
+
+
+class HealthStrength(BaseModel):
+    sport: Literal["strength"]
+    type: Literal["strength"]
+    name: str
+    patterns: list[str]
+    sets_per_exercise: int
+    exercises: list[str]
+    rir: int
+    duration_min: int
+    tss: int
+    notes: str
+
+
+class HealthDay(BaseModel):
+    date: date
+    weekday: Weekday
+    sessions: list[HealthStrength | HealthCardio]
+    note: str | None = None
+
+
+class HealthDose(BaseModel):
+    aerobic: int
+    strength_days: int
+    sets: int
+
+
+class HealthPlan(BaseModel):
+    goal: str
+    week_in_block: int
+    dose: HealthDose
+    equivalent_min: int
+    days: list[HealthDay]
+    warnings: list[str]

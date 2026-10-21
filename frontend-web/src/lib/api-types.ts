@@ -75,6 +75,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/health-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Health Plan */
+        post: operations["health_plan_health_plan_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -177,6 +194,171 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HealthCardio */
+        HealthCardio: {
+            /** Id */
+            id: string;
+            /**
+             * Sport
+             * @enum {string}
+             */
+            sport: "running" | "cycling" | "swimming_pool" | "swimming_open" | "walking";
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "recovery" | "aerobic" | "long" | "neuromuscular" | "vo2max" | "threshold" | "tempo" | "anaerobic" | "race_specific" | "brick" | "test";
+            /** Name */
+            name: string;
+            /** Goal */
+            goal: string;
+            /** Duration Min */
+            duration_min: number;
+            /** Tss */
+            tss: number;
+            /** Blocks */
+            blocks: components["schemas"]["Block"][];
+            /** Targets */
+            targets: {
+                [key: string]: string;
+            };
+            /** Hr Cap */
+            hr_cap?: number | null;
+            /** If Bad */
+            if_bad: string;
+            /** If Good */
+            if_good: string;
+            /** Equivalent Min */
+            equivalent_min: number;
+        };
+        /** HealthDay */
+        HealthDay: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Weekday
+             * @enum {string}
+             */
+            weekday: "MON" | "TUE" | "WED" | "THU" | "FRI" | "SAT" | "SUN";
+            /** Sessions */
+            sessions: (components["schemas"]["HealthStrength"] | components["schemas"]["HealthCardio"])[];
+            /** Note */
+            note?: string | null;
+        };
+        /** HealthDose */
+        HealthDose: {
+            /** Aerobic */
+            aerobic: number;
+            /** Strength Days */
+            strength_days: number;
+            /** Sets */
+            sets: number;
+        };
+        /** HealthPlan */
+        HealthPlan: {
+            /** Goal */
+            goal: string;
+            /** Week In Block */
+            week_in_block: number;
+            dose: components["schemas"]["HealthDose"];
+            /** Equivalent Min */
+            equivalent_min: number;
+            /** Days */
+            days: components["schemas"]["HealthDay"][];
+            /** Warnings */
+            warnings: string[];
+        };
+        /** HealthPlanRequest */
+        HealthPlanRequest: {
+            /**
+             * Goal
+             * @enum {string}
+             */
+            goal: "fitness" | "strength" | "fat_loss";
+            /**
+             * Days
+             * @description Minutos disponibles por día
+             */
+            days: {
+                [key: string]: number;
+            };
+            /**
+             * Strength
+             * @default gym
+             * @enum {string}
+             */
+            strength: "gym" | "bodyweight" | "none";
+            /**
+             * Cardio
+             * @default [
+             *       "walking"
+             *     ]
+             */
+            cardio: ("walking" | "running" | "cycling" | "swimming_pool")[];
+            /**
+             * Level
+             * @default beginner
+             * @enum {string}
+             */
+            level: "beginner" | "intermediate" | "advanced";
+            /** Age */
+            age?: number | null;
+            /**
+             * Parq Restricted
+             * @default false
+             */
+            parq_restricted: boolean;
+            /**
+             * Start
+             * @description Lunes de la semana; por defecto, el de esta semana
+             */
+            start?: string | null;
+            /**
+             * Adherence
+             * @description Fracción de sesiones hechas en cada bloque terminado
+             * @default []
+             */
+            adherence: number[];
+            /**
+             * Week In Block
+             * @default 0
+             */
+            week_in_block: number;
+            /** @description Estado de hoy sin reloj (§8) */
+            readiness?: components["schemas"]["Readiness"] | null;
+        };
+        /** HealthStrength */
+        HealthStrength: {
+            /**
+             * Sport
+             * @constant
+             */
+            sport: "strength";
+            /**
+             * Type
+             * @constant
+             */
+            type: "strength";
+            /** Name */
+            name: string;
+            /** Patterns */
+            patterns: string[];
+            /** Sets Per Exercise */
+            sets_per_exercise: number;
+            /** Exercises */
+            exercises: string[];
+            /** Rir */
+            rir: number;
+            /** Duration Min */
+            duration_min: number;
+            /** Tss */
+            tss: number;
+            /** Notes */
+            notes: string;
+        };
         /** LastActivity */
         LastActivity: {
             /** Name */
@@ -218,6 +400,15 @@ export interface components {
             /** Days */
             days: components["schemas"]["Day"][];
         };
+        /** Readiness */
+        Readiness: {
+            /** Sleep */
+            sleep: number;
+            /** Energy */
+            energy: number;
+            /** Soreness */
+            soreness: number;
+        };
         /** Sent */
         Sent: {
             /** Id */
@@ -240,7 +431,7 @@ export interface components {
              * Sport
              * @enum {string}
              */
-            sport: "running" | "cycling" | "swimming_pool" | "swimming_open";
+            sport: "running" | "cycling" | "swimming_pool" | "swimming_open" | "walking";
             /**
              * Type
              * @enum {string}
@@ -439,6 +630,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Sent"];
+                };
+            };
+        };
+    };
+    health_plan_health_plan_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HealthPlanRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HealthPlan"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
