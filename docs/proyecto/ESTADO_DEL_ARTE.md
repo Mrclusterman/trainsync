@@ -114,12 +114,14 @@ constancia sobre la complejidad. Es también la justificación de los objetivos 
 | **Fitbit / Google** | La Fitbit Web API se apaga el 30-10-2026; sustituta: Google Health API (nube, nuevo consentimiento). Health Connect solo en el móvil | [Fuente: documentación de Google] |
 | **Samsung** | Samsung Health Data SDK, solo en el móvil Android | [Fuente: Samsung Developers] |
 | **Apple** | HealthKit, solo en el iPhone (sin API de servidor) | [No verificado] |
-| **Strava** | Desde nov. 2024: datos solo visibles para su propio usuario y prohibido usarlos en modelos de IA; en 2026, sin intermediarios | [Secundaria: TechRepublic, CyberInsider] |
+| **Strava** | **Viable para TrainSync**: el motor es determinista, sin IA. Condiciones desde nov. 2024: datos solo visibles para su propio usuario y prohibido usarlos en modelos de IA; en 2026, sin intermediarios. Da actividades (FC, ritmo, potencia), no sueño ni HRV. [No verificado] límite de un atleta conectado hasta la revisión de la app | [Secundaria: TechRepublic, CyberInsider] |
 | **Cualquier marca** | Archivos FIT/GPX exportados a mano: formato abierto, sin acuerdos | [Inferencia] |
 
 **Consecuencia para el diseño:** no se puede depender de una sola marca. Propuesta: (1) intervals.icu como agregador
 mientras lo permita; (2) Polar AccessLink directo; (3) Health Connect (Android) y HealthKit (iOS) cuando exista app móvil,
-que cubren Samsung, Google/Fitbit y Apple; (4) importar FIT/GPX; (5) modo manual por sensación (RPE) sin reloj.
+que cubren Samsung, Google/Fitbit y Apple; (4) Strava directo (actividades de casi cualquier marca; sin datos de recuperación); (5) importar FIT/GPX; (6) modo
+manual por sensación (RPE) sin reloj. La IA solo se usa para desarrollar el motor y la app, nunca con datos de usuarios:
+las pruebas con integraciones reales usan datos simulados o datos propios que no pasan por un asistente de IA.
 Garmin, cuando reabra su programa.
 
 ## Referencias
