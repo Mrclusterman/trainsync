@@ -5,6 +5,7 @@ import type { Day } from "@/lib/api";
 import { minutes, PHASE_LABEL, shortDate, WEEKDAY_LABEL } from "@/lib/format";
 import { Alternatives, SessionCard, StrengthCard } from "./SessionCard";
 import { SportIcon } from "./SportIcon";
+import { Reason } from "./Reason";
 
 const dayTss = (d: Day) => (d.main?.tss ?? 0) + (d.strength?.tss ?? 0);
 
@@ -67,7 +68,7 @@ export function PlanStrip({ days }: { days: Day[] }) {
               </p>
               <button onClick={() => sheet.current?.close()} className="font-ui text-sm text-accent">Cerrar</button>
             </div>
-            {selected.reasons.map((r) => <p key={r} className="border-l-2 border-alert pl-3 text-sm">{r}</p>)}
+            {selected.reasons.map((r) => <Reason key={r} text={r} />)}
             {selected.main ? <SessionCard session={selected.main} /> : <p className="text-secondary">Descanso: forma parte del plan.</p>}
             {selected.strength && <StrengthCard strength={selected.strength} />}
             <Alternatives sessions={selected.alternatives} />

@@ -11,6 +11,7 @@ import { LinkIntervals } from "@/components/LinkIntervals";
 import { ApiError, hasSession } from "@/lib/account";
 import { getPlan, getState, type Plan, type State } from "@/lib/api";
 import { athleteMood, minutes, PHASE_LABEL, shortDate, SPORT_LABEL, tsbTone, WEEKDAY_LABEL } from "@/lib/format";
+import { Reason } from "@/components/Reason";
 
 const MOOD = {
   optimal: { dot: "var(--color-bio)", border: "rgba(0, 229, 160, 0.35)", text: "Condiciones óptimas para calidad" },
@@ -74,7 +75,7 @@ async function Dashboard() {
 
       <section aria-labelledby="hoy" className="space-y-3">
         <h2 id="hoy" className="font-ui text-sm text-secondary">Sesión de hoy</h2>
-        {today.reasons.map((r) => <p key={r} className="border-l-2 border-alert pl-3 text-sm">{r}</p>)}
+        {today.reasons.map((r) => <Reason key={r} text={r} />)}
         {today.main && <SendToWatch />}
         {today.main ? <SessionCard session={today.main} /> : (
           <p className="rounded-module bg-surface-1 p-4 text-secondary">Descanso. Recuperar también es entrenar.</p>

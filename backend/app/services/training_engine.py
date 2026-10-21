@@ -278,27 +278,27 @@ def adjust(session_type: str, state: DayState) -> tuple[str, float, list[str]]:
     status = hrv_status(state.hrv_history)
     # TSB entre -10 y -30 es zona productiva de carga (Friel); solo < -30 obliga a recuperar
     if tsb < -30:
-        return ("recovery" if session_type != "rest" else "rest"), 1.0, [f"TSB {tsb:.1f} < -30: riesgo alto, solo recuperación"]
+        return ("recovery" if session_type != "rest" else "rest"), 1.0, [f"TSB {tsb:.1f} < -30: riesgo alto, solo recuperación [Práctica]"]
     if status == "outside_swc" and session_type in QUALITY:
         session_type = "aerobic"
-        reasons.append("HRV fuera de tu rango normal (media 7 días): hoy sin intensidad")
+        reasons.append("HRV fuera de tu rango normal (media 7 días): hoy sin intensidad [Verificado]")
     if state.effort_mismatch and session_type in QUALITY:
         session_type = "aerobic"
-        reasons.append("Esfuerzo percibido alto con FC baja en tu última sesión: posible fatiga, hoy sin intensidad")
+        reasons.append("Esfuerzo percibido alto con FC baja en tu última sesión: posible fatiga, hoy sin intensidad [Verificado]")
     if state.sleep_score is not None and state.sleep_score < 50:
         # Mal sueño quita la calidad; sumado a HRV fuera de rango, el día pasa a recuperación (criterio Fase 3)
         if session_type in QUALITY or status == "outside_swc":
             session_type = DOWNGRADE[session_type]
         volume = 0.7
-        reasons.append(f"Sueño {state.sleep_score:.0f}/100: -30 % de carga y sin calidad")
+        reasons.append(f"Sueño {state.sleep_score:.0f}/100: -30 % de carga y sin calidad [Inferencia]")
     # Tras una parada se reconstruye la base antes de la intensidad [Práctica: Garmin, tipos de sesión sugerida;
     # umbral de 7 días: Inferencia]
     if state.days_since_activity is not None and state.days_since_activity >= 7 and session_type in QUALITY:
         session_type = "aerobic"
-        reasons.append(f"{state.days_since_activity} días sin entrenar: primero base, la intensidad vuelve después")
+        reasons.append(f"{state.days_since_activity} días sin entrenar: primero base, la intensidad vuelve después [Práctica]")
     if state.consecutive_days >= 3 and session_type in QUALITY and tsb < -20:  # [Inferencia]
         session_type = "aerobic"
-        reasons.append(f"{state.consecutive_days} días seguidos entrenando con TSB {tsb:.1f}: sin calidad hoy")
+        reasons.append(f"{state.consecutive_days} días seguidos entrenando con TSB {tsb:.1f}: sin calidad hoy [Inferencia]")
     return session_type, volume, reasons
 
 
@@ -341,12 +341,12 @@ def focus_kind(kind: str, phase: str, focus: dict[str, float] | None, goal: Goal
         return kind, None
     share = f"{focus[worst]:.0%} de tu carga frente al {target[worst]:.0%} objetivo"
     if worst == "low":
-        return "aerobic", f"Falta carga aeróbica baja ({share}): hoy base"
+        return "aerobic", f"Falta carga aeróbica baja ({share}): hoy base [Inferencia]"
     if worst == "anaerobic":
-        return "anaerobic", f"Falta carga anaeróbica ({share})"
+        return "anaerobic", f"Falta carga anaeróbica ({share}) [Inferencia]"
     if run_class(goal) in ("half", "marathon") and phase in ("build", "peak"):
-        return "tempo", f"Falta carga aeróbica alta ({share}): tempo a ritmo de maratón"
-    return ("vo2max" if kind == "neuromuscular" else kind), f"Falta carga aeróbica alta ({share})"
+        return "tempo", f"Falta carga aeróbica alta ({share}): tempo a ritmo de maratón [Inferencia]"
+    return ("vo2max" if kind == "neuromuscular" else kind), f"Falta carga aeróbica alta ({share}) [Inferencia]"
 
 
 # ---------------------------------------------------------------- 13 ritmos a partir de la FC (como Garmin)
@@ -536,12 +536,12 @@ def propose_day(day: date, profile: Profile, goal: Goal | None, state: DayState 
     kind = template.get(weekday, "rest")
     volume, reasons, why = PHASE_VOLUME[phase] * scale, [], []
     if weekday in moved:
-        reasons.append(f"Viene del {DAY_NAMES[moved[weekday]]}: ese día no entrenas")
+        reasons.append(f"Viene del {DAY_NAMES[moved[weekday]]}: ese día no entrenas [Inferencia]")
     if recovery_week:
         volume *= 0.7
         if kind in QUALITY and weekday == "THU":
             kind = "aerobic"
-        reasons.append("Semana de descarga (patrón 3+1): -30 % de volumen")
+        reasons.append("Semana de descarga (patrón 3+1): -30 % de volumen [Práctica]")
     if state is not None:
         kind, focus_reason = focus_kind(kind, phase, state.load_focus, goal)
         reasons += [focus_reason] if focus_reason else []
@@ -561,7 +561,7 @@ def propose_day(day: date, profile: Profile, goal: Goal | None, state: DayState 
         day_cap = profile.day_minutes.get(weekday) if profile.day_minutes else None
         if day_cap and out["strength"]["duration_min"] + 20 > day_cap:  # fuerza + 20′ de sesión principal no caben
             out["strength"] = None
-            reasons.append(f"Sin fuerza hoy: no cabe en tus {day_cap} min junto a la sesión principal")
+            reasons.append(f"Sin fuerza hoy: no cabe en tus {day_cap} min junto a la sesión principal [Inferencia]")
     # Minutos del día que le quedan a la sesión principal (descontada la fuerza): la sesión tiene que caber
     cap = profile.day_minutes.get(weekday) if profile.day_minutes else None
     if cap:
@@ -650,5 +650,5 @@ def schedule_tests(days: list[dict], profile: Profile) -> None:
         if test:
             day["alternatives"].insert(0, day["main"])
             day["main"] = test
-            day["reasons"].append(f"Test de {sport}: faltan datos fisiológicos fiables para fijar tus zonas")
+            day["reasons"].append(f"Test de {sport}: faltan datos fisiológicos fiables para fijar tus zonas [Práctica]")
             used.add(day["date"])
