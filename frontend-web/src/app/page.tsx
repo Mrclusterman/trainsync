@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { MetricCard } from "@/components/Metric";
 import { Alternatives, SessionCard, StrengthCard } from "@/components/SessionCard";
+import { SendToWatch } from "@/components/SendToWatch";
 import { DashboardSkeleton } from "@/components/Skeletons";
 import { SportIcon } from "@/components/SportIcon";
 import { ZoneBars } from "@/components/ZoneBars";
@@ -63,6 +64,7 @@ async function Dashboard() {
       <section aria-labelledby="hoy" className="space-y-3">
         <h2 id="hoy" className="font-ui text-sm text-secondary">Sesión de hoy</h2>
         {today.reasons.map((r) => <p key={r} className="border-l-2 border-alert pl-3 text-sm">{r}</p>)}
+        {today.main && <SendToWatch />}
         {today.main ? <SessionCard session={today.main} /> : (
           <p className="rounded-module bg-surface-1 p-4 text-secondary">Descanso. Recuperar también es entrenar.</p>
         )}

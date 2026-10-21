@@ -5,7 +5,7 @@ from functools import lru_cache
 from fastapi import APIRouter, HTTPException, Query
 
 from app import config, schemas
-from app.services import training_engine as engine
+from app.services import training_engine as engine, workout_text
 from app.services.intervals_client import IntervalsClient
 
 router = APIRouter()
@@ -148,3 +148,16 @@ def plan(days: int = Query(14, ge=1, le=42)):
     today = date.today()
     profile, goal, s, _ = load_context(today)
     return {"goal": goal, "days": engine.plan(today, days, profile, goal, s)}
+
+
+@router.post("/plan/today/send", response_model=schemas.Sent)
+def send_today():
+    """Envía la sesión principal de hoy al calendario de intervals.icu (reenviar la sustituye, no la duplica)."""
+    today = date.today()
+    profile, goal, s, _ = load_context(today)
+    main = engine.plan(today, 1, profile, goal, s)[0]["main"]
+    if main is None:
+        raise HTTPException(409, "Hoy toca descanso: no hay sesión que enviar")
+    event = workout_text.event(main, today.isoformat(), profile.lthr_for(main["sport"]), profile.css)
+    created = client().upsert_workouts([event])[0]
+    return {"id": created["id"], "date": today, "name": event["name"], "description": event["description"]}

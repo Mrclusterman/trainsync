@@ -22,3 +22,14 @@ async function get<T>(path: string): Promise<T> {
 
 export const getState = () => get<State>("/state");
 export const getPlan = (days = 14) => get<Plan>(`/plan?days=${days}`);
+
+export type Sent = components["schemas"]["Sent"];
+
+export async function sendToday(): Promise<Sent> {
+  const res = await fetch(`${API_URL}/plan/today/send`, { method: "POST", cache: "no-store" });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.detail ?? `El backend respondió ${res.status} al enviar la sesión`);
+  }
+  return res.json();
+}

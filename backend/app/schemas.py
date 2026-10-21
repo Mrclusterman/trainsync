@@ -115,3 +115,10 @@ class State(BaseModel):
     srpe_week: SrpeWeek
     needs_test: list[str]
     last_activity: LastActivity | None
+
+
+class Sent(BaseModel):
+    id: int
+    date: date
+    name: str
+    description: str

@@ -55,6 +55,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/plan/today/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send Today
+         * @description Envía la sesión principal de hoy al calendario de intervals.icu (reenviar la sustituye, no la duplica).
+         */
+        post: operations["send_today_plan_today_send_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -197,6 +217,20 @@ export interface components {
             goal: components["schemas"]["Goal"] | null;
             /** Days */
             days: components["schemas"]["Day"][];
+        };
+        /** Sent */
+        Sent: {
+            /** Id */
+            id: number;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
         };
         /** Session */
         Session: {
@@ -385,6 +419,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_today_plan_today_send_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Sent"];
                 };
             };
         };

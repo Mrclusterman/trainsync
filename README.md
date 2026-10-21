@@ -41,6 +41,7 @@ Swagger UI: http://localhost:8000/docs
 | `GET /state` | CTL, ATL, TSB, HRV, sueño, fase, objetivo y análisis de zona gris de la última actividad |
 | `GET /plan/today` | Propuesta de hoy ajustada a tu estado |
 | `GET /plan?days=14` | Plan de N días (solo hoy usa el estado real; se recalcula a diario) |
+| `POST /plan/today/send` | Envía la sesión de hoy al calendario de intervals.icu como entrenamiento estructurado; intervals.icu la pasa al reloj si tienes activada la sincronización (Garmin, Wahoo, Zwift). Reenviar la actualiza (`external_id` por día) |
 
 ## Frontend web (`frontend-web/`)
 

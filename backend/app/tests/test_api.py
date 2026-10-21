@@ -1,4 +1,5 @@
 """API completa contra un intervals.icu simulado (httpx.MockTransport)."""
+import json
 from datetime import date, timedelta
 
 import httpx
@@ -43,6 +44,28 @@ def test_endpoints(monkeypatch):
         assert today["strength"] is None
 
     assert len(api.get("/plan?days=14").json()["days"]) == 14
+
+
+def test_send_today(monkeypatch):
+    sent = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST":
+            sent.append(request)
+            return httpx.Response(200, json=[{"id": 99, **json.loads(request.content)[0]}])
+        return fake_intervals(request)
+
+    monkeypatch.setattr(plan_router, "client", lambda: IntervalsClient("i1", "k", httpx.MockTransport(handler)))
+    r = TestClient(app).post("/plan/today/send")
+    if r.status_code == 409:  # el día de la semana del test es de descanso
+        assert not sent
+        return
+    assert r.status_code == 200 and r.json()["id"] == 99
+    req = sent[0]
+    assert req.url.path.endswith("/events/bulk") and req.url.params["upsert"] == "true"
+    body = json.loads(req.content)[0]
+    assert body["external_id"] == f"trainsync-{TODAY.isoformat()}" and body["category"] == "WORKOUT"
+    assert "- " in body["description"]
 
 
 def test_implausible_lthr_is_replaced_and_flagged():

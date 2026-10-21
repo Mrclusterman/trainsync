@@ -1,4 +1,4 @@
-"""Cliente de solo lectura para la API de intervals.icu (memoria técnica, sección 7)."""
+"""Cliente de la API de intervals.icu (memoria técnica, sección 7). Solo escribe entrenamientos planificados."""
 from datetime import date
 
 import httpx
@@ -29,3 +29,9 @@ class IntervalsClient:
     def races(self, oldest: date, newest: date) -> list[dict]:
         """Objetivos = eventos de carrera A/B/C del calendario de intervals.icu."""
         return self._get("/events", oldest=oldest, newest=newest, category="RACE_A,RACE_B,RACE_C")
+
+    def upsert_workouts(self, events: list[dict]) -> list[dict]:
+        """Crea o actualiza (por external_id) entrenamientos del calendario; intervals.icu los pasa al reloj si está configurado."""
+        r = self.http.post("/events/bulk", params={"upsert": "true", "upsertOnUid": "false", "updatePlanApplied": "false"}, json=events)
+        r.raise_for_status()
+        return r.json()
