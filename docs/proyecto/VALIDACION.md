@@ -35,7 +35,7 @@ planes): exige un estudio con participantes y aprobación de un comité de étic
 | V9 Monotonía de Foster < 2 | Cumple en 17 de 18 casos. No cumple en uno: tope de intensidad + adherencia baja (máx. 2,34), un conflicto estructural explicado en §4 |
 | V10 Determinismo | Cumple |
 | V11 Adherencia baja → menos volumen que alta | Cumple |
-| Caso real | Cumple: LTHR 174, FC máx. 192 → techo fácil 144 ppm = 75 % de la FC máx.; objetivos de 50 a 75 % |
+| Caso real | Cumple: LTHR 174, FC máx. 192 → techo fácil 144 ppm = 75 % de la FC máx.; objetivos de 50 a 97 % (incluye una sesión de calidad) |
 
 ## 3. Defectos que encontró la validación (y su corrección)
 

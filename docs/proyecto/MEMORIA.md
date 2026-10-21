@@ -346,7 +346,7 @@ ha alcanzado la meta, bien porque el perfil no tiene tiempo físico para 150 min
 | V9 Monotonía de Foster < 2 | Cumple en 17 de 18 casos; el restante es un conflicto estructural (§8.2) |
 | V10 Determinismo | Cumple |
 | V11 Menos volumen con adherencia baja | Cumple |
-| Caso real | Cumple: LTHR 174, FC máx. 192 → techo fácil 144 ppm = 75 %; objetivos entre 50 y 75 % |
+| Caso real | Cumple: LTHR 174, FC máx. 192 → techo fácil 144 ppm = 75 %; objetivos entre 50 y 97 % (incluye una sesión de calidad) |
 
 ### 7.3 Defectos encontrados
 
