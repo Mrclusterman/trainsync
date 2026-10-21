@@ -250,7 +250,11 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
+        /**
+         * Update Goal
+         * @description Editar una carrera; su copia en intervals.icu se actualiza (mismo external_id: se mueve, no se duplica).
+         */
+        put: operations["update_goal_me_goals__goal_id__put"];
         post?: never;
         /** Delete Goal */
         delete: operations["delete_goal_me_goals__goal_id__delete"];
@@ -1442,6 +1446,41 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RaceGoalOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_goal_me_goals__goal_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goal_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RaceGoalIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -214,3 +214,27 @@ def test_goal_is_kept_when_intervals_is_down(monkeypatch):
     r = api.post("/me/goals", json=race, headers=h)
     assert r.status_code == 201 and r.json()["synced"] is False
     assert len(api.get("/me/goals", headers=h).json()) == 1
+
+
+def test_edit_goal_updates_it_and_moves_its_calendar_copy(monkeypatch):
+    calendar: dict[str, dict] = {}
+
+    def fake(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST" and request.url.path.endswith("/events/bulk"):
+            for e in json.loads(request.content):
+                calendar[e["external_id"]] = e
+            return httpx.Response(200, json=list(calendar.values()))
+        return fake_intervals(request)
+
+    h = linked_user(monkeypatch, fake)
+    race = {"name": "10K", "sport": "running", "date": (TODAY + timedelta(weeks=6)).isoformat(), "priority": "B"}
+    goal_id = api.post("/me/goals", json=race, headers=h).json()["id"]
+    later = (TODAY + timedelta(weeks=8)).isoformat()
+    r = api.put(f"/me/goals/{goal_id}", json=race | {"date": later, "priority": "A", "name": "10K Alicante"}, headers=h)
+    assert r.status_code == 200 and r.json()["synced"] is True and r.json()["priority"] == "A"
+    copy = calendar[f"trainsync-goal-{goal_id}"]
+    assert len(calendar) == 1 and copy["start_date_local"].startswith(later) and copy["category"] == "RACE_A"
+    assert api.put(f"/me/goals/{goal_id}", json=race | {"date": (TODAY - timedelta(1)).isoformat()},
+                   headers=h).status_code == 422
+    other = linked_user(monkeypatch, fake)
+    assert api.put(f"/me/goals/{goal_id}", json=race, headers=other).status_code == 404  # no es suyo

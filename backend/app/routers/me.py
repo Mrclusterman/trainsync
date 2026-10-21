@@ -250,6 +250,22 @@ def create_goal(req: schemas.RaceGoalIn, user: db.User = Depends(auth.current_us
     return schemas.RaceGoalOut.model_validate(row, from_attributes=True).model_copy(update={"synced": synced})
 
 
+@router.put("/me/goals/{goal_id}", response_model=schemas.RaceGoalOut)
+def update_goal(goal_id: int, req: schemas.RaceGoalIn, user: db.User = Depends(auth.current_user),
+                session: Session = Depends(db.get_session)):
+    """Editar una carrera; su copia en intervals.icu se actualiza (mismo external_id: se mueve, no se duplica)."""
+    row = session.get(db.RaceGoal, goal_id)
+    if row is None or row.user_id != user.id:  # nunca se edita el objetivo de otro usuario
+        raise HTTPException(404, "No existe ese objetivo")
+    if not date.today() <= req.date <= date.today() + timedelta(days=730):
+        raise HTTPException(422, "La fecha tiene que estar entre hoy y dentro de dos años")
+    for field, value in req.model_dump().items():
+        setattr(row, field, value)
+    session.commit()
+    synced = push_goals(linked_client(user, session), [row])
+    return schemas.RaceGoalOut.model_validate(row, from_attributes=True).model_copy(update={"synced": synced})
+
+
 @router.delete("/me/goals/{goal_id}", status_code=204)
 def delete_goal(goal_id: int, user: db.User = Depends(auth.current_user), session: Session = Depends(db.get_session)):
     row = session.get(db.RaceGoal, goal_id)

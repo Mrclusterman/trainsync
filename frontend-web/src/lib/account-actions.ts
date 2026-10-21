@@ -116,21 +116,31 @@ export async function resetWeekAction() {
 }
 
 // Carreras objetivo creadas en la app (el plan de carrera también lee las de intervals.icu)
-export async function createGoalAction(_: FormState, form: FormData): Promise<FormState> {
+function goalBody(form: FormData) {
   const distance = form.get("distance_km");
+  return JSON.stringify({
+    name: form.get("name"), sport: form.get("sport"), date: form.get("date"), priority: form.get("priority"),
+    distance_km: distance ? Number(distance) : null, trail: form.get("trail") === "on",
+  });
+}
+
+async function saveGoal(path: string, method: "POST" | "PUT", form: FormData): Promise<FormState> {
   let synced: boolean | null | undefined;
   try {
-    ({ synced } = await api<{ synced?: boolean | null }>("/me/goals", {
-      method: "POST", body: JSON.stringify({
-        name: form.get("name"), sport: form.get("sport"), date: form.get("date"), priority: form.get("priority"),
-        distance_km: distance ? Number(distance) : null, trail: form.get("trail") === "on",
-      }),
-    }));
+    ({ synced } = await api<{ synced?: boolean | null }>(path, { method, body: goalBody(form) }));
   } catch (e) { return fail(e); }
   revalidatePath("/salud/perfil");
   revalidatePath("/");
   if (synced === false) return { error: "Guardado en la app, pero no se pudo copiar a intervals.icu. Prueba más tarde." };
   return { message: synced ? "Guardado y copiado a tu calendario de intervals.icu" : "Objetivo guardado" };
+}
+
+export async function createGoalAction(_: FormState, form: FormData): Promise<FormState> {
+  return saveGoal("/me/goals", "POST", form);
+}
+
+export async function updateGoalAction(_: FormState, form: FormData): Promise<FormState> {
+  return saveGoal(`/me/goals/${Number(form.get("id"))}`, "PUT", form);
 }
 
 export async function deleteGoalAction(form: FormData) {
