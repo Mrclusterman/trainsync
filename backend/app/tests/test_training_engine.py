@@ -328,3 +328,14 @@ def test_strength_is_dropped_when_it_does_not_fit_the_day():
     assert all(d["strength"] is None for d in days)
     assert any("Sin fuerza hoy" in r for d in days for r in d["reasons"])
     assert all(d["main"] is None or d["main"]["duration_min"] <= 45 for d in days)
+
+
+def test_fit_days_moves_sessions_to_the_days_the_user_trains():
+    t = e.TEMPLATES["build"]
+    assert e.fit_days(t, ["MON"]) == (t, {})  # el caso por defecto no cambia
+    placed, moved = e.fit_days(t, ["SUN"])  # entrena el lunes pero no el domingo: la larga pasa al lunes
+    assert placed["MON"] == "long" and moved == {"MON": "SUN"} and "SUN" not in placed
+    placed, moved = e.fit_days(t, ["MON", "SAT", "SUN"])  # 4 días: la larga echa a la recuperación
+    assert sorted(placed.values()) == ["aerobic", "long", "threshold", "vo2max"] and moved == {"FRI": "SUN"}
+    day = e.propose_day(date(2026, 3, 2), e.Profile(active_sports=["running"], rest_days=["SUN"]), None)
+    assert day["main"] and "Viene del domingo" in day["reasons"][-1]

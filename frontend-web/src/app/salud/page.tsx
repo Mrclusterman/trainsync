@@ -85,6 +85,11 @@ function Day({ day, today, upcoming }: { day: HealthDay; today: string; upcoming
           {day.sessions.map((s) => <Session key={s.sport} s={s} date={day.date} past={day.date <= today} done={day.done?.includes(s.sport) ?? false} watch={day.done_from_watch?.includes(s.sport) ?? false} />)}
         </div>
       )}
+      {day.matches?.length > 0 && (
+        <ul className="mt-2 space-y-1 text-xs text-secondary">
+          {day.matches.map((m, i) => <li key={i} className={m.matched ? "" : "text-alert"}>{m.why}</li>)}
+        </ul>
+      )}
       {day.date >= today && !day.done?.length && <DayChanges day={day} upcoming={upcoming} />}
     </section>
   );

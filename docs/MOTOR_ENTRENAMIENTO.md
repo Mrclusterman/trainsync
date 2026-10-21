@@ -1,6 +1,6 @@
 # MOTOR DE ENTRENAMIENTO — TrainSync
 
-> **Versión:** 0.5 — Reparto de la carga, ritmos desde la FC y envío al reloj, comparados con el método de Garmin (§12–§15)
+> **Versión:** 0.6 — Días del usuario en la plantilla y emparejado de lo hecho con lo planificado (§15.1)
 > **Fecha:** 2026-10-21
 > **Estado:** Verificado por Claude contra bibliografía (sección 11). Cambios de §11.1 aprobados el 2026-10-19 y aplicados en Memoria v0.4
 > **Complementa a:** `MEMORIA_TECNICA.md` §8 (fórmulas de TSS, CTL/ATL/TSB, zonas, HRV). Este documento no las repite: define **qué sesiones existen, cómo se eligen y cómo se organizan**.
@@ -601,6 +601,21 @@ competencia, sin depender de una IA para proponer sesiones.
 
 No replicable: el EPOC y el Training Effect de Firstbeat (algoritmos cerrados) y los rangos de objetivo de Garmin.
 
+### 15.1 Días del usuario y sesiones hechas
+
+Queja en Garmin Coach y TrainingPeaks (`replica/fixes.md` #4): el plan no respeta los días elegidos y no explica cuándo
+da una sesión por hecha.
+
+- **Días.** `fit_days` coloca la plantilla (§8) en los días que el usuario puede entrenar: lo que cae en un día sin
+  entreno pasa al día libre más cercano y, si no queda ninguno, desplaza a la sesión menos importante (larga > específico
+  > calidad > aeróbico > recuperación). El lunes ya no es descanso fijo si el usuario lo marca. El motivo se ve en la
+  sesión ("Viene del domingo: ese día no entrenas"). [Inferencia]
+- **Hechas** (planes de salud, `match_day`). Una actividad del reloj (≥ 10 min) cuenta por la sesión del mismo deporte
+  ese día; si no la hay, otro cardio cuenta por una sesión de cardio (mismo trabajo aeróbico); la fuerza no sustituye al
+  cardio ni al revés. No cuenta si dura menos de la mitad de lo planificado. Lo marcado a mano en una sesión que el reloj
+  ya dio por hecha no cuenta dos veces. La adherencia de cada bloque usa este mismo emparejado y la app muestra el motivo de
+  cada actividad ("Bici de 45 min a las 08:00 en tu reloj: cuenta por «Aeróbico base»"). [Inferencia]
+
 ## 16. Referencias
 
 1. Seiler S. What is best practice for training intensity and duration distribution in endurance athletes? *Int J Sports Physiol Perform.* 2010;5(3):276-291. doi:10.1123/ijspp.5.3.276 — https://pubmed.ncbi.nlm.nih.gov/20861519/
@@ -656,6 +671,7 @@ No replicable: el EPOC y el Training Effect de Firstbeat (algoritmos cerrados) y
 
 | Versión | Fecha | Cambios |
 |---|---|---|
+| 0.6 | 2026-10-21 | Plantilla ajustada a los días del usuario (`fit_days`) y emparejado de lo hecho con lo planificado con motivo visible (`match_day`) (§15.1). |
 | 0.5 | 2026-10-21 | Reparto de la carga como el load focus de Garmin (§12), sesiones tempo y anaeróbicas, vuelta a la base tras 7 días sin entrenar, ritmos de carrera desde la FC con la relación FC-velocidad propia (§13), envío al reloj con una métrica por sesión (§14) y comparación con Garmin (§15). |
 | 0.4 | 2026-10-19 | RPE verificado e implementado (§3.3). Todas las pruebas: running por distancia (5K→ultra), trail (§4.1.b), ciclismo de fondo, natación en piscina y aguas abiertas, triatlón/duatlón (§6.4). Taper por distancia (§8.2), topes de larga 5K/ultra (§8.4). Implementados: neuromusculares, tests de onboarding, brick, notas si te sientes mal/bien, pesos por tipo de sesión (§9.1) e intermitentes con fracción de trabajo. Corregido: sin PLAN_START la fase no avanzaba. 12 referencias nuevas. |
 | 0.3 | 2026-10-19 | Catálogo implementado en `backend/app/services/session_catalog.py`. Añadida C-OPENER y S-RACE en taper (huecos de la plantilla). En código: S-TECH cubre el slot `recovery`; natación en minutos (~1:45/100 m) mientras no se use el CSS; con poco volumen las series se reducen (mínimo 2, o 1 en bloques ≥ 10′). Pendiente en código: sesiones neuromusculares, tests de campo, bricks, notas "si te sientes mal/bien" y pesos por tipo de sesión (§9.1). |

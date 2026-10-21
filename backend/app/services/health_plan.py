@@ -402,9 +402,56 @@ def week_with_changes(p: HealthProfile, start: date, adherence: list[float], wee
     return changed | {"days": out, "equivalent_min": round(eq), "changed": True}
 
 
-def adherence_history(p: HealthProfile, block_start: date, done: dict[str, int], blocks: int,
+SPORT_NAMES = {"walking": "Caminata", "running": "Carrera", "cycling": "Bici", "swimming_pool": "Natación",
+               "strength": "Fuerza"}
+MIN_SHARE = 0.5  # una actividad del reloj con menos de la mitad de lo planificado no cuenta [Inferencia]
+
+
+def match_day(sessions: list[dict], done: list[dict]) -> list[dict]:
+    """Empareja lo hecho un día con lo planificado y explica por qué cuenta o no (mejora 4 de replica/fixes.md).
+
+    done: {"sport", "source": "watch" | "manual", "minutes" (None a mano), "start" ("HH:MM" o None)}. Reglas, en orden:
+    mismo deporte; si no, otro cardio por una sesión de cardio (mismo trabajo aeróbico, §3); si no, extra. Lo del reloj
+    se empareja antes; lo marcado a mano en una sesión ya hecha por el reloj no cuenta dos veces.
+    """
+    free = list(sessions)
+    out: list[dict] = []
+
+    def take(item: dict, s: dict) -> None:
+        planned = s.get("duration_min") or 0
+        what = (f"{SPORT_NAMES.get(item['sport'], item['sport'])} de {item['minutes']} min"
+                + (f" a las {item['start']}" if item.get("start") else "") + " en tu reloj"
+                if item["source"] == "watch" else f"{SPORT_NAMES.get(item['sport'], item['sport'])} marcada a mano")
+        if item["minutes"] is not None and item["minutes"] < MIN_SHARE * planned:
+            out.append(item | {"matched": None, "why": f"{what}: no cuenta, {item['minutes']} de {planned} min planificados"})
+            return
+        free.remove(s)
+        swap = "" if s["sport"] == item["sport"] else " (otro deporte, mismo trabajo aeróbico)"
+        out.append(item | {"matched": s["sport"], "why": f"{what}: cuenta por «{s['name']}»{swap}"})
+
+    for source in ("watch", "manual"):
+        pending = []
+        for item in (d for d in done if d["source"] == source):
+            same = next((s for s in free if s["sport"] == item["sport"]), None)
+            if same:
+                take(item, same)
+            elif source == "manual" and any(o["matched"] == item["sport"] for o in out):
+                continue  # ya la había detectado el reloj
+            else:
+                pending.append(item)
+        for item in pending:
+            cardio = next((s for s in free if s["sport"] != "strength"), None) if item["sport"] != "strength" else None
+            if cardio:
+                take(item, cardio)
+            else:
+                name = SPORT_NAMES.get(item["sport"], item["sport"])
+                out.append(item | {"matched": None, "why": f"{name}: extra, hoy no tocaba otra sesión de este tipo"})
+    return out
+
+
+def adherence_history(p: HealthProfile, block_start: date, done: dict[str, list[dict]], blocks: int,
                       changes: dict[str, tuple[dict[str, int], date]] | None = None) -> list[float]:
-    """Adherencia de cada bloque terminado: sesiones hechas / planificadas (como mucho las planificadas cada día).
+    """Adherencia de cada bloque terminado: sesiones emparejadas con lo planificado (match_day) / planificadas.
 
     Se reconstruye cada bloque con el plan que tocaba entonces, cambios de la semana incluidos (`changes`: lunes en ISO →
     (cambios, fecha del cambio)): el plan es determinista (§1).
@@ -418,8 +465,7 @@ def adherence_history(p: HealthProfile, block_start: date, done: dict[str, int],
             week_changes, since = changes.get(monday.isoformat(), (None, None))
             week = week_with_changes(p, monday, history, w, week_changes, since)
             for day in week["days"]:
-                n = len(day["sessions"])
-                planned += n
-                completed += min(done.get(day["date"], 0), n)
+                planned += len(day["sessions"])
+                completed += sum(m["matched"] is not None for m in match_day(day["sessions"], done.get(day["date"], [])))
         history.append(round(completed / planned, 3) if planned else 1.0)
     return history

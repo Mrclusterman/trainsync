@@ -51,7 +51,8 @@ def test_adherence_history_counts_done_over_planned():
     start = date(2026, 1, 5)
     first_block = [hp.week_plan(p, start + timedelta(weeks=w), [], w) for w in range(4)]
     planned = [d for wk in first_block for d in wk["days"] if d["sessions"]]
-    done = {d["date"]: len(d["sessions"]) for d in planned[: len(planned) // 2]}  # la mitad de los días
+    done = {d["date"]: [{"sport": s["sport"], "source": "manual", "minutes": None} for s in d["sessions"]]
+            for d in planned[: len(planned) // 2]}  # la mitad de los días
     history = hp.adherence_history(p, start, done, 1)
     assert 0.3 < history[0] < 0.7
     assert hp.adherence_history(p, start, {}, 2)[0] == 0.0
@@ -124,7 +125,9 @@ def test_link_intervals_and_send_today(monkeypatch):
                    headers=h).status_code == 204
     plan = api.get("/me/plan", headers=h).json()
     days = {d["date"]: d for d in plan["days"]}
-    assert days[date.today().isoformat()]["done_from_watch"] == ["walking"]  # detectada sin pulsar nada
+    today = days[date.today().isoformat()]  # detectada sin pulsar nada; cuenta o es extra según lo que toque hoy
+    assert [m["why"].startswith("Caminata de 30 min a las 08:00") for m in today["matches"]] == [True]
+    assert today["done_from_watch"] == [m["matched"] for m in today["matches"] if m["matched"]]
     yesterday = (date.today() - timedelta(1)).isoformat()
     assert yesterday not in days or days[yesterday]["done_from_watch"] == []  # 5 minutos no cuentan
     with db.SessionLocal() as s:  # la clave no se guarda en claro

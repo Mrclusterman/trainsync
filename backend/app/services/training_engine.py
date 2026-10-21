@@ -183,7 +183,7 @@ def phase_for(day: date, goal: Goal | None, plan_start: date | None) -> tuple[st
     return ("base_early" if week < 4 else "base"), recovery_week
 
 
-# Plantilla semanal polarizada (8.4). Lunes y días no listados = descanso. [Inferencia]
+# Plantilla semanal polarizada (8.4). Lunes y días no listados = descanso; fit_days la ajusta a los días del usuario.
 TEMPLATES = {
     "base_early": {"TUE": "vo2max", "WED": "aerobic", "THU": "vo2max", "FRI": "recovery", "SAT": "aerobic", "SUN": "long"},
     "base": {"TUE": "vo2max", "WED": "aerobic", "THU": "neuromuscular", "FRI": "recovery", "SAT": "aerobic", "SUN": "long"},
@@ -217,6 +217,33 @@ def template_for(phase: str, goal: Goal | None) -> dict:
     if goal and goal.sport in ROTATION and phase in ("build", "peak"):
         t["SAT"] = "brick"  # [Práctica] transiciones en triatlón/duatlón
     return t
+
+
+# Qué se conserva antes cuando no caben todas las sesiones en los días disponibles [Inferencia]
+KEEP_FIRST = ("long", "race_specific", "brick", "threshold", "vo2max", "test", "tempo", "anaerobic", "neuromuscular",
+              "aerobic", "recovery")
+DAY_NAMES = dict(zip(WEEKDAYS, ("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")))
+
+
+def fit_days(template: dict, rest_days: list[str]) -> tuple[dict, dict]:
+    """Coloca la plantilla en los días que el usuario puede entrenar (mejora 4 de replica/fixes.md).
+
+    Lo que cae en un día sin entreno pasa al día libre más cercano; si no queda ninguno, desplaza a la sesión menos
+    importante (KEEP_FIRST). Devuelve la plantilla colocada y, por día, de qué día viene lo movido.
+    """
+    available = [d for d in WEEKDAYS if d not in rest_days]
+    placed = {d: k for d, k in template.items() if d in available}
+    moved: dict[str, str] = {}
+    for day in sorted((d for d in template if d not in available), key=lambda d: KEEP_FIRST.index(template[d])):
+        free = [d for d in available if d not in placed]
+        if free:
+            target = min(free, key=lambda d: abs(WEEKDAYS.index(d) - WEEKDAYS.index(day)))
+        else:
+            target = max(placed, key=lambda d: KEEP_FIRST.index(placed[d]), default=None)
+            if target is None or KEEP_FIRST.index(placed[target]) <= KEEP_FIRST.index(template[day]):
+                continue
+        placed[target], moved[target] = template[day], day
+    return placed, moved
 
 
 # Tope de la sesión larga de running por distancia (min). [Práctica: Daniels <= 150; 5K-HM y ultra: Inferencia]
@@ -505,8 +532,11 @@ def propose_day(day: date, profile: Profile, goal: Goal | None, state: DayState 
     weekday = WEEKDAYS[day.weekday()]
     week = day.isocalendar().week
     phase, recovery_week = phase_for(day, goal, profile.plan_start)
-    kind = "rest" if weekday in profile.rest_days else template_for(phase, goal).get(weekday, "rest")
+    template, moved = fit_days(template_for(phase, goal), profile.rest_days)
+    kind = template.get(weekday, "rest")
     volume, reasons, why = PHASE_VOLUME[phase] * scale, [], []
+    if weekday in moved:
+        reasons.append(f"Viene del {DAY_NAMES[moved[weekday]]}: ese día no entrenas")
     if recovery_week:
         volume *= 0.7
         if kind in QUALITY and weekday == "THU":

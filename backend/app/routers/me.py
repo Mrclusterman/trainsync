@@ -76,19 +76,21 @@ ACTIVITY_SPORTS = {"Run": "running", "TrailRun": "running", "VirtualRun": "runni
 MIN_ACTIVITY_S = 600  # menos de 10 min no cuenta como sesión [Inferencia]
 
 
-def watch_sessions(client: IntervalsClient, oldest: date) -> dict[str, set[str]]:
-    """Deportes hechos cada día según el reloj; vacío si intervals.icu falla (el plan sigue con lo marcado a mano)."""
+def watch_sessions(client: IntervalsClient, oldest: date) -> dict[str, list[dict]]:
+    """Actividades de cada día según el reloj, para hp.match_day; vacío si intervals.icu falla (queda lo marcado a mano)."""
     try:
         activities = client.activities(oldest, date.today())
     except Exception:  # red o intervals.icu caído: no debe tumbar el plan
         return {}
     if not isinstance(activities, list):  # respuesta inesperada: mejor no detectar nada que inventar
         return {}
-    done: dict[str, set[str]] = {}
+    done: dict[str, list[dict]] = {}
     for a in activities:
         sport = ACTIVITY_SPORTS.get(a.get("type"))
-        if sport and (a.get("moving_time") or 0) >= MIN_ACTIVITY_S and a.get("start_date_local"):
-            done.setdefault(a["start_date_local"][:10], set()).add(sport)
+        start = a.get("start_date_local") or ""
+        if sport and (a.get("moving_time") or 0) >= MIN_ACTIVITY_S and start:
+            done.setdefault(start[:10], []).append({"sport": sport, "source": "watch", "minutes": a["moving_time"] // 60,
+                                                    "start": start[11:16] or None})
     return done
 
 
@@ -101,12 +103,10 @@ def user_plan(user: db.User, session: Session, monday: date, ephys: engine.Profi
     block, week = hp.position(row.block_start, monday)
     logs = session.scalars(select(db.SessionLog).where(db.SessionLog.user_id == user.id)).all()
     watch = watch_sessions(client, row.block_start) if client else {}
-    manual: dict[str, set[str]] = {}
+    done = watch
     for log in logs:
-        manual.setdefault(log.date.isoformat(), set()).add(log.sport)
-    # Lo marcado a mano y lo detectado en el reloj, sin contar dos veces el mismo deporte el mismo día
-    done_sports = {d: manual.get(d, set()) | watch.get(d, set()) for d in manual.keys() | watch.keys()}
-    done = {d: len(sports) for d, sports in done_sports.items()}
+        done.setdefault(log.date.isoformat(), []).append({"sport": log.sport, "source": "manual", "minutes": None,
+                                                          "start": None})
     physio = {"lthr": ephys.lthr, "max_hr": ephys.max_hr, "css": ephys.css} if ephys else None
     changes = {c.week_start.isoformat(): (c.changes, c.since) for c in
                session.scalars(select(db.WeekChange).where(db.WeekChange.user_id == user.id))}
@@ -116,8 +116,9 @@ def user_plan(user: db.User, session: Session, monday: date, ephys: engine.Profi
     plan = build_plan(req, monday, adherence, week, readiness, physio, *changes.get(monday.isoformat(), (None, None)))
     plan |= {"block": block, "adherence": adherence}
     for day in plan["days"]:
-        day["done"] = sorted(done_sports.get(day["date"], set()))
-        day["done_from_watch"] = sorted(watch.get(day["date"], set()))
+        day["matches"] = hp.match_day(day["sessions"], done.get(day["date"], []))
+        day["done"] = sorted(m["matched"] for m in day["matches"] if m["matched"])
+        day["done_from_watch"] = sorted(m["matched"] for m in day["matches"] if m["matched"] and m["source"] == "watch")
     return plan
 
 

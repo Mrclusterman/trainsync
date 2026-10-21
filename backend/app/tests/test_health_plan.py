@@ -194,7 +194,8 @@ def test_adherence_counts_the_moved_plan():
     start = date(2026, 1, 5)
     changes = {start.isoformat(): ({"MON": 0, "TUE": 60}, start)}
     planned = hp.week_with_changes(p, start, [], 0, *changes[start.isoformat()])
-    done = {d["date"]: len(d["sessions"]) for d in planned["days"]}  # hizo todo lo que tocaba esa semana
+    done = {d["date"]: [{"sport": s["sport"], "source": "manual", "minutes": None} for s in d["sessions"]]
+            for d in planned["days"]}  # hizo todo lo que tocaba esa semana
     with_changes = hp.adherence_history(p, start, done, 1, changes)
     without = hp.adherence_history(p, start, done, 1)
     assert with_changes[0] > without[0]  # sin tener en cuenta el cambio, el martes contaría como sesión de más
@@ -206,3 +207,21 @@ def test_never_drops_a_day_when_the_floor_is_not_reached():
     if week["equivalent_min"] < hp.FLOOR_AEROBIC:
         assert not any(d.get("note") == hp.REST_NOTE for d in week["days"])
         assert sum(bool(d["sessions"]) for d in week["days"]) == 6  # todos menos el descanso obligatorio
+
+
+def test_match_day_explains_what_counts():
+    bike = {"sport": "cycling", "name": "Rodaje", "duration_min": 60}
+    gym = {"sport": "strength", "name": "Cuerpo completo", "duration_min": 45}
+    watch = lambda sport, minutes: {"sport": sport, "source": "watch", "minutes": minutes, "start": "08:00"}
+    manual = lambda sport: {"sport": sport, "source": "manual", "minutes": None, "start": None}
+    same, = hp.match_day([bike], [watch("cycling", 50)])
+    assert same["matched"] == "cycling" and "Bici de 50 min a las 08:00" in same["why"]
+    short, = hp.match_day([bike], [watch("cycling", 20)])
+    assert short["matched"] is None and "20 de 60 min" in short["why"]
+    swap, = hp.match_day([bike, gym], [watch("running", 40)])
+    assert swap["matched"] == "cycling" and "otro deporte" in swap["why"]  # correr cuenta por la bici, no por la fuerza
+    assert hp.match_day([bike], [watch("strength", 40)])[0]["matched"] is None  # fuerza no sustituye al cardio
+    # El reloj ya la detectó: marcarla a mano no cuenta dos veces
+    assert [m["matched"] for m in hp.match_day([bike], [manual("cycling"), watch("running", 60)])] == ["cycling"]
+    extra = hp.match_day([], [watch("walking", 30)])[0]
+    assert extra["matched"] is None and "extra" in extra["why"]

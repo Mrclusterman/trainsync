@@ -464,6 +464,27 @@ export interface components {
              */
             minutes: number;
         };
+        /** DoneMatch */
+        DoneMatch: {
+            /** Sport */
+            sport: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "watch" | "manual";
+            /** Minutes */
+            minutes: number | null;
+            /** Start */
+            start: string | null;
+            /**
+             * Matched
+             * @description Deporte de la sesión planificada que cumple; None si no cuenta
+             */
+            matched: string | null;
+            /** Why */
+            why: string;
+        };
         /** Goal */
         Goal: {
             /** Name */
@@ -548,16 +569,22 @@ export interface components {
             note?: string | null;
             /**
              * Done
-             * @description Deportes de ese día ya hechos (marcados a mano o detectados en el reloj)
+             * @description Deportes de las sesiones planificadas ya hechas (a mano o por el reloj)
              * @default []
              */
             done: string[];
             /**
              * Done From Watch
-             * @description Los detectados en las actividades del reloj
+             * @description Las que se dan por hechas por una actividad del reloj
              * @default []
              */
             done_from_watch: string[];
+            /**
+             * Matches
+             * @description Cada cosa hecha ese día y por qué cuenta o no
+             * @default []
+             */
+            matches: components["schemas"]["DoneMatch"][];
         };
         /** HealthDose */
         HealthDose: {
