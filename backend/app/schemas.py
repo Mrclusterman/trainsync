@@ -135,6 +135,19 @@ class Readiness(BaseModel):
     soreness: int = Field(ge=1, le=5)
 
 
+class ScreeningIn(BaseModel):
+    active: bool = Field(description="≥ 30 min moderados, ≥ 3 días/semana, en los últimos 3 meses")
+    known_disease: bool = Field(description="Enfermedad cardiovascular, metabólica o renal diagnosticada")
+    symptoms: bool = Field(description="Algún signo o síntoma de screening.SYMPTOMS")
+    other_conditions: bool = False
+
+
+class ScreeningOut(BaseModel):
+    clearance: Literal["none", "recommended", "vigorous_only", "stop"]
+    intensity_cap: Literal["light_moderate", "moderate", "vigorous"]
+    message: str
+
+
 class HealthPlanRequest(BaseModel):
     goal: Literal["fitness", "strength", "fat_loss"]
     days: dict[Weekday, int] = Field(description="Minutos disponibles por día")
@@ -142,7 +155,7 @@ class HealthPlanRequest(BaseModel):
     cardio: list[Literal["walking", "running", "cycling", "swimming_pool"]] = ["walking"]
     level: Literal["beginner", "intermediate", "advanced"] = "beginner"
     age: int | None = Field(None, ge=14, le=110)  # España: 14 años para consentir (CUMPLIMIENTO #17)
-    parq_restricted: bool = False
+    screening: ScreeningIn = Field(description="Cribado previo del ACSM (screening.py)")
     start: date | None = Field(None, description="Lunes de la semana; por defecto, el de esta semana")
     adherence: list[float] = Field([], description="Fracción de sesiones hechas en cada bloque terminado")
     week_in_block: int = Field(0, ge=0, le=3)
@@ -181,6 +194,7 @@ class HealthDose(BaseModel):
 
 class HealthPlan(BaseModel):
     goal: str
+    screening: ScreeningOut
     week_in_block: int
     dose: HealthDose
     equivalent_min: int

@@ -24,7 +24,7 @@ class HealthProfile:
     cardio: list[str] = field(default_factory=lambda: ["walking"])
     level: str = "beginner"
     age: int | None = None
-    parq_restricted: bool = False  # PAR-Q+ con alguna alerta (§9)
+    intensity_cap: str = "vigorous"  # tope del cribado del ACSM (screening.py): light_moderate / moderate / vigorous
     lthr: float | None = None
     max_hr: float | None = None
     css: float | None = None
@@ -32,6 +32,7 @@ class HealthProfile:
     def __post_init__(self):
         assert self.goal in GOALS and self.level in LEVELS and self.strength in ("gym", "bodyweight", "none")
         assert set(self.cardio) <= set(CARDIO) and set(self.days) <= set(WEEKDAYS)
+        assert self.intensity_cap in ("light_moderate", "moderate", "vigorous")
 
 
 # ---------------------------------------------------------------- §3 dosis semanal
@@ -138,8 +139,8 @@ MIN_PER_SET = 2.5  # serie + descanso [Inferencia]
 def strength_session(p: HealthProfile, patterns: tuple, sets_per_exercise: int, extra_rir: int = 0) -> dict:
     reps, rir = REPS["beginner" if p.level == "beginner" else p.goal]
     rir += extra_rir
-    if p.parq_restricted:
-        rir = max(rir, 3)  # PAR-Q+ con alerta: lejos del fallo (§9)
+    # Tope del cribado (§9): lejos del fallo cuando no se permite intensidad vigorosa [Inferencia: RIR ≈ intensidad]
+    rir = max(rir, {"light_moderate": 3, "moderate": 2, "vigorous": 0}[p.intensity_cap])
     kit = 1 if p.strength == "bodyweight" else 0
     # El core es isométrico: se prescribe por tiempo, no por repeticiones ni RIR [Práctica]
     exercises = [f"{PATTERNS[pt][kit]}: {sets_per_exercise} × 20–45″ por lado" if pt == "core"
@@ -213,9 +214,9 @@ def cardio_session(p: HealthProfile, sport: str, kind: str, equivalent: float, w
 
 
 def cardio_kinds(p: HealthProfile, n: int) -> list[str]:
-    """Intensidad de las sesiones de la semana: moderada para principiantes y PAR-Q+ con alerta; si no, polarizada
+    """Intensidad de las sesiones de la semana: moderada para principiantes y sin permiso de vigorosa; si no, polarizada
     (una de calidad cada 3 sesiones, como mucho dos). [MOTOR §1; Inferencia en el reparto]"""
-    if p.level == "beginner" or p.parq_restricted or n < 3:
+    if p.level == "beginner" or p.intensity_cap != "vigorous" or n < 3:
         return ["aerobic"] * n
     quality = "vo2max" if p.goal == "fat_loss" else "threshold"
     hard = min(n // 3, 2)

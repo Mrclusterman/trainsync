@@ -96,8 +96,8 @@ def test_no_strength_is_allowed_but_flagged():
 
 # ---- §6 fuerza y §9 seguridad
 
-def test_parq_restricted_never_gets_vigorous_work():
-    p = profile(goal="fat_loss", level="advanced", parq_restricted=True, cardio=["running", "cycling"],
+def test_without_clearance_for_vigorous_there_is_no_vigorous_work():
+    p = profile(goal="fat_loss", level="advanced", intensity_cap="light_moderate", cardio=["running", "cycling"],
                 days=ALL_DAYS, lthr=174, max_hr=192)
     week = hp.week_plan(p, MONDAY)
     cardio = [s for s in sessions(week) if s["sport"] != "strength"]
@@ -136,8 +136,18 @@ def test_deterministic():
 def test_endpoint():
     r = TestClient(app).post("/health-plan", json={
         "goal": "fitness", "days": {"MON": 45, "WED": 45, "SAT": 60}, "cardio": ["walking", "swimming_pool"],
-        "start": MONDAY.isoformat(), "readiness": {"sleep": 3, "energy": 3, "soreness": 3}})
+        "start": MONDAY.isoformat(), "readiness": {"sleep": 3, "energy": 3, "soreness": 3},
+        "screening": {"active": False, "known_disease": False, "symptoms": False}})
     assert r.status_code == 200
     body = r.json()
     assert len(body["days"]) == 7 and body["dose"]["strength_days"] == 2
+    assert body["screening"]["intensity_cap"] == "light_moderate"
+
+
+def test_endpoint_stops_when_active_with_symptoms():
+    r = TestClient(app).post("/health-plan", json={
+        "goal": "fitness", "days": {"MON": 45}, "screening": {"active": True, "known_disease": False, "symptoms": True}})
+    body = r.json()
+    assert r.status_code == 200 and body["screening"]["clearance"] == "stop"
+    assert all(not d["sessions"] for d in body["days"]) and "médico" in body["warnings"][0]
     assert TestClient(app).post("/health-plan", json={"goal": "x", "days": {}}).status_code == 422

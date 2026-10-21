@@ -24,7 +24,7 @@
 | Días disponibles | días de la semana + minutos por sesión | Usuario |
 | Nivel | `beginner`, `intermediate`, `advanced` | Historial si hay datos (sesiones/semana en 12 semanas); si no, autodeclarado |
 | Edad | años | Usuario (≥ 65 activa el componente de equilibrio) |
-| PAR-Q+ | `clear` o `restricted` | Cuestionario inicial (EA §5) |
+| Cribado | actividad actual, enfermedad conocida, síntomas, otras condiciones | Algoritmo del ACSM al empezar (EA §5) |
 | Datos | intervals.icu, Strava, Polar, Apple Salud / Health Connect, FIT, manual | Vinculación (EA §8) |
 
 **Caminar** se añade como deporte de resistencia: es la actividad aeróbica de entrada para principiantes y mayores. [Inferencia]
@@ -101,8 +101,10 @@ Entrada: días disponibles, minutos por sesión, dosis de la semana. Algoritmo d
 
 ## 9. Seguridad
 
-- PAR-Q+ `restricted` → solo intensidad baja-moderada (sin Z4+, sin vigorosa, fuerza a RIR ≥ 3) y aviso de consulta médica
-  hasta que el usuario la confirme. [EA §5]
+- **Cribado del ACSM** en lugar del PAR-Q+ (su licencia no permite incluirlo en una app sin permiso escrito, EA §5).
+  El resultado fija el tope de intensidad del plan: ligera-moderada (resistencia sin Z4+ y fuerza a RIR ≥ 3), moderada
+  (sin vigorosa, RIR ≥ 2) o vigorosa (sin tope). Activo con síntomas → el plan queda vacío y pide parar y consultar.
+  Consulta recomendada → aviso visible y tope ligero-moderado hasta que se confirme. [EA §5]
 - Avisos que no se ocultan: dolor en el pecho, mareo o dolor articular agudo → parar y consultar. [Práctica: PAR-Q+]
 - Nada de dietas ni consejo médico (`docs/CUMPLIMIENTO.md`).
 
@@ -115,7 +117,7 @@ vengan. Orden de prioridad cuando hay varias: datos del reloj > Strava > registr
 ## 11. Criterios de validación (para la fase D)
 
 Cada criterio se comprueba con perfiles simulados (principiante sedentario, persona mayor, gimnasio, corredor, pérdida de
-grasa, PAR-Q+ restringido) durante 24 semanas:
+grasa, cribado con tope) durante 24 semanas:
 
 | # | Criterio | Fuente |
 |---|---|---|
@@ -124,7 +126,7 @@ grasa, PAR-Q+ restringido) durante 24 semanas:
 | V3 | Cada grupo muscular se trabaja ≥ 2 veces por semana en `strength` y las series semanales quedan en la meta | EA §2 |
 | V4 | `fat_loss` alcanza ≥ 250 min si los días disponibles lo permiten; si no, lo avisa | EA §4 |
 | V5 | La subida semanal de volumen no pasa del 10 % y cada 4.ª semana es de descarga | Diseño §4 |
-| V6 | Con PAR-Q+ restringido nunca aparece intensidad vigorosa, Z4+ ni RIR < 3 | EA §5 |
+| V6 | Con tope ligero-moderado del cribado nunca aparece intensidad vigorosa, Z4+ ni RIR < 3; con "parar", ninguna sesión | EA §5 |
 | V7 | Al menos 1 día de descanso por semana; nunca dos sesiones de pierna pesadas en días seguidos | Diseño §5 |
 | V8 | En `strength`, nunca carrera intensa el mismo día que la sesión de pierna | EA §3 |
 | V9 | La monotonía semanal (Foster) queda por debajo de 2 | MOTOR §3 |

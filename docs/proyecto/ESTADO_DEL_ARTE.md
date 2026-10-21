@@ -83,7 +83,19 @@ sistemáticas y un consenso basado en evidencia. Quien responde "sí" pasa a pre
 recomienda consulta médica, mientras tanto solo actividad de baja intensidad [Fuente: formulario de la PAR-Q+ Collaboration, 2024].
 [No verificado] número exacto de preguntas de la versión vigente y su licencia de uso en una app.
 
-**Consecuencia:** cuestionario al empezar; con alguna alerta, recomendar consulta médica y limitar el plan a intensidad baja.
+**Licencia:** el PAR-Q+ y sus recursos "may not be incorporated into electronic surveys, research tools, or any
+derivative materials without the express written consent of the PAR‑Q+ Collaboration" [Fuente: eparmedx.com].
+
+**Alternativa adoptada: algoritmo de cribado del ACSM** (Riebe et al., *Med Sci Sports Exerc* 2015;47(11):2473–2479,
+doi:10.1249/MSS.0000000000000664; *ACSM's Guidelines for Exercise Testing and Prescription*, 2017) [Fuente: reproducido en
+la guía de cribado de Leeds Beckett University, 2020]. Decide con tres variables (actividad actual, enfermedad cardiovascular,
+metabólica o renal o sus síntomas, e intensidad deseada) y deja de usar factores de riesgo. Activo = al menos 30 min
+moderados, 3 días por semana, durante 3 meses. Moderada: 40–59 % FCR, 3–5,9 MET, RPE 12–13; vigorosa: ≥ 60 % FCR, ≥ 6 MET,
+RPE ≥ 14. Resultados: sin consulta; consulta recomendada (a veces solo para lo vigoroso); o parar y consultar. Deriva
+alrededor de un 41 % menos de personas al médico que el procedimiento anterior [Secundaria: ACSM]. Al ser un procedimiento
+de decisión y no un formulario, se implementa con preguntas redactadas con palabras propias.
+
+**Consecuencia:** cribado al empezar (`backend/app/services/screening.py`) que fija el tope de intensidad del plan.
 
 ## 6. Adherencia
 
