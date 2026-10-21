@@ -193,6 +193,7 @@ class HealthDay(BaseModel):
     weekday: Weekday
     sessions: list[HealthStrength | HealthCardio]
     note: str | None = None
+    available_min: int | None = Field(None, description="Día disponible que el motor deja de descanso extra: sus minutos")
     done: list[str] = Field([], description="Deportes de las sesiones planificadas ya hechas (a mano o por el reloj)")
     done_from_watch: list[str] = Field([], description="Las que se dan por hechas por una actividad del reloj")
     matches: list[DoneMatch] = Field([], description="Cada cosa hecha ese día y por qué cuenta o no")

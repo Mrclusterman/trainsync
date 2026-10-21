@@ -29,6 +29,7 @@ class HealthProfile:
     lthr: float | None = None
     max_hr: float | None = None
     css: float | None = None
+    keep: frozenset[str] = frozenset()  # días que el usuario pidió entrenar: nunca pasan a descanso extra (§5.6)
 
     def __post_init__(self):
         assert self.goal in GOALS and self.level in LEVELS and self.strength in ("gym", "bodyweight", "none")
@@ -277,7 +278,9 @@ def _cardio(p: HealthProfile, start: date, dose: dict, days: list[str], strength
 
 STRENGTH_SHARES = (1.0, 0.85, 0.7, 0.55, 0.4, 0.3)  # parte del día que puede ocupar la fuerza [Inferencia]
 MAX_MONOTONY = 2.0  # Foster 1998: por encima, la carga diaria es demasiado uniforme (MOTOR §3)
-REST_NOTE = "Descanso extra: alternar días con y sin carga evita repetir el mismo esfuerzo todos los días."
+REST_NOTE = ("Hoy descansas aunque lo marcaste como disponible: entrenar todos los días con el mismo esfuerzo cansa "
+             "más y sube el riesgo de acabar agotado o enfermo. Con este día libre llegas igual a tu dosis de la semana. "
+             "Si prefieres entrenar, puedes recuperarlo.")
 
 
 def monotony(strength: dict[str, dict], cardio: dict[str, dict]) -> float:
@@ -299,7 +302,7 @@ def week_plan(p: HealthProfile, start: date, adherence: list[float] | None = Non
     # necesidad); para cada parte, la semana tal cual y luego con un día libre más de descanso. Si ninguna baja de 2, se
     # queda la primera que cumple el suelo; si ninguna lo cumple, la de fuerza mínima.
     floor_eq = min(dose["aerobic"], FLOOR_AEROBIC)
-    free = [d for d in days if d not in s_days]
+    free = [d for d in days if d not in s_days and d not in p.keep]
     chosen = floor_ok = most = None
     for share in STRENGTH_SHARES:
         budget = {d: max(round(p.days[d] * share), 20) for d in s_days}
@@ -350,7 +353,7 @@ def week_plan(p: HealthProfile, start: date, adherence: list[float] | None = Non
         elif len(sessions) == 2:
             sessions.reverse()  # ponerse en forma: la sesión aeróbica primero (§5.4)
         out.append({"date": day.isoformat(), "weekday": wd, "sessions": sessions}
-                   | ({"note": REST_NOTE} if wd == extra_rest else {}))
+                   | ({"note": REST_NOTE, "available_min": p.days[wd]} if wd == extra_rest else {}))
     return {"goal": p.goal, "week_in_block": week_in_block, "dose": dose, "days": out, "warnings": warnings,
             "info": info, "equivalent_min": round(done_eq)}
 
@@ -408,7 +411,8 @@ def week_with_changes(p: HealthProfile, start: date, adherence: list[float], wee
     if not changes:
         return base
     days = {d: m for d, m in (p.days | changes).items() if m}
-    changed = week_plan(replace(p, days=days), start, adherence, week_in_block)
+    keep = p.keep | {d for d, m in changes.items() if m}  # "quiero entrenar este día": no se vuelve a quitar
+    changed = week_plan(replace(p, days=days, keep=frozenset(keep)), start, adherence, week_in_block)
     cutoff = (since or start).isoformat()
     out = [b if b["date"] < cutoff else c for b, c in zip(base["days"], changed["days"])]
     eq = sum(s.get("equivalent_min", 0) for d in out for s in d["sessions"])

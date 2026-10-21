@@ -236,3 +236,14 @@ def test_only_warns_below_the_who_floor():
     starting = hp.week_plan(profile(level="beginner", days={"MON": 45, "WED": 45, "SAT": 60}), MONDAY)
     assert not starting["warnings"] and any("Empiezas con" in i for i in starting["info"])  # sin naranja al empezar
     assert "RIR" not in hp.strength_session(profile(), hp.FULL_BODY, 2)["notes"]
+
+
+def test_extra_rest_day_can_be_taken_back():
+    p = profile(goal="fitness", level="intermediate", strength="gym", cardio=["walking", "cycling"],
+                days={d: 60 for d in ("MON", "TUE", "WED", "THU", "FRI", "SAT")}, lthr=165, max_hr=185)
+    week = hp.week_plan(p, MONDAY, [0.95], 1)
+    rested = [d for d in week["days"] if d.get("available_min")]
+    assert rested and "puedes recuperarlo" in rested[0]["note"]
+    day = rested[0]["weekday"]
+    back = hp.week_with_changes(p, MONDAY, [0.95], 1, {day: rested[0]["available_min"]}, MONDAY)
+    assert next(d for d in back["days"] if d["weekday"] == day)["sessions"]  # el usuario lo pidió: se entrena

@@ -73,9 +73,13 @@ Entrada: días disponibles, minutos por sesión, dosis de la semana. Algoritmo d
 5. **Elección de la semana:** se prueban semanas candidatas y se elige la primera que cumple el suelo aeróbico de la OMS
    con monotonía de Foster < 2. Orden de preferencia: la fuerza ocupa todo su tiempo antes que menos (no se quita fuerza
    sin necesidad), y para cada caso, la semana tal cual antes que con un día libre convertido en descanso (con una nota
-   que lo explica). Si ninguna cumple ambas cosas, prima el suelo de la OMS. [Foster 1998; orden: Inferencia]
+   que lo explica en lenguaje llano). El usuario puede recuperar ese día con un toque y entonces el motor no lo vuelve a
+   quitar esa semana. Si ninguna cumple ambas cosas, prima el suelo de la OMS. [Foster 1998; orden: Inferencia]
 6. **Duración:** cada sesión cabe en los minutos disponibles; si la dosis no cabe en los días dados, el plan lo dice
-   ("con estos días llegas a X de Y min") en vez de alargar sesiones sin límite. [Inferencia]
+   en vez de alargar sesiones sin límite. Solo es un aviso si no llega al mínimo de la OMS (150 min) y la persona no es
+   principiante; si no, es información en tono neutro. Los minutos suaves (Z1) no cuentan para la OMS, pero la app los
+   muestra como actividad que también suma ("all physical activity counts", ficha de la OMS 2024). [Inferencia en el
+   tono]
 
 ## 6. Sesión de fuerza
 

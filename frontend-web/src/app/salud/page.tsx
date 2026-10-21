@@ -12,12 +12,21 @@ const GOAL_LABEL: Record<string, string> = { fitness: "Ponerme en forma", streng
 
 // Sin jerga (Z2, VO2max, umbral…): nombre y cómo saber si vas bien, con la prueba del habla [Práctica: ACSM]
 const PLAIN: Record<string, [string, string]> = {
-  recovery: ["Suave", "Muy tranquilo: podrías ir cantando."],
+  recovery: ["Suave", "Muy tranquilo: podrías ir cantando. También suma: según la OMS, cualquier actividad es mejor que ninguna."],
   aerobic: ["Ritmo cómodo", "Puedes mantener una conversación sin quedarte sin aire."],
   long: ["Larga a ritmo cómodo", "Más tiempo que otros días, pero siempre pudiendo hablar."],
   threshold: ["Ritmo exigente", "Constante y exigente: solo puedes decir frases cortas."],
   vo2max: ["Series intensas", "En cada serie casi no puedes hablar; entre series, muy suave."],
 };
+
+// Minutos suaves (Z1): no cuentan para los 150 de la OMS, pero suman [Verificado: ficha de la OMS sobre actividad física,
+// 2024: "any amount of physical activity is better than none; all physical activity counts"]
+function lightMinutes(days: HealthDay[]) {
+  return Math.round(days.flatMap((d) => d.sessions).filter((s): s is HealthCardio => "blocks" in s)
+    .flatMap((s) => s.blocks)
+    .reduce((sum, b) => sum + (b.zone === "Z1" ? b.reps * (b.minutes ?? 0) : 0)
+      + (b.rest_zone === "Z1" ? b.reps * (b.rest_minutes ?? 0) : 0), 0));
+}
 
 function pulse(s: HealthCardio) {
   const zone = s.blocks.find((b) => b.block === "principal")?.zone;
@@ -59,6 +68,15 @@ const small = "rounded-full border border-accent/40 px-3 py-1 font-ui text-xs te
 
 // Mover, liberar o añadir un día: solo hoy y los días que quedan de la semana
 function DayChanges({ day, upcoming }: { day: HealthDay; upcoming: HealthDay[] }) {
+  if (day.sessions.length === 0 && day.available_min) {
+    return (
+      <form action={changeDayAction} className="mt-2">
+        <input type="hidden" name="date" value={day.date} />
+        <input type="hidden" name="minutes" value={day.available_min} />
+        <button className={small}>Prefiero entrenar este día</button>
+      </form>
+    );
+  }
   if (day.sessions.length === 0) {
     return (
       <form action={changeDayAction} className="mt-2 flex items-center gap-2">
@@ -96,7 +114,7 @@ function Day({ day, today, upcoming }: { day: HealthDay; today: string; upcoming
     <section aria-label={`${WEEKDAY_LABEL[day.weekday]} ${day.date}`}
       className={`rounded-module bg-surface-1 p-3 ${isToday ? "ring-1 ring-accent/50" : ""}`}>
       <h3 className="font-ui text-sm text-secondary">{WEEKDAY_LABEL[day.weekday]} {day.date.slice(8)}{isToday && " · hoy"}</h3>
-      {day.note && <p className="mt-1 text-sm text-alert">{day.note}</p>}
+      {day.note && <p className="mt-1 text-sm text-secondary">{day.note}</p>}
       {day.sessions.length === 0 ? <p className="mt-1 text-sm text-secondary">Descanso</p> : (
         <div className="mt-2 space-y-2">
           {day.sessions.map((s) => <Session key={s.sport} s={s} date={day.date} past={day.date <= today} done={day.done?.includes(s.sport) ?? false} watch={day.done_from_watch?.includes(s.sport) ?? false} />)}
@@ -132,6 +150,7 @@ async function SaludView() {
       </header>
       <p className="text-sm text-secondary">
         Esta semana: {plan.equivalent_min} min de actividad y fuerza {plan.dose.strength_days} días
+        {lightMinutes(plan.days) > 0 && `, más ${lightMinutes(plan.days)} min suaves que también suman`}
         {deload && " · semana más suave para recuperar"}
       </p>
       {plan.equivalent_min >= 150 && plan.dose.strength_days >= 2 && (

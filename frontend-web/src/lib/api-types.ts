@@ -655,6 +655,11 @@ export interface components {
             /** Note */
             note?: string | null;
             /**
+             * Available Min
+             * @description Día disponible que el motor deja de descanso extra: sus minutos
+             */
+            available_min?: number | null;
+            /**
              * Done
              * @description Deportes de las sesiones planificadas ya hechas (a mano o por el reloj)
              * @default []
