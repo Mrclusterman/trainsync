@@ -377,6 +377,7 @@ class Profile:
     run_pace: float | None = None  # ritmo umbral de carrera, seg/km (intervals.icu threshold_pace)
     ftp: float | None = None  # vatios; sin FTP la bici se prescribe por FC
     run_model: tuple[float, float] | None = None  # velocidad (m/s) = a + b·FC, de tus carreras (hr_pace_model)
+    day_minutes: dict[str, int] | None = None  # minutos disponibles por día (perfil del usuario); None = sin límite
     plan_start: date | None = None
     warnings: list[str] = field(default_factory=list)
     needs_test: set[str] = field(default_factory=set)  # deportes sin LTHR/CSS fiable (onboarding RF-03)
@@ -494,7 +495,8 @@ def main_sport(weekday: str, goal: Goal | None, profile: Profile) -> str:
         preferred = goal.sport
     if preferred in profile.active_sports:
         return preferred
-    return profile.active_sports[0]
+    # Sin carrera objetivo (o con un deporte que no practica), rotan los deportes elegidos día a día [Inferencia]
+    return profile.active_sports[WEEKDAYS.index(weekday) % len(profile.active_sports)]
 
 
 def propose_day(day: date, profile: Profile, goal: Goal | None, state: DayState | None = None,
@@ -523,8 +525,28 @@ def propose_day(day: date, profile: Profile, goal: Goal | None, state: DayState 
         return out
     preferred = "cycling" if kind == "brick" else main_sport(weekday, goal, profile)
     event = "trail" if goal and goal.trail else None
-    sessions = {s: build_session(kind, s, profile, volume, phase, week, event, long_cap(goal, s))
-                for s in [preferred] + [s for s in profile.active_sports if s != preferred]}
+    # Sin fuerza si el estado del día ha obligado a bajar la carga
+    if profile.strength != "none" and weekday in STRENGTH_DAYS[phase] and not why:
+        out["strength"] = build_strength(goal.sport if goal else preferred, profile, phase)
+        day_cap = profile.day_minutes.get(weekday) if profile.day_minutes else None
+        if day_cap and out["strength"]["duration_min"] + 20 > day_cap:  # fuerza + 20′ de sesión principal no caben
+            out["strength"] = None
+            reasons.append(f"Sin fuerza hoy: no cabe en tus {day_cap} min junto a la sesión principal")
+    # Minutos del día que le quedan a la sesión principal (descontada la fuerza): la sesión tiene que caber
+    cap = profile.day_minutes.get(weekday) if profile.day_minutes else None
+    if cap:
+        cap = max(cap - (out["strength"]["duration_min"] if out["strength"] else 0), 20)
+
+    def build(sport: str, vol: float) -> dict | None:
+        session = build_session(kind, sport, profile, vol, phase, week, event, long_cap(goal, sport))
+        for _ in range(3):  # la duración no es lineal con el volumen (bloques fijos): se ajusta
+            if not session or not cap or session["duration_min"] <= cap:
+                break
+            vol *= cap / session["duration_min"]
+            session = build_session(kind, sport, profile, vol, phase, week, event, long_cap(goal, sport))
+        return session
+
+    sessions = {s: build(s, volume) for s in [preferred] + [s for s in profile.active_sports if s != preferred]}
     sessions = {s: v for s, v in sessions.items() if v}
     if not sessions:
         return out
@@ -534,14 +556,11 @@ def propose_day(day: date, profile: Profile, goal: Goal | None, state: DayState 
         # Alternativa equivalente en carga (±15 %): el TSS no es lineal con la duración, se itera
         alt_volume = volume
         for _ in range(3):
-            if not alt["tss"] or abs(alt["tss"] - target) <= 0.15 * target:
+            if not alt["tss"] or abs(alt["tss"] - target) <= 0.15 * target or (cap and alt["duration_min"] >= cap):
                 break
             alt_volume *= target / alt["tss"]
-            alt = build_session(kind, other, profile, alt_volume, phase, week, event, long_cap(goal, other))
+            alt = build(other, alt_volume)
         out["alternatives"].append(alt)
-    # Sin fuerza si el estado del día ha obligado a bajar la carga
-    if profile.strength != "none" and weekday in STRENGTH_DAYS[phase] and not why:
-        out["strength"] = build_strength(goal.sport if goal else sport, profile, phase)
     return out
 
 
@@ -589,7 +608,13 @@ def schedule_tests(days: list[dict], profile: Profile) -> None:
     """Onboarding (RF-03): la primera sesión de calidad pasa a ser el test del deporte sin LTHR/CSS fiable."""
     used = set()
     for sport in [s for s in profile.active_sports if s in profile.needs_test]:
-        quality = [d for d in days if d["main"] and d["main"]["type"] in QUALITY and d["date"] not in used]
+        test = build_session("test", sport, profile)
+        if test is None:  # deporte sin test en el catálogo (aguas abiertas)
+            continue
+        # Solo en un día de calidad donde el test quepa en los minutos disponibles (descontada la fuerza)
+        fits = lambda d: not profile.day_minutes or test["duration_min"] + (
+            d["strength"]["duration_min"] if d["strength"] else 0) <= profile.day_minutes.get(d["weekday"], 0)
+        quality = [d for d in days if d["main"] and d["main"]["type"] in QUALITY and d["date"] not in used and fits(d)]
         day = next((d for d in quality if d["main"]["sport"] == sport), quality[0] if quality else None)
         test = day and build_session("test", sport, profile, phase=day["phase"])
         if test:

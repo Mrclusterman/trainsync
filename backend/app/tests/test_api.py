@@ -89,7 +89,7 @@ def test_implausible_lthr_is_replaced_and_flagged():
         {"types": ["Ride"], "lthr": 174, "max_hr": 192},
         {"types": ["Run", "TrailRun"], "lthr": 190, "max_hr": 192},  # caso real: 99 % de la FC máx
     ]}
-    profile = plan_router.fill_physiology(plan_router.config.load_profile(), athlete)
+    profile = plan_router.fill_physiology(plan_router.engine.Profile(active_sports=["running", "cycling"]), athlete)
     assert profile.lthr_for("running") == 174 and profile.lthr_for("cycling") == 174
     assert "running" not in profile.lthr_by_sport and len(profile.warnings) == 1
 
@@ -124,3 +124,20 @@ def test_run_model_warns_when_lthr_and_threshold_pace_disagree(monkeypatch):
     state = api.get("/state", headers=h).json()
     # 174 ppm → ~5:06/km con esta recta (punto medio de cada tramo de 5 ppm) frente a 4:41/km: más de un 5 %
     assert any("5:06/km" in w and "4:41/km" in w for w in state["warnings"]), state["warnings"]
+
+
+def test_race_plan_follows_the_user_profile(monkeypatch):
+    h = linked_user(monkeypatch, fake_intervals)
+    days = {"TUE": 45, "THU": 45, "SAT": 60, "SUN": 90}
+    profile = {"goal": "fitness", "days": days, "strength": "none", "cardio": ["walking", "cycling"]}
+    assert api.put("/me/profile", json=profile, headers=h).status_code == 204
+    plan = api.get("/plan?days=14", headers=h).json()
+    for d in plan["days"]:
+        if d["weekday"] not in days:
+            assert d["main"] is None  # días sin disponibilidad = descanso
+        elif d["main"]:
+            assert d["main"]["sport"] == "cycling" and d["main"]["duration_min"] <= days[d["weekday"]]
+            assert d["strength"] is None and all(a["sport"] == "cycling" for a in d["alternatives"])
+    only_walking = profile | {"cardio": ["walking"]}
+    api.put("/me/profile", json=only_walking, headers=h)
+    assert api.get("/plan", headers=h).status_code == 409

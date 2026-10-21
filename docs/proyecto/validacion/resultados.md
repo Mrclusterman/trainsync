@@ -4,44 +4,44 @@
 
 | Perfil | Adherencia | Criterio | Cumple | Detalle |
 |---|---|---|---|---|
-| principiante sedentario | alta | V1 | no aplica | no aplica: con 150 min/semana caben ~65 equivalentes; mín. 45 |
+| principiante sedentario | alta | V1 | no aplica | no aplica: con 150 min/semana caben ~65 equivalentes; mín. 80 |
 | principiante sedentario | alta | V5 | sí | subida máx. +10.0%; descarga cada 4.ª semana: True |
 | principiante sedentario | alta | V6 | sí | sin Z4+ ni RIR < 3 |
 | principiante sedentario | alta | V7 | sí | día de descanso: True; pierna en días seguidos: False |
-| principiante sedentario | alta | V9 | sí | sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 0.62 (18 semanas) |
+| principiante sedentario | alta | V9 | sí | sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 0.85 (18 semanas) |
 | principiante sedentario | alta | V10 | sí | dos ejecuciones idénticas |
 | principiante sedentario | media | V1 | no aplica | no aplica: sin semanas estables (la progresión aún no ha llegado a la meta) |
 | principiante sedentario | media | V5 | sí | subida máx. +10.0%; descarga cada 4.ª semana: True |
 | principiante sedentario | media | V6 | sí | sin Z4+ ni RIR < 3 |
 | principiante sedentario | media | V7 | sí | día de descanso: True; pierna en días seguidos: False |
-| principiante sedentario | media | V9 | sí | sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 0.62 (18 semanas) |
+| principiante sedentario | media | V9 | sí | sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 0.85 (18 semanas) |
 | principiante sedentario | media | V10 | sí | dos ejecuciones idénticas |
 | principiante sedentario | baja | V1 | no aplica | no aplica: sin semanas estables (la progresión aún no ha llegado a la meta) |
 | principiante sedentario | baja | V5 | sí | subida máx. +10.0%; descarga cada 4.ª semana: True |
 | principiante sedentario | baja | V6 | sí | sin Z4+ ni RIR < 3 |
 | principiante sedentario | baja | V7 | sí | día de descanso: True; pierna en días seguidos: False |
-| principiante sedentario | baja | V9 | sí | sin límite de tiempo: máx. 0.86 (4 semanas); limitadas por tiempo: máx. 0.62 (14 semanas) |
+| principiante sedentario | baja | V9 | sí | sin límite de tiempo: máx. 0.86 (5 semanas); limitadas por tiempo: máx. 0.85 (13 semanas) |
 | principiante sedentario | baja | V10 | sí | dos ejecuciones idénticas |
-| persona mayor (70) | alta | V1 | no aplica | no aplica: con 225 min/semana caben ~105 equivalentes; mín. 81 |
+| persona mayor (70) | alta | V1 | no aplica | no aplica: con 225 min/semana caben ~105 equivalentes; mín. 107 |
 | persona mayor (70) | alta | V2 | sí | equilibrio y fuerza ≥ 3 días todas las semanas |
 | persona mayor (70) | alta | V5 | sí | subida máx. +10.0%; descarga cada 4.ª semana: True |
 | persona mayor (70) | alta | V6 | sí | sin Z4+ ni RIR < 3 |
 | persona mayor (70) | alta | V7 | sí | día de descanso: True; pierna en días seguidos: False |
-| persona mayor (70) | alta | V9 | sí | sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 0.87 (18 semanas) |
+| persona mayor (70) | alta | V9 | sí | sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 1.14 (18 semanas) |
 | persona mayor (70) | alta | V10 | sí | dos ejecuciones idénticas |
 | persona mayor (70) | media | V1 | no aplica | no aplica: sin semanas estables (la progresión aún no ha llegado a la meta) |
 | persona mayor (70) | media | V2 | sí | equilibrio y fuerza ≥ 3 días todas las semanas |
 | persona mayor (70) | media | V5 | sí | subida máx. +10.0%; descarga cada 4.ª semana: True |
 | persona mayor (70) | media | V6 | sí | sin Z4+ ni RIR < 3 |
 | persona mayor (70) | media | V7 | sí | día de descanso: True; pierna en días seguidos: False |
-| persona mayor (70) | media | V9 | sí | sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 0.87 (18 semanas) |
+| persona mayor (70) | media | V9 | sí | sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 1.14 (18 semanas) |
 | persona mayor (70) | media | V10 | sí | dos ejecuciones idénticas |
 | persona mayor (70) | baja | V1 | no aplica | no aplica: sin semanas estables (la progresión aún no ha llegado a la meta) |
 | persona mayor (70) | baja | V2 | sí | equilibrio y fuerza ≥ 3 días todas las semanas |
 | persona mayor (70) | baja | V5 | sí | subida máx. +10.0%; descarga cada 4.ª semana: True |
 | persona mayor (70) | baja | V6 | sí | sin Z4+ ni RIR < 3 |
 | persona mayor (70) | baja | V7 | sí | día de descanso: True; pierna en días seguidos: False |
-| persona mayor (70) | baja | V9 | sí | sin límite de tiempo: máx. 1.15 (7 semanas); limitadas por tiempo: máx. 0.87 (11 semanas) |
+| persona mayor (70) | baja | V9 | sí | sin límite de tiempo: máx. 1.15 (8 semanas); limitadas por tiempo: máx. 1.14 (10 semanas) |
 | persona mayor (70) | baja | V10 | sí | dos ejecuciones idénticas |
 | gimnasio | alta | V1 | sí | 15 semanas estables; mín. 150 min equivalentes |
 | gimnasio | alta | V3 | sí | cada patrón principal ≥ 2 veces/semana; series = dosis o aviso |
@@ -125,4 +125,4 @@
 | pérdida de grasa | baja vs alta | V11 | sí | último bloque: 66 min (baja) frente a 250 (alta) |
 | cribado con tope | baja vs alta | V11 | sí | último bloque: 82 min (baja) frente a 250 (alta) |
 
-Caso real: LTHR 174, FC máx. 192 → techo fácil 144 ppm = 75.0 % de la FC máx.; 3 sesiones aeróbicas, objetivos 50.0–97.0 % HR: cumple
+Caso real: LTHR 174, FC máx. 192 → techo fácil 144 ppm = 75.0 % de la FC máx.; 4 sesiones aeróbicas, objetivos 50.0–75.0 % HR: cumple

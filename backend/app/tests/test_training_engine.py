@@ -314,3 +314,17 @@ def test_running_targets_show_pace_with_a_model():
     assert targets["Z4"].endswith("/km") and all(t.endswith("/km") for t in targets.values() if "RPE" not in t)
     trail = e.build_session("threshold", "running", profile, phase="build", event="trail")
     assert trail["id"].startswith("T-") and trail["targets"]["Z4"].endswith("ppm")
+
+
+def test_without_goal_main_sport_rotates_through_chosen_sports():
+    profile = e.Profile(active_sports=["running", "cycling"])
+    sports = {e.main_sport(d, None, profile) for d in ("TUE", "WED", "THU")}
+    assert sports == {"running", "cycling"}
+
+
+def test_strength_is_dropped_when_it_does_not_fit_the_day():
+    profile = e.Profile(active_sports=["running"], day_minutes={d: 45 for d in e.WEEKDAYS}, rest_days=[])
+    days = e.plan(date(2026, 10, 26), 7, profile, None)
+    assert all(d["strength"] is None for d in days)
+    assert any("Sin fuerza hoy" in r for d in days for r in d["reasons"])
+    assert all(d["main"] is None or d["main"]["duration_min"] <= 45 for d in days)

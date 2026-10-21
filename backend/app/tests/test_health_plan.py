@@ -198,3 +198,11 @@ def test_adherence_counts_the_moved_plan():
     with_changes = hp.adherence_history(p, start, done, 1, changes)
     without = hp.adherence_history(p, start, done, 1)
     assert with_changes[0] > without[0]  # sin tener en cuenta el cambio, el martes contaría como sesión de más
+
+
+def test_never_drops_a_day_when_the_floor_is_not_reached():
+    p = profile(days={d: 45 for d in WEEKDAYS}, cardio=["walking", "running", "cycling"])  # el caso real que lo destapó
+    week = hp.week_plan(p, MONDAY)
+    if week["equivalent_min"] < hp.FLOOR_AEROBIC:
+        assert not any(d.get("note") == hp.REST_NOTE for d in week["days"])
+        assert sum(bool(d["sessions"]) for d in week["days"]) == 6  # todos menos el descanso obligatorio

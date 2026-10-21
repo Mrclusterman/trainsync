@@ -293,13 +293,15 @@ def week_plan(p: HealthProfile, start: date, adherence: list[float] | None = Non
     # queda la primera que cumple el suelo; si ninguna lo cumple, la de fuerza mínima.
     floor_eq = min(dose["aerobic"], FLOOR_AEROBIC)
     free = [d for d in days if d not in s_days]
-    chosen = floor_ok = None
+    chosen = floor_ok = most = None
     for share in STRENGTH_SHARES:
         budget = {d: max(round(p.days[d] * share), 20) for d in s_days}
         strength = strength_week(p, s_days, dose["sets"], budget)
         for rest in [None] + free:
             plan_days, done_eq = _cardio(p, start, dose, [d for d in days if d != rest], strength)
             candidate = (strength, plan_days, done_eq, rest)
+            if rest is None and (most is None or done_eq > most[2]):
+                most = candidate  # sin llegar al suelo, nunca se quita un día disponible
             if done_eq < floor_eq:
                 continue
             floor_ok = floor_ok or candidate
@@ -308,7 +310,8 @@ def week_plan(p: HealthProfile, start: date, adherence: list[float] | None = Non
                 break
         if chosen:
             break
-    strength, plan_days, done_eq, extra_rest = chosen or floor_ok or candidate
+    # Si ninguna semana llega al suelo, la que más minutos da con todos los días disponibles
+    strength, plan_days, done_eq, extra_rest = chosen or floor_ok or most
 
     warnings = []
     if p.strength == "none":
