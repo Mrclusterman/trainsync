@@ -98,13 +98,13 @@ CATALOG = [
       [B("calentamiento", 15, "Z1"), B("principal", None, "Z2"),
        B("esfuerzos al final", 10, "Z4", 2, 5, "en la última hora: durabilidad (rendir con fatiga acumulada)")]),
     S("C-SPRINT", "cycling", "neuromuscular", ("base", "build", "peak"), (60, 90),
-      [B("calentamiento", 15, "Z2"), B("sprints", 0.17, "Z6", 8, 4, "6–8×10″ sprint"), B("principal", None, "Z2")]),
+      [B("calentamiento", 15, "Z2"), B("esprints", 0.17, "Z6", 8, 4, "6–8×10″ a tope"), B("principal", None, "Z2")]),
     S("C-TEST", "cycling", "test", ALL, (55, 55),
       [B("calentamiento", 15, "Z2"), B("test", 30, "Z4", detail="30′ al máximo sostenible; LTHR = FC media de los últimos 20′"),
        B("vuelta a la calma", None, "Z1")]),
     S("C-BRICK", "cycling", "brick", ("build", "peak"), (75, 150),
       [B("calentamiento", 15, "Z1"), B("bici", None, "Z2"), B("bici a ritmo de carrera", 20, "Z4"),
-       B("carrera a pie", 15, "Z2", detail="transición inmediata; usa tus zonas de running")]),
+       B("carrera a pie", 15, "Z2", detail="transición inmediata; usa tus zonas de carrera a pie")]),
     S("C-VO2-3015", "cycling", "vo2max", ("base_early", "base", "build"), (75, 90),
       intervals(3, 13, "Z5", 3, "30″ Z5–Z6 / 15″ suave (Rønnestad 2015)", duty=0.67)),
     S("C-VO2-4x5", "cycling", "vo2max", NO_TAPER, (60, 80), intervals(4, 5, "Z5", 2.5)),
@@ -124,12 +124,12 @@ CATALOG = [
     S("S-REC", "swimming_pool", "recovery", ALL, (20, 35), [B("principal", None, "Z1", detail="1.000–1.500 m + técnica suave")]),
     S("S-TECH", "swimming_pool", "recovery", ALL, (30, 40),
       [B("calentamiento", 10, "Z1", detail=SWIM_WARMUP),
-       B("técnica", None, "Z2", detail="catch-up, 6 patadas/brazada, sculling, pull buoy")]),
+       B("técnica", None, "Z2", detail="brazada de alcance (catch-up), 6 patadas por brazada, remadas de manos (sculling), con pull buoy")]),
     S("S-AERO", "swimming_pool", "aerobic", ALL, (40, 60),
       [B("calentamiento", 10, "Z1", detail=SWIM_WARMUP), B("principal", 7, "Z2", 5, 0.33, "4–6×400, desc. 20″"),
        B("vuelta a la calma", None, "Z1")]),
     S("S-PULL", "swimming_pool", "aerobic", ("base", "build"), (40, 50),
-      [B("calentamiento", 10, "Z1", detail=SWIM_WARMUP), B("principal", 3.5, "Z2", 6, 0.33, "6×200 pull buoy + palas"),
+      [B("calentamiento", 10, "Z1", detail=SWIM_WARMUP), B("principal", 3.5, "Z2", 6, 0.33, "6×200 con pull buoy (flotador entre las piernas) y palas"),
        B("vuelta a la calma", None, "Z1")]),
     S("S-KICK", "swimming_pool", "aerobic", ("base",), (35, 45),
       [B("calentamiento", 10, "Z1", detail=SWIM_WARMUP), B("patada", 1.25, "Z2", 8, 0.25, "8×50 patada"),
@@ -150,7 +150,7 @@ CATALOG = [
     S("S-RACE", "swimming_pool", "race_specific", ("peak", "taper"), (30, 60),
       intervals(3, 8, "Z4", 2, "distancia de carrera a ritmo objetivo en 2–3 bloques", warmup=10)),
     S("S-SPRINT", "swimming_pool", "neuromuscular", ("base", "build"), (30, 45),
-      [B("calentamiento", 10, "Z1", detail=SWIM_WARMUP), B("sprints", 0.4, "Z6", 8, 0.75, "8×25 máximo, desc. 45″"),
+      [B("calentamiento", 10, "Z1", detail=SWIM_WARMUP), B("esprints", 0.4, "Z6", 8, 0.75, "8×25 máximo, desc. 45″"),
        B("principal", None, "Z2")]),
     S("S-TEST-CSS", "swimming_pool", "test", ALL, (40, 40),
       [B("calentamiento", 10, "Z1", detail=SWIM_WARMUP), B("test 400", 7, "Z5", detail="400 m al máximo"),
@@ -216,14 +216,14 @@ STRENGTH_DOSE = {
 }
 LOWER = {
     "gym": ["Sentadilla con barra", "Peso muerto rumano", "Zancada búlgara con mancuernas",
-            "Elevación de gemelo de pie y sentado", "Hip thrust con barra"],
-    "bodyweight": ["Sentadilla búlgara (progresión a pistol)", "Peso muerto rumano a una pierna",
-                   "Step-up alto", "Gemelo a una pierna en escalón", "Puente de glúteo a una pierna"],
+            "Elevación de gemelo de pie y sentado", "Empuje de cadera con barra (hip thrust)"],
+    "bodyweight": ["Sentadilla búlgara (progresión a sentadilla a una pierna)", "Peso muerto rumano a una pierna",
+                   "Subida a cajón alto", "Gemelo a una pierna en escalón", "Puente de glúteo a una pierna"],
 }
-PLYO = {"gym": ["Saltos al cajón", "Drop jumps bajos"], "bodyweight": ["Pogo jumps", "Saltos de rana"]}
+PLYO = {"gym": ["Saltos al cajón", "Saltos de caída desde poca altura (drop jumps)"], "bodyweight": ["Saltos de tobillo seguidos (pogo)", "Saltos de rana"]}
 UPPER = {
     "gym": ["Jalón al pecho o dominadas lastradas", "Remo con mancuerna", "Press de banca con mancuernas",
-            "Face pull"],
+            "Tirón a la cara con polea (face pull)"],
     "bodyweight": ["Dominadas o negativas", "Remo invertido", "Flexiones", "Rotación externa con goma"],
 }
-CORE = ["Plancha frontal", "Plancha lateral", "Dead bug", "Pallof press", "Plancha de Copenhague"]
+CORE = ["Plancha frontal", "Plancha lateral", "Bicho muerto (dead bug)", "Press Pallof antirrotación", "Plancha de Copenhague"]

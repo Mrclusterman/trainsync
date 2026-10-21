@@ -417,7 +417,7 @@ class Profile:
 ZONE_IF = {"Z1": 0.65, "Z2": 0.75, "Z3": 0.88, "Z4": 0.97, "Z5": 1.05, "Z6": 1.15}
 NAMES = {"recovery": "Recuperación", "aerobic": "Aeróbico base", "long": "Tirada larga",
          "vo2max": "Intervalos VO2max", "threshold": "Umbral", "race_specific": "Específico de carrera",
-         "rest": "Descanso", "strength": "Fuerza", "neuromuscular": "Neuromuscular", "brick": "Brick (transición)",
+         "rest": "Descanso", "strength": "Fuerza", "neuromuscular": "Neuromuscular", "brick": "Transición bici-carrera (brick)",
          "test": "Test de campo", "tempo": "Tempo", "anaerobic": "Anaeróbico"}
 GOALS = {"recovery": "Recuperar sin generar fatiga", "aerobic": "Base aeróbica y eficiencia (Z2 pura, sin zona gris)",
          "long": "Resistencia aeróbica y economía", "vo2max": "Elevar el techo aeróbico",

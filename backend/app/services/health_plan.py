@@ -120,7 +120,7 @@ def spread(days: list[str], n: int) -> list[str]:
 # ---------------------------------------------------------------- §6 sesión de fuerza
 
 PATTERNS = {  # patrón -> (gimnasio, peso corporal)
-    "sentadilla": ("Sentadilla goblet o con barra", "Sentadilla (a una pierna al progresar)"),
+    "sentadilla": ("Sentadilla copa (goblet) o con barra", "Sentadilla (a una pierna al progresar)"),
     "bisagra": ("Peso muerto rumano", "Puente de glúteo (a una pierna al progresar)"),
     "zancada": ("Zancada con mancuernas", "Zancada atrás"),
     "empuje horizontal": ("Press de banca con mancuernas", "Flexiones (inclinadas al empezar)"),

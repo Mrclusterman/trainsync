@@ -15,8 +15,8 @@ export const PHASE_LABEL: Record<string, string> = {
   base_early: "Base temprana",
   base: "Base",
   build: "Construcción",
-  peak: "Peak",
-  taper: "Taper",
+  peak: "Pico",
+  taper: "Puesta a punto",
 };
 
 export const WEEKDAY_LABEL: Record<string, string> = {

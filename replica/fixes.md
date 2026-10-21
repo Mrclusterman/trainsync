@@ -57,7 +57,7 @@ Elegidas por evidencia × lo barato que es hacerlas. Tamaño: S (días), M (1–
 | 4 | **Hecho (2026-10-21).** **Días disponibles y emparejado de lo hecho con lo planificado**: el plan respeta los días que marca el usuario (RF-09 ya lo prevé) y explica cuándo da una sesión por hecha. Modo carrera: la plantilla se recoloca en tus días (`fit_days`); Salud: cada actividad dice por qué cuenta o no (`match_day`, MOTOR §15.1) | M | motor + frontend | Garmin Coach (11 GC) y TP (6), finos |
 | 5 | **Hecho (2026-10-21).** **Explicar cada propuesta**: mostrar los motivos que ya calcula el motor (`reasons`: TSB, HRV, sueño) y la etiqueta de evidencia de cada regla. Cada motivo lleva su etiqueta y la web la muestra con lo que significa (`Reason.tsx`) | S | frontend | Métricas en las que no confían (16 GC, 12 TP), finos |
 | 6 | **Hecho (2026-10-21).** **Web ligera que funcione sin conexión** (PWA con la semana en caché). Instalable (`manifest.ts`) y `public/sw.js`: las páginas de la app se guardan al verlas y sin red se ve la última copia, con aviso; la caché se borra al cerrar sesión | M | frontend-web | Lenta (39 TP, 92 GC) y sin conexión (17 GC, 2 fuentes) |
-| 7 | **Español completo de serie, incluida la web** | S | frontend (ya en `lang="es"`), textos de sesiones | 8 TP, fino |
+| 7 | **Hecho (2026-10-21).** **Español completo de serie, incluida la web**. Ejercicios, natación, fases y sesiones en español, con el nombre habitual entre paréntesis (hip thrust, pull buoy…). Se mantiene la sintaxis que exige intervals.icu (`HR`, `Pace`) | S | frontend (ya en `lang="es"`), textos de sesiones | 8 TP, fino |
 
 Las quejas de precio y cobro no aplican mientras TrainSync sea gratis. Las notificaciones (si llegan en la Fase 5) deben poder desactivarse por tipo.
 
