@@ -61,6 +61,15 @@ def fill_physiology(profile: engine.Profile, athlete: dict) -> engine.Profile:
         profile.lthr_by_sport.setdefault(sport, lthr)
     profile.lthr = profile.lthr or profile.lthr_by_sport.get("cycling") or next(iter(profile.lthr_by_sport.values()), None)
     profile.rest_hr = profile.rest_hr or athlete.get("icu_resting_hr")
+    # Umbrales de ritmo y potencia de intervals.icu (threshold_pace en m/s) para los objetivos que llegan al reloj
+    for s in athlete.get("sportSettings") or []:
+        types, pace = s.get("types") or [], s.get("threshold_pace")
+        if "Swim" in types and pace and not profile.css:
+            profile.css = 100 / pace
+        if "Run" in types and pace:
+            profile.run_pace = 1000 / pace
+        if "Ride" in types and s.get("ftp"):
+            profile.ftp = s["ftp"]
     # Onboarding (RF-03): test en los deportes sin LTHR propia o sin CSS
     for sport in ("running", "cycling"):
         if sport in profile.active_sports and sport not in profile.lthr_by_sport and not config_lthr:
@@ -158,6 +167,6 @@ def send_today():
     main = engine.plan(today, 1, profile, goal, s)[0]["main"]
     if main is None:
         raise HTTPException(409, "Hoy toca descanso: no hay sesión que enviar")
-    event = workout_text.event(main, today.isoformat(), profile.lthr_for(main["sport"]), profile.css)
+    event = workout_text.event(main, today.isoformat(), profile)
     created = client().upsert_workouts([event])[0]
     return {"id": created["id"], "date": today, "name": event["name"], "description": event["description"]}

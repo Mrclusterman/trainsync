@@ -280,6 +280,8 @@ class Profile:
     max_hr: float | None = None
     rest_hr: float | None = None
     css: float | None = None  # seg/100m
+    run_pace: float | None = None  # ritmo umbral de carrera, seg/km (intervals.icu threshold_pace)
+    ftp: float | None = None  # vatios; sin FTP la bici se prescribe por FC
     plan_start: date | None = None
     warnings: list[str] = field(default_factory=list)
     needs_test: set[str] = field(default_factory=set)  # deportes sin LTHR/CSS fiable (onboarding RF-03)
