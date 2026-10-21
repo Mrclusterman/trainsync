@@ -269,6 +269,16 @@ def _cardio(p: HealthProfile, start: date, dose: dict, days: list[str], strength
 
 
 STRENGTH_SHARES = (1.0, 0.85, 0.7, 0.55, 0.4, 0.3)  # parte del día que puede ocupar la fuerza [Inferencia]
+MAX_MONOTONY = 2.0  # Foster 1998: por encima, la carga diaria es demasiado uniforme (MOTOR §3)
+REST_NOTE = "Descanso extra: alternar días con y sin carga evita repetir el mismo esfuerzo todos los días."
+
+
+def monotony(strength: dict[str, dict], cardio: dict[str, dict]) -> float:
+    """Monotonía de Foster: media / desviación típica de la carga diaria de la semana (0 si no hay variación)."""
+    loads = [sum(s["tss"] for s in (strength.get(d), cardio.get(d)) if s) for d in WEEKDAYS]
+    mean = sum(loads) / 7
+    sd = (sum((x - mean) ** 2 for x in loads) / 7) ** 0.5
+    return mean / sd if sd else 0.0
 
 
 def week_plan(p: HealthProfile, start: date, adherence: list[float] | None = None, week_in_block: int = 0) -> dict:
@@ -277,15 +287,28 @@ def week_plan(p: HealthProfile, start: date, adherence: list[float] | None = Non
     dose = week_dose(p, adherence, week_in_block)
     days = training_days(p)
     s_days = spread(days, dose["strength_days"])
-    # El suelo aeróbico de la OMS va antes que seguir subiendo series (§1.2): si no se alcanza, la fuerza ocupa menos
-    # parte del día y se vuelve a repartir, hasta llegar al suelo o a la sesión mínima de fuerza
+    # Se prueban semanas candidatas en orden de preferencia y se elige la primera que cumple el suelo aeróbico de la OMS
+    # (§1.2) con monotonía < 2 (§5.6). Orden: la fuerza ocupa primero todo el día y después menos (no se quita fuerza sin
+    # necesidad); para cada parte, la semana tal cual y luego con un día libre más de descanso. Si ninguna baja de 2, se
+    # queda la primera que cumple el suelo; si ninguna lo cumple, la de fuerza mínima.
     floor_eq = min(dose["aerobic"], FLOOR_AEROBIC)
+    free = [d for d in days if d not in s_days]
+    chosen = floor_ok = None
     for share in STRENGTH_SHARES:
         budget = {d: max(round(p.days[d] * share), 20) for d in s_days}
         strength = strength_week(p, s_days, dose["sets"], budget)
-        plan_days, done_eq = _cardio(p, start, dose, days, strength)
-        if done_eq >= floor_eq:
+        for rest in [None] + free:
+            plan_days, done_eq = _cardio(p, start, dose, [d for d in days if d != rest], strength)
+            candidate = (strength, plan_days, done_eq, rest)
+            if done_eq < floor_eq:
+                continue
+            floor_ok = floor_ok or candidate
+            if monotony(strength, plan_days) < MAX_MONOTONY:
+                chosen = candidate
+                break
+        if chosen:
             break
+    strength, plan_days, done_eq, extra_rest = chosen or floor_ok or candidate
 
     warnings = []
     if p.strength == "none":
@@ -310,7 +333,8 @@ def week_plan(p: HealthProfile, start: date, adherence: list[float] | None = Non
             pass  # fuerza primero: es el objetivo (§5.4)
         elif len(sessions) == 2:
             sessions.reverse()  # forma y pérdida de grasa: la sesión aeróbica primero (§5.4)
-        out.append({"date": day.isoformat(), "weekday": wd, "sessions": sessions})
+        out.append({"date": day.isoformat(), "weekday": wd, "sessions": sessions}
+                   | ({"note": REST_NOTE} if wd == extra_rest else {}))
     return {"goal": p.goal, "week_in_block": week_in_block, "dose": dose, "days": out, "warnings": warnings,
             "equivalent_min": round(done_eq)}
 

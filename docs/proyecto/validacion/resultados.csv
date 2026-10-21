@@ -1,42 +1,42 @@
 perfil,adherencia,criterio,cumple,detalle
-principiante sedentario,alta,V1,,no aplica: con 150 min/semana caben ~65 equivalentes; mín. 80
+principiante sedentario,alta,V1,,no aplica: con 150 min/semana caben ~65 equivalentes; mín. 45
 principiante sedentario,alta,V5,True,subida máx. +10.0%; descarga cada 4.ª semana: True
 principiante sedentario,alta,V6,True,sin Z4+ ni RIR < 3
 principiante sedentario,alta,V7,True,día de descanso: True; pierna en días seguidos: False
-principiante sedentario,alta,V9,True,sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 0.85 (18 semanas)
+principiante sedentario,alta,V9,True,sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 0.62 (18 semanas)
 principiante sedentario,alta,V10,True,dos ejecuciones idénticas
 principiante sedentario,media,V1,,no aplica: sin semanas estables (la progresión aún no ha llegado a la meta)
 principiante sedentario,media,V5,True,subida máx. +10.0%; descarga cada 4.ª semana: True
 principiante sedentario,media,V6,True,sin Z4+ ni RIR < 3
 principiante sedentario,media,V7,True,día de descanso: True; pierna en días seguidos: False
-principiante sedentario,media,V9,True,sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 0.85 (18 semanas)
+principiante sedentario,media,V9,True,sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 0.62 (18 semanas)
 principiante sedentario,media,V10,True,dos ejecuciones idénticas
 principiante sedentario,baja,V1,,no aplica: sin semanas estables (la progresión aún no ha llegado a la meta)
 principiante sedentario,baja,V5,True,subida máx. +10.0%; descarga cada 4.ª semana: True
 principiante sedentario,baja,V6,True,sin Z4+ ni RIR < 3
 principiante sedentario,baja,V7,True,día de descanso: True; pierna en días seguidos: False
-principiante sedentario,baja,V9,True,sin límite de tiempo: máx. 0.86 (5 semanas); limitadas por tiempo: máx. 0.85 (13 semanas)
+principiante sedentario,baja,V9,True,sin límite de tiempo: máx. 0.86 (4 semanas); limitadas por tiempo: máx. 0.62 (14 semanas)
 principiante sedentario,baja,V10,True,dos ejecuciones idénticas
-persona mayor (70),alta,V1,,no aplica: con 225 min/semana caben ~105 equivalentes; mín. 107
+persona mayor (70),alta,V1,,no aplica: con 225 min/semana caben ~105 equivalentes; mín. 81
 persona mayor (70),alta,V2,True,equilibrio y fuerza ≥ 3 días todas las semanas
 persona mayor (70),alta,V5,True,subida máx. +10.0%; descarga cada 4.ª semana: True
 persona mayor (70),alta,V6,True,sin Z4+ ni RIR < 3
 persona mayor (70),alta,V7,True,día de descanso: True; pierna en días seguidos: False
-persona mayor (70),alta,V9,True,sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 1.14 (18 semanas)
+persona mayor (70),alta,V9,True,sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 0.87 (18 semanas)
 persona mayor (70),alta,V10,True,dos ejecuciones idénticas
 persona mayor (70),media,V1,,no aplica: sin semanas estables (la progresión aún no ha llegado a la meta)
 persona mayor (70),media,V2,True,equilibrio y fuerza ≥ 3 días todas las semanas
 persona mayor (70),media,V5,True,subida máx. +10.0%; descarga cada 4.ª semana: True
 persona mayor (70),media,V6,True,sin Z4+ ni RIR < 3
 persona mayor (70),media,V7,True,día de descanso: True; pierna en días seguidos: False
-persona mayor (70),media,V9,True,sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 1.14 (18 semanas)
+persona mayor (70),media,V9,True,sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 0.87 (18 semanas)
 persona mayor (70),media,V10,True,dos ejecuciones idénticas
 persona mayor (70),baja,V1,,no aplica: sin semanas estables (la progresión aún no ha llegado a la meta)
 persona mayor (70),baja,V2,True,equilibrio y fuerza ≥ 3 días todas las semanas
 persona mayor (70),baja,V5,True,subida máx. +10.0%; descarga cada 4.ª semana: True
 persona mayor (70),baja,V6,True,sin Z4+ ni RIR < 3
 persona mayor (70),baja,V7,True,día de descanso: True; pierna en días seguidos: False
-persona mayor (70),baja,V9,True,sin límite de tiempo: máx. 1.15 (8 semanas); limitadas por tiempo: máx. 1.15 (10 semanas)
+persona mayor (70),baja,V9,True,sin límite de tiempo: máx. 1.15 (7 semanas); limitadas por tiempo: máx. 0.87 (11 semanas)
 persona mayor (70),baja,V10,True,dos ejecuciones idénticas
 gimnasio,alta,V1,True,15 semanas estables; mín. 150 min equivalentes
 gimnasio,alta,V3,True,cada patrón principal ≥ 2 veces/semana; series = dosis o aviso
@@ -59,59 +59,59 @@ gimnasio,baja,V7,True,día de descanso: True; pierna en días seguidos: False
 gimnasio,baja,V8,True,sin carrera el día de pierna
 gimnasio,baja,V9,True,sin límite de tiempo: máx. 1.58 (18 semanas)
 gimnasio,baja,V10,True,dos ejecuciones idénticas
-corredor,alta,V1,True,18 semanas estables; mín. 183 min equivalentes
+corredor,alta,V1,True,18 semanas estables; mín. 156 min equivalentes
 corredor,alta,V5,True,subida máx. +0.0%; descarga cada 4.ª semana: True
 corredor,alta,V7,True,día de descanso: True; pierna en días seguidos: False
-corredor,alta,V9,False,sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 2.03 (18 semanas)
+corredor,alta,V9,True,sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 1.98 (18 semanas)
 corredor,alta,V10,True,dos ejecuciones idénticas
-corredor,media,V1,True,18 semanas estables; mín. 184 min equivalentes
+corredor,media,V1,True,18 semanas estables; mín. 156 min equivalentes
 corredor,media,V5,True,subida máx. +0.0%; descarga cada 4.ª semana: True
 corredor,media,V7,True,día de descanso: True; pierna en días seguidos: False
-corredor,media,V9,False,sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 2.03 (18 semanas)
+corredor,media,V9,True,sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 1.98 (18 semanas)
 corredor,media,V10,True,dos ejecuciones idénticas
-corredor,baja,V1,True,3 semanas estables; mín. 196 min equivalentes
+corredor,baja,V1,True,3 semanas estables; mín. 156 min equivalentes
 corredor,baja,V5,True,subida máx. +10.0%; descarga cada 4.ª semana: True
 corredor,baja,V7,True,día de descanso: True; pierna en días seguidos: False
-corredor,baja,V9,False,sin límite de tiempo: máx. 2.21 (10 semanas); limitadas por tiempo: máx. 2.03 (8 semanas)
+corredor,baja,V9,True,sin límite de tiempo: máx. 1.99 (9 semanas); limitadas por tiempo: máx. 2.00 (9 semanas)
 corredor,baja,V10,True,dos ejecuciones idénticas
-pérdida de grasa,alta,V1,True,15 semanas estables; mín. 173 min equivalentes
+pérdida de grasa,alta,V1,True,15 semanas estables; mín. 158 min equivalentes
 pérdida de grasa,alta,V4,True,semanas estables: 15; con aviso: 15
 pérdida de grasa,alta,V5,True,subida máx. +10.0%; descarga cada 4.ª semana: True
 pérdida de grasa,alta,V7,True,día de descanso: True; pierna en días seguidos: False
-pérdida de grasa,alta,V9,False,sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 2.40 (18 semanas)
+pérdida de grasa,alta,V9,True,sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 1.58 (18 semanas)
 pérdida de grasa,alta,V10,True,dos ejecuciones idénticas
 pérdida de grasa,media,V1,,no aplica: sin semanas estables (la progresión aún no ha llegado a la meta)
 pérdida de grasa,media,V4,True,semanas estables: 0; con aviso: 0
 pérdida de grasa,media,V5,True,subida máx. +10.0%; descarga cada 4.ª semana: True
 pérdida de grasa,media,V7,True,día de descanso: True; pierna en días seguidos: False
-pérdida de grasa,media,V9,False,sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 2.42 (18 semanas)
+pérdida de grasa,media,V9,True,sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 1.58 (18 semanas)
 pérdida de grasa,media,V10,True,dos ejecuciones idénticas
 pérdida de grasa,baja,V1,,no aplica: sin semanas estables (la progresión aún no ha llegado a la meta)
 pérdida de grasa,baja,V4,True,semanas estables: 0; con aviso: 0
 pérdida de grasa,baja,V5,True,subida máx. +10.0%; descarga cada 4.ª semana: True
 pérdida de grasa,baja,V7,True,día de descanso: True; pierna en días seguidos: False
-pérdida de grasa,baja,V9,False,sin límite de tiempo: máx. 2.40 (13 semanas); limitadas por tiempo: máx. 2.40 (5 semanas)
+pérdida de grasa,baja,V9,True,sin límite de tiempo: máx. 1.98 (13 semanas); limitadas por tiempo: máx. 1.58 (5 semanas)
 pérdida de grasa,baja,V10,True,dos ejecuciones idénticas
 cribado con tope,alta,V1,True,18 semanas estables; mín. 156 min equivalentes
 cribado con tope,alta,V4,True,semanas estables: 18; con aviso: 18
 cribado con tope,alta,V5,True,subida máx. +0.0%; descarga cada 4.ª semana: True
 cribado con tope,alta,V6,True,sin Z4+ ni RIR < 3
 cribado con tope,alta,V7,True,día de descanso: True; pierna en días seguidos: False
-cribado con tope,alta,V9,False,sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 2.21 (18 semanas)
+cribado con tope,alta,V9,True,sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 1.99 (18 semanas)
 cribado con tope,alta,V10,True,dos ejecuciones idénticas
 cribado con tope,media,V1,True,18 semanas estables; mín. 156 min equivalentes
 cribado con tope,media,V4,True,semanas estables: 18; con aviso: 18
 cribado con tope,media,V5,True,subida máx. +0.0%; descarga cada 4.ª semana: True
 cribado con tope,media,V6,True,sin Z4+ ni RIR < 3
 cribado con tope,media,V7,True,día de descanso: True; pierna en días seguidos: False
-cribado con tope,media,V9,False,sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 2.21 (18 semanas)
+cribado con tope,media,V9,True,sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 1.99 (18 semanas)
 cribado con tope,media,V10,True,dos ejecuciones idénticas
 cribado con tope,baja,V1,True,3 semanas estables; mín. 156 min equivalentes
 cribado con tope,baja,V4,True,semanas estables: 3; con aviso: 3
 cribado con tope,baja,V5,True,subida máx. +10.0%; descarga cada 4.ª semana: True
 cribado con tope,baja,V6,True,sin Z4+ ni RIR < 3
 cribado con tope,baja,V7,True,día de descanso: True; pierna en días seguidos: False
-cribado con tope,baja,V9,False,sin límite de tiempo: máx. 2.34 (10 semanas); limitadas por tiempo: máx. 2.22 (8 semanas)
+cribado con tope,baja,V9,False,sin límite de tiempo: máx. 2.34 (10 semanas); limitadas por tiempo: máx. 1.99 (8 semanas)
 cribado con tope,baja,V10,True,dos ejecuciones idénticas
 principiante sedentario,baja vs alta,V11,True,último bloque: 60 min (baja) frente a 300 (alta)
 persona mayor (70),baja vs alta,V11,True,último bloque: 60 min (baja) frente a 300 (alta)

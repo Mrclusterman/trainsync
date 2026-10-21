@@ -157,3 +157,20 @@ def test_endpoint_without_screening_uses_no_cap():
     r = TestClient(app).post("/health-plan", json={"goal": "fitness", "days": {"MON": 60, "WED": 60, "SAT": 60},
                                                    "level": "advanced", "start": MONDAY.isoformat()})
     assert r.status_code == 200 and r.json()["screening"] is None and r.json()["days"]
+
+
+def test_six_day_weeks_keep_the_floor_and_vary_the_load():
+    p = profile(goal="fat_loss", level="intermediate", strength="gym", cardio=["walking", "cycling"],
+                days={d: 60 for d in ("MON", "TUE", "WED", "THU", "FRI", "SAT")}, lthr=165, max_hr=185)
+    week = hp.week_plan(p, MONDAY, [0.95], 1)
+    strength = {d["weekday"]: s for d in week["days"] for s in d["sessions"] if s["sport"] == "strength"}
+    cardio = {d["weekday"]: s for d in week["days"] for s in d["sessions"] if s["sport"] != "strength"}
+    assert week["equivalent_min"] >= hp.FLOOR_AEROBIC and hp.monotony(strength, cardio) < hp.MAX_MONOTONY
+    rested = [d for d in week["days"] if d.get("note") == hp.REST_NOTE]
+    assert all(not d["sessions"] for d in rested)  # el descanso extra, si lo hay, es un día sin sesiones
+
+
+def test_monotony():
+    assert hp.monotony({}, {}) == 0.0
+    flat = {d: {"tss": 50} for d in WEEKDAYS[:6]}
+    assert hp.monotony(flat, {}) > 2  # seis días iguales y uno de descanso

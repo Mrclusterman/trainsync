@@ -70,7 +70,11 @@ Entrada: días disponibles, minutos por sesión, dosis de la semana. Algoritmo d
 4. **Orden en días combinados:** primero lo prioritario del objetivo (`strength` → fuerza antes; `fitness`/`fat_loss` → la
    sesión aeróbica de calidad antes). En `strength`, sin carrera intensa el mismo día que pierna y, si hay deportes
    alternativos, preferir bici o natación. [Schumann 2022, Lundberg 2022 (EA §3); Inferencia en el detalle]
-5. **Duración:** cada sesión cabe en los minutos disponibles; si la dosis no cabe en los días dados, el plan lo dice
+5. **Elección de la semana:** se prueban semanas candidatas y se elige la primera que cumple el suelo aeróbico de la OMS
+   con monotonía de Foster < 2. Orden de preferencia: la fuerza ocupa todo su tiempo antes que menos (no se quita fuerza
+   sin necesidad), y para cada caso, la semana tal cual antes que con un día libre convertido en descanso (con una nota
+   que lo explica). Si ninguna cumple ambas cosas, prima el suelo de la OMS. [Foster 1998; orden: Inferencia]
+6. **Duración:** cada sesión cabe en los minutos disponibles; si la dosis no cabe en los días dados, el plan lo dice
    ("con estos días llegas a X de Y min") en vez de alargar sesiones sin límite. [Inferencia]
 
 ## 6. Sesión de fuerza

@@ -2,10 +2,12 @@
 
 **Memoria del proyecto**
 **Autor:** Gabriel Miralles Álvarez
-**Tutor/a:** [completar]
-**Universidad / Escuela:** [completar]
-**Fecha:** [completar] (versión de trabajo: 21 de octubre de 2026)
+**Fecha:** 21 de octubre de 2026
 **Código y documentación:** repositorio `trainsync` (licencia AGPL-3.0-only)
+
+> TrainSync es un proyecto de aplicación, no un trabajo académico para presentar. Esta memoria sigue la estructura y las
+> exigencias de un trabajo académico (estado del arte con fuentes verificadas, diseño trazable, validación reproducible y límites
+> declarados) para que las decisiones del producto sean revisables con el mismo rigor.
 
 ---
 
@@ -25,11 +27,11 @@ respalda. Se implementó un backend en Python (FastAPI) con cuentas de usuario, 
 y cifrado de credenciales, una aplicación web (Next.js) y la integración con intervals.icu para enviar las sesiones al
 reloj como entrenamientos estructurados.
 
-La validación combina 173 pruebas automáticas, una simulación de seis perfiles con tres niveles de adherencia durante 24
-semanas frente a once criterios derivados de la evidencia, y un caso real. Cumplen 101 de las 110 comprobaciones
-aplicables; la simulación descubrió cinco defectos del motor que los tests unitarios no detectaban y que se corrigieron, y
-deja un resultado negativo documentado: la monotonía de la carga supera el umbral de Foster en semanas de seis días
-limitadas por el tiempo disponible. La eficacia en personas queda como trabajo futuro.
+La validación combina 175 pruebas automáticas, una simulación de seis perfiles con tres niveles de adherencia durante 24
+semanas frente a once criterios derivados de la evidencia, y un caso real. Cumplen 109 de las 110 comprobaciones
+aplicables; la simulación descubrió seis defectos del motor que los tests unitarios no detectaban y que se corrigieron. La
+comprobación que no se cumple es un conflicto estructural documentado entre el suelo de la OMS y la variedad de la carga en
+un caso límite. La eficacia en personas queda como trabajo futuro.
 
 **Palabras clave:** planificación del entrenamiento, prescripción del ejercicio, salud, sistemas deterministas,
 explicabilidad, aplicaciones de salud, adherencia.
@@ -45,10 +47,10 @@ the World Health Organization 2020 guidelines (150 minutes of moderate-equivalen
 on two or more days per week) and the 2026 ACSM resistance-training position stand, and every rule is tagged with its level
 of evidence. The system comprises a Python/FastAPI backend with user accounts, explicit consent for health data and
 encrypted credentials, a Next.js web app, and an intervals.icu integration that sends sessions to the user's watch as
-structured workouts. Validation combines 173 automated tests, a 24-week simulation of six profiles at three adherence levels
-against eleven evidence-based criteria, and a real-account case: 101 of 110 applicable checks pass. The simulation exposed
-five engine defects that unit tests had missed, all fixed, and leaves one documented negative result: weekly load monotony
-exceeds Foster's threshold in six-day, time-constrained weeks. Efficacy in people is left as future work.
+structured workouts. Validation combines 175 automated tests, a 24-week simulation of six profiles at three adherence levels
+against eleven evidence-based criteria, and a real-account case: 109 of 110 applicable checks pass. The simulation exposed
+six engine defects that unit tests had missed, all fixed; the remaining failure is a documented structural conflict between
+the WHO floor and load variety in an edge case. Efficacy in people is left as future work.
 
 **Keywords:** training planning, exercise prescription, health, deterministic systems, explainability, health apps,
 adherence.
@@ -257,7 +259,9 @@ lugar de alargar las sesiones.
 
 **Fuerza.** Patrones de movimiento (sentadilla, bisagra de cadera, empujes, tracciones, zancada, core) con versión de
 gimnasio y de peso corporal; carga regulada por RIR; progresión doble; ondulación diaria con tres días (pesado, ligero,
-medio) para variar la carga sin cambiar el total; el core, por tiempo.
+medio) para variar la carga sin cambiar el total; el core, por tiempo. Entre las semanas posibles, el motor elige la primera que cumple el
+suelo de la OMS con monotonía de Foster menor que 2, cediendo antes tiempo de fuerza que días y, si hace falta, convirtiendo
+un día libre en descanso.
 **Resistencia.** Un catálogo de 67 sesiones para carrera, ciclismo, natación y caminar, con intensidad polarizada para
 usuarios con experiencia y solo moderada para principiantes.
 
@@ -297,7 +301,7 @@ Components y Server Actions): el navegador nunca ve la URL del backend ni el tok
 | Componente | Tamaño aproximado |
 |---|---|
 | Backend (sin tests) | 2.340 líneas de Python |
-| Tests | 840 líneas, 173 pruebas |
+| Tests | 860 líneas, 175 pruebas |
 | Web | 1.250 líneas de TypeScript/TSX |
 
 ### 6.2 Seguridad
@@ -320,14 +324,14 @@ El método y los resultados completos están en `docs/proyecto/VALIDACION.md` y 
 
 ### 7.1 Método
 
-1. **Verificación:** 173 pruebas automáticas.
+1. **Verificación:** 175 pruebas automáticas.
 2. **Simulación:** 6 perfiles (principiante sedentario, persona de 70 años, gimnasio, corredor avanzado, pérdida de grasa y
    pérdida de grasa con tope de intensidad) × 3 adherencias (95, 75 y 40 %) × 24 semanas, frente a once criterios.
 3. **Caso real:** el motor con la fisiología de la cuenta de intervals.icu del autor.
 
 ### 7.2 Resultados
 
-**101 de 110 comprobaciones aplicables cumplen**; 10 no aplican, bien porque con adherencia media o baja la progresión aún no
+**109 de 110 comprobaciones aplicables cumplen**; 10 no aplican, bien porque con adherencia media o baja la progresión aún no
 ha alcanzado la meta, bien porque el perfil no tiene tiempo físico para 150 minutos (estimación independiente del motor).
 
 | Criterio | Resultado |
@@ -340,17 +344,18 @@ ha alcanzado la meta, bien porque el perfil no tiene tiempo físico para 150 min
 | V6 Tope de intensidad | Cumple |
 | V7 Descanso semanal; pierna nunca en días seguidos | Cumple |
 | V8 Sin carrera el día de pierna (fuerza y músculo) | Cumple |
-| V9 Monotonía de Foster < 2 | No cumple en los 3 perfiles de 6 días (2,03–2,42) |
+| V9 Monotonía de Foster < 2 | Cumple en 17 de 18 casos; el restante es un conflicto estructural (§8.2) |
 | V10 Determinismo | Cumple |
 | V11 Menos volumen con adherencia baja | Cumple |
 | Caso real | Cumple: LTHR 174, FC máx. 192 → techo fácil 144 ppm = 75 %; objetivos entre 50 y 75 % |
 
 ### 7.3 Defectos encontrados
 
-La primera simulación dio 106 de 120 y destapó cinco defectos que los tests unitarios no veían: subidas semanales de hasta
+La primera simulación dio 106 de 120 y destapó seis defectos que los tests unitarios no veían: subidas semanales de hasta
 +11,6 % por redondeo; volumen sin mínimo con adherencia baja; sesiones de calidad que no aparecían cuando el deporte no tenía
 ese tipo; sesiones de fuerza que, al subir las series, expulsaban la actividad aeróbica (semanas estables de solo 35 minutos
-equivalentes); y un ajuste de día suave que no acortaba. También se corrigieron dos errores del propio protocolo, que dejaban
+equivalentes); semanas de seis días con la carga diaria demasiado uniforme (monotonía de hasta 2,42); y un ajuste de día suave
+que no acortaba. También se corrigieron dos errores del propio protocolo, que dejaban
 dos criterios sin comprobar casi nada. Que la validación encontrara defectos reales es el principal argumento de su valor.
 
 ## 8. Discusión
@@ -362,13 +367,13 @@ que falta), pero con fórmulas publicadas y citadas, y añade lo que Garmin no o
 salud sin fecha que se adaptan a la adherencia y gratuidad. La comparación es de diseño, no de resultados: no existe una base
 común para medir qué plan funciona mejor en personas.
 
-### 8.2 El resultado negativo: monotonía
+### 8.2 Monotonía: un conflicto que el motor resuelve con una prioridad declarada
 
-En semanas de seis días limitadas por el tiempo disponible, la monotonía de Foster supera 2 aunque el motor alterne días duros
-y suaves y ondule la fuerza: variar más la carga exigiría dejar días a medio usar y alejarse de los minutos de la OMS, y el
-motor prioriza la dosis. El umbral procede del seguimiento de deportistas con cargas altas (Foster, 1998), donde la monotonía
-alta se asocia a enfermedad junto con carga elevada; su relevancia en actividad moderada para la salud es menor, pero el
-resultado se declara.
+Las semanas de seis días salían con la carga diaria demasiado uniforme. Hacer que el motor elija entre semanas candidatas
+—cediendo tiempo de fuerza y, si hace falta, añadiendo un día de descanso— lo resolvió en 17 de 18 casos sin perder el suelo
+de la OMS. En el caso restante (tope de intensidad moderada y adherencia baja, con la dosis pegada al suelo) se comprobó que
+ninguna semana posible cumple ambas cosas, y el motor prioriza el suelo: el umbral de 2 viene del seguimiento de deportistas
+con cargas altas (Foster, 1998) y este caso es de carga baja. El conflicto y la prioridad quedan declarados.
 
 ### 8.3 Decisiones con coste
 
@@ -388,8 +393,8 @@ usuario siga la prueba del habla; y, sobre todo, ausencia de validación de efic
 Se ha construido un motor de planificación determinista y explicable que traduce las guías de la OMS y del ACSM a reglas
 cuantificables, para objetivos de salud sin fecha y para eventos, integrado en una aplicación gratuita y conforme a los
 requisitos de privacidad del RGPD (OE1–OE3). Se definieron once criterios medibles derivados de la evidencia y una validación
-reproducible que los comprueba (OE4), y cuyo resultado —101 de 110 comprobaciones aplicables, cinco defectos encontrados y
-corregidos, y un resultado negativo explicado— muestra que la validación por simulación detecta errores que las pruebas
+reproducible que los comprueba (OE4), y cuyo resultado —109 de 110 comprobaciones aplicables, seis defectos encontrados y
+corregidos, y un conflicto estructural explicado— muestra que la validación por simulación detecta errores que las pruebas
 unitarias no ven. Los límites del modelo y de su validación quedan documentados (OE5).
 
 La aportación principal no es un algoritmo nuevo, sino un método: cada regla citada y etiquetada, cada decisión visible para
@@ -399,11 +404,9 @@ el usuario y cada afirmación de la memoria reproducible desde el repositorio.
 
 1. **Validación de eficacia:** estudio con participantes, aprobado por un comité de ética, que mida adherencia y cambios en
    la condición física frente a un grupo de control.
-2. **Monotonía:** con seis o más días disponibles, convertir uno en recuperación activa cuando la monotonía prevista supere 2,
-   y medir el efecto sobre la dosis.
-3. **Aplicación móvil** con Apple Salud y Health Connect, e integración directa con Polar y Strava.
-4. **Calibración de las inferencias** con datos de uso reales (punto de partida, progresión, umbrales de adherencia).
-5. **Migraciones de base de datos** y despliegue con PostgreSQL antes de abrir la aplicación al público.
+2. **Aplicación móvil** con Apple Salud y Health Connect, e integración directa con Polar y Strava.
+3. **Calibración de las inferencias** con datos de uso reales (punto de partida, progresión, umbrales de adherencia).
+4. **Migraciones de base de datos** y despliegue con PostgreSQL antes de abrir la aplicación al público.
 
 ## 11. Bibliografía
 
@@ -440,7 +443,7 @@ el usuario y cada afirmación de la memoria reproducible desde el repositorio.
 
 ## 12. Anexos
 
-- **A. Reproducibilidad.** `cd backend && pip install -e '.[dev]' && pytest` (173 pruebas) y `python -m validation.run`
+- **A. Reproducibilidad.** `cd backend && pip install -e '.[dev]' && pytest` (175 pruebas) y `python -m validation.run`
   (simulación; añade `--real` con las credenciales de intervals.icu en el entorno). Resultados en
   `docs/proyecto/validacion/resultados.md` y `resultados.csv`.
 - **B. Especificaciones.** `docs/proyecto/DISENO.md` (objetivos sin fecha, criterios V1–V11), `docs/MOTOR_ENTRENAMIENTO.md`
