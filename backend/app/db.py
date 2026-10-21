@@ -56,6 +56,15 @@ class SessionLog(Base):
     rpe: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
 
+class WeekChange(Base):
+    """Cambios de disponibilidad de una semana concreta (mover una sesión, "hoy no puedo"): minutos por día."""
+    __tablename__ = "week_changes"
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    week_start: Mapped[date] = mapped_column(Date, primary_key=True)
+    changes: Mapped[dict] = mapped_column(JSON)
+    since: Mapped[date] = mapped_column(Date)  # día del último cambio: los anteriores no se recalculan
+
+
 class IntervalsLink(Base):
     """Cuenta de intervals.icu vinculada; la clave va cifrada (app/crypto.py)."""
     __tablename__ = "intervals_links"

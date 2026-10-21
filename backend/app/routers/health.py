@@ -25,14 +25,16 @@ def profile_from(req: schemas.HealthPlanRequest, physio: dict | None = None) -> 
 
 
 def build_plan(req: schemas.HealthPlanRequest, monday: date, adherence: list[float], week_in_block: int,
-               readiness: schemas.Readiness | None, physio: dict | None = None) -> dict:
+               readiness: schemas.Readiness | None, physio: dict | None = None,
+               changes: dict[str, int] | None = None, since: date | None = None) -> dict:
     p, check = profile_from(req, physio)
     if check and check.clearance == "stop":  # síntomas estando activo: el algoritmo del ACSM manda parar y consultar
         return {"goal": req.goal, "week_in_block": week_in_block, "dose": {"aerobic": 0, "strength_days": 0, "sets": 0},
                 "equivalent_min": 0, "warnings": [check.message], "screening": check.__dict__,
                 "days": [{"date": (monday + timedelta(d)).isoformat(), "weekday": hp.WEEKDAYS[d], "sessions": []}
                          for d in range(7)]}
-    plan = hp.week_plan(p, monday, adherence, week_in_block) | {"screening": check.__dict__ if check else None}
+    plan = hp.week_with_changes(p, monday, adherence, week_in_block, changes, since)
+    plan |= {"screening": check.__dict__ if check else None}
     if check and check.clearance != "none":
         plan["warnings"].insert(0, check.message)
     if readiness:

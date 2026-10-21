@@ -50,6 +50,7 @@ Swagger UI: http://localhost:8000/docs
 | `POST /health-plan` | Plan semanal sin fecha para ponerse en forma, fuerza y músculo o perder grasa: gimnasio o peso corporal, solo o con caminar, correr, bici o natación ([`docs/proyecto/DISENO.md`](docs/proyecto/DISENO.md)). El perfil va en la petición hasta que haya usuarios (Fase 1) |
 | `POST /auth/register`, `POST /auth/login` | Cuenta con consentimiento explícito y separado para datos de salud y edad mínima de 14 años |
 | `PUT /me/profile`, `GET /me/plan` | Perfil guardado (objetivo, días, actividades, cribado del ACSM) y plan de la semana; la adherencia de cada bloque sale de las sesiones registradas |
+| `POST /me/week/move`, `POST /me/week/day`, `DELETE /me/week` | Mover una sesión a otro día, "no puedo este día" o "puedo entrenar": la semana se recalcula desde hoy; los días pasados no cambian |
 | `POST /me/sessions`, `POST /me/readiness` | Marcar una sesión como hecha; estado del día sin reloj |
 | `PUT /me/intervals`, `POST /me/plan/today/send` | Vincular intervals.icu una vez (clave cifrada con AES-256-GCM) y enviar al reloj las sesiones de hoy |
 | `GET /me/export`, `DELETE /me` | Exportar todos tus datos (RGPD art. 20) y borrar la cuenta (art. 17) |

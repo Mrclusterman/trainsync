@@ -3,7 +3,7 @@
 Determinista: mismas entradas, mismo plan. Cada regla cita su apartado del diseño (§n), que a su vez cita su fuente en
 docs/proyecto/ESTADO_DEL_ARTE.md. Las sesiones de resistencia salen del catálogo del motor (training_engine.build_session).
 """
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, timedelta
 from itertools import combinations
 from math import ceil, floor
@@ -378,16 +378,42 @@ def position(block_start: date, monday: date) -> tuple[int, int]:
     return weeks // 4, weeks % 4
 
 
-def adherence_history(p: HealthProfile, block_start: date, done: dict[str, int], blocks: int) -> list[float]:
+def week_with_changes(p: HealthProfile, start: date, adherence: list[float], week_in_block: int,
+                      changes: dict[str, int] | None = None, since: date | None = None) -> dict:
+    """Semana con cambios de disponibilidad (mejora 3 de replica/fixes.md): `changes` = minutos por día solo para esta
+    semana (0 = ese día no puede). Se recalcula la semana con las mismas reglas; los días anteriores a `since` (cuando se
+    hizo el cambio) se quedan como estaban, porque ya pasaron.
+
+    shortcut: los días pasados siguen contando como disponibles al recalcular, así el reparto del resto no se dispara; y si
+    hay varios cambios en una semana, los días entre el primero y el último usan el plan original. Guardar el historial de
+    cambios si hace falta más precisión.
+    """
+    base = week_plan(p, start, adherence, week_in_block)
+    if not changes:
+        return base
+    days = {d: m for d, m in (p.days | changes).items() if m}
+    changed = week_plan(replace(p, days=days), start, adherence, week_in_block)
+    cutoff = (since or start).isoformat()
+    out = [b if b["date"] < cutoff else c for b, c in zip(base["days"], changed["days"])]
+    eq = sum(s.get("equivalent_min", 0) for d in out for s in d["sessions"])
+    return changed | {"days": out, "equivalent_min": round(eq), "changed": True}
+
+
+def adherence_history(p: HealthProfile, block_start: date, done: dict[str, int], blocks: int,
+                      changes: dict[str, tuple[dict[str, int], date]] | None = None) -> list[float]:
     """Adherencia de cada bloque terminado: sesiones hechas / planificadas (como mucho las planificadas cada día).
 
-    Se reconstruye cada bloque con el plan que tocaba entonces: el plan es determinista (§1).
+    Se reconstruye cada bloque con el plan que tocaba entonces, cambios de la semana incluidos (`changes`: lunes en ISO →
+    (cambios, fecha del cambio)): el plan es determinista (§1).
     """
+    changes = changes or {}
     history: list[float] = []
     for b in range(blocks):
         planned = completed = 0
         for w in range(4):
-            week = week_plan(p, block_start + timedelta(weeks=4 * b + w), history, w)
+            monday = block_start + timedelta(weeks=4 * b + w)
+            week_changes, since = changes.get(monday.isoformat(), (None, None))
+            week = week_with_changes(p, monday, history, w, week_changes, since)
             for day in week["days"]:
                 n = len(day["sessions"])
                 planned += n

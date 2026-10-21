@@ -87,10 +87,13 @@ def user_plan(user: db.User, session: Session, monday: date, ephys: engine.Profi
         done[log.date.isoformat()] = done.get(log.date.isoformat(), 0) + 1
         done_sports.setdefault(log.date.isoformat(), []).append(log.sport)
     physio = {"lthr": ephys.lthr, "max_hr": ephys.max_hr, "css": ephys.css} if ephys else None
-    adherence = hp.adherence_history(profile_from(req, physio)[0], row.block_start, done, block)
+    changes = {c.week_start.isoformat(): (c.changes, c.since) for c in
+               session.scalars(select(db.WeekChange).where(db.WeekChange.user_id == user.id))}
+    adherence = hp.adherence_history(profile_from(req, physio)[0], row.block_start, done, block, changes)
     ready = session.get(db.ReadinessLog, (user.id, date.today()))
     readiness = schemas.Readiness(sleep=ready.sleep, energy=ready.energy, soreness=ready.soreness) if ready else None
-    plan = build_plan(req, monday, adherence, week, readiness, physio) | {"block": block, "adherence": adherence}
+    plan = build_plan(req, monday, adherence, week, readiness, physio, *changes.get(monday.isoformat(), (None, None)))
+    plan |= {"block": block, "adherence": adherence}
     for day in plan["days"]:
         day["done"] = done_sports.get(day["date"], [])
     return plan
@@ -103,6 +106,73 @@ def get_plan(start: date | None = None, user: db.User = Depends(auth.current_use
     monday = (start or today) - timedelta((start or today).weekday())
     client = linked_client(user, session)
     return user_plan(user, session, monday, physiology(client) if client else None)
+
+
+def check_this_week(day: date) -> date:
+    """Solo se pueden cambiar los días que quedan de la semana en curso. Devuelve su lunes."""
+    today = date.today()
+    monday = today - timedelta(today.weekday())
+    if not today <= day <= monday + timedelta(6):
+        raise HTTPException(422, "Solo se pueden cambiar los días que quedan de esta semana")
+    return monday
+
+
+def this_week_change(user: db.User, session: Session, day: date) -> db.WeekChange:
+    monday = check_this_week(day)
+    today = date.today()
+    row = session.get(db.WeekChange, (user.id, monday))
+    if row is None:
+        row = db.WeekChange(user_id=user.id, week_start=monday, changes={}, since=today)
+        session.add(row)
+    return row
+
+
+def available_minutes(user: db.User, session: Session, row: db.WeekChange) -> dict[str, int]:
+    profile = session.get(db.HealthProfileRow, user.id)
+    if profile is None:
+        raise HTTPException(404, "Primero completa tu perfil (PUT /me/profile)")
+    return profile.plan["days"] | row.changes
+
+
+@router.post("/me/week/day", status_code=204)
+def change_day(req: schemas.DayChangeIn, user: db.User = Depends(auth.current_user),
+               session: Session = Depends(db.get_session)):
+    """"Hoy no puedo" (minutes = 0) o "puedo entrenar este día": la semana se recalcula desde hoy."""
+    row = this_week_change(user, session, req.date)
+    available_minutes(user, session, row)
+    row.changes = row.changes | {hp.WEEKDAYS[req.date.weekday()]: req.minutes}
+    row.since = date.today()
+    session.commit()
+    return Response(status_code=204)
+
+
+@router.post("/me/week/move", status_code=204)
+def move_session(req: schemas.MoveIn, user: db.User = Depends(auth.current_user),
+                 session: Session = Depends(db.get_session)):
+    """Mover el entrenamiento de un día a otro de esta semana: el día de origen queda libre y el de destino recibe sus
+    minutos (o los suyos, si eran más); el resto de la semana se recalcula."""
+    if req.from_date == req.to_date:
+        raise HTTPException(422, "Elige otro día")
+    check_this_week(req.to_date)
+    row = this_week_change(user, session, req.from_date)
+    minutes = available_minutes(user, session, row)
+    src, dst = hp.WEEKDAYS[req.from_date.weekday()], hp.WEEKDAYS[req.to_date.weekday()]
+    if not minutes.get(src):
+        raise HTTPException(422, "Ese día no tiene entrenamiento que mover")
+    row.changes = row.changes | {dst: max(minutes.get(dst, 0), minutes[src]), src: 0}
+    row.since = date.today()
+    session.commit()
+    return Response(status_code=204)
+
+
+@router.delete("/me/week", status_code=204)
+def reset_week(user: db.User = Depends(auth.current_user), session: Session = Depends(db.get_session)):
+    """Vuelve al plan original de esta semana (los días ya pasados no cambian)."""
+    today = date.today()
+    session.execute(delete(db.WeekChange).where(db.WeekChange.user_id == user.id,
+                                                db.WeekChange.week_start == today - timedelta(today.weekday())))
+    session.commit()
+    return Response(status_code=204)
 
 
 @router.put("/me/intervals", status_code=204)
@@ -185,7 +255,7 @@ def export(user: db.User = Depends(auth.current_user), session: Session = Depend
 @router.delete("/me", status_code=204)
 def delete_account(user: db.User = Depends(auth.current_user), session: Session = Depends(db.get_session)):
     """Borrado inmediato de la cuenta y de todos sus datos (RGPD art. 17, CUMPLIMIENTO #20)."""
-    for model in (db.SessionLog, db.ReadinessLog, db.HealthProfileRow, db.IntervalsLink):
+    for model in (db.SessionLog, db.ReadinessLog, db.HealthProfileRow, db.IntervalsLink, db.WeekChange):
         session.execute(delete(model).where(model.user_id == user.id))
     session.delete(session.get(db.User, user.id))
     session.commit()

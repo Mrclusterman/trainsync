@@ -127,3 +127,25 @@ def test_link_intervals_and_send_today(monkeypatch):
     assert all(e["external_id"].startswith(f"trainsync-{date.today().isoformat()}-") for e in posted)
     assert {e["type"] for e in posted} <= {"WeightTraining", "Walk", "Ride"}
     assert "clave-de-pruebas" not in json.dumps(api.get("/me/export", headers=h).json())
+
+
+def test_move_and_change_days_this_week():
+    h = auth("semana@x.es")
+    every_day = {d: 45 for d in ("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN")}
+    api.put("/me/profile", json=PROFILE | {"days": every_day}, headers=h)
+    today = date.today()
+    sunday = today + timedelta(6 - today.weekday())
+    assert api.post("/me/week/day", json={"date": (today - timedelta(1)).isoformat(), "minutes": 0},
+                    headers=h).status_code == 422  # pasado
+    assert api.post("/me/week/day", json={"date": (sunday + timedelta(1)).isoformat(), "minutes": 0},
+                    headers=h).status_code == 422  # otra semana
+    assert api.post("/me/week/day", json={"date": today.isoformat(), "minutes": 0}, headers=h).status_code == 204
+    plan = api.get("/me/plan", headers=h).json()
+    assert plan["changed"] and not next(d for d in plan["days"] if d["date"] == today.isoformat())["sessions"]
+    if today != sunday:
+        r = api.post("/me/week/move", json={"from_date": sunday.isoformat(), "to_date": today.isoformat()}, headers=h)
+        assert r.status_code == 204
+        assert api.post("/me/week/move", json={"from_date": sunday.isoformat(), "to_date": today.isoformat()},
+                        headers=h).status_code == 422  # el domingo ya quedó libre
+    assert api.delete("/me/week", headers=h).status_code == 204
+    assert api.get("/me/plan", headers=h).json()["changed"] is False

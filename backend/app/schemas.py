@@ -240,6 +240,17 @@ class SessionLogIn(BaseModel):
 class UserPlan(HealthPlan):
     block: int
     adherence: list[float]
+    changed: bool = False
+
+
+class DayChangeIn(BaseModel):
+    date: date
+    minutes: int = Field(ge=0, le=240, description="0 = ese día no puedes")
+
+
+class MoveIn(BaseModel):
+    from_date: date
+    to_date: date
 
 
 class IntervalsLinkIn(BaseModel):

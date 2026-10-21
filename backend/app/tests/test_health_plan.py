@@ -1,5 +1,5 @@
 """Planes de salud sin fecha (docs/proyecto/DISENO.md). La validación completa con simulación es la fase D."""
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -174,3 +174,27 @@ def test_monotony():
     assert hp.monotony({}, {}) == 0.0
     flat = {d: {"tss": 50} for d in WEEKDAYS[:6]}
     assert hp.monotony(flat, {}) > 2  # seis días iguales y uno de descanso
+
+
+# ---- mejora 3: mover sesiones y cambiar días de la semana
+
+def test_changes_recompute_from_the_change_day_and_keep_past_days():
+    p = profile(level="intermediate")  # lun, mié, vie, sáb
+    base = hp.week_plan(p, MONDAY)
+    wednesday = MONDAY + timedelta(2)
+    moved = hp.week_with_changes(p, MONDAY, [], 0, {"WED": 0, "THU": 60}, since=wednesday)
+    days = {d["weekday"]: d for d in moved["days"]}
+    assert moved["changed"] and not days["WED"]["sessions"] and days["THU"]["sessions"]
+    assert moved["days"][:2] == base["days"][:2]  # lunes y martes ya pasaron: no cambian
+    assert hp.week_with_changes(p, MONDAY, [], 0, None) == base
+
+
+def test_adherence_counts_the_moved_plan():
+    p = profile(level="intermediate")
+    start = date(2026, 1, 5)
+    changes = {start.isoformat(): ({"MON": 0, "TUE": 60}, start)}
+    planned = hp.week_with_changes(p, start, [], 0, *changes[start.isoformat()])
+    done = {d["date"]: len(d["sessions"]) for d in planned["days"]}  # hizo todo lo que tocaba esa semana
+    with_changes = hp.adherence_history(p, start, done, 1, changes)
+    without = hp.adherence_history(p, start, done, 1)
+    assert with_changes[0] > without[0]  # sin tener en cuenta el cambio, el martes contaría como sesión de más

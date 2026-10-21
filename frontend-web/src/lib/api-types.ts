@@ -160,6 +160,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/week/day": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change Day
+         * @description "Hoy no puedo" (minutes = 0) o "puedo entrenar este día": la semana se recalcula desde hoy.
+         */
+        post: operations["change_day_me_week_day_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/week/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Move Session
+         * @description Mover el entrenamiento de un día a otro de esta semana: el día de origen queda libre y el de destino recibe sus
+         *     minutos (o los suyos, si eran más); el resto de la semana se recalcula.
+         */
+        post: operations["move_session_me_week_move_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/week": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Reset Week
+         * @description Vuelve al plan original de esta semana (los días ya pasados no cambian).
+         */
+        delete: operations["reset_week_me_week_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/intervals": {
         parameters: {
             query?: never;
@@ -347,6 +408,19 @@ export interface components {
             /** Alternatives */
             alternatives: components["schemas"]["Session"][];
             strength: components["schemas"]["Strength"] | null;
+        };
+        /** DayChangeIn */
+        DayChangeIn: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Minutes
+             * @description 0 = ese día no puedes
+             */
+            minutes: number;
         };
         /** Goal */
         Goal: {
@@ -579,6 +653,19 @@ export interface components {
             email: string;
             /** Password */
             password: string;
+        };
+        /** MoveIn */
+        MoveIn: {
+            /**
+             * From Date
+             * Format: date
+             */
+            from_date: string;
+            /**
+             * To Date
+             * Format: date
+             */
+            to_date: string;
         };
         /** Physiology */
         Physiology: {
@@ -853,6 +940,11 @@ export interface components {
             block: number;
             /** Adherence */
             adherence: number[];
+            /**
+             * Changed
+             * @default false
+             */
+            changed: boolean;
         };
         /** ValidationError */
         ValidationError: {
@@ -1125,6 +1217,86 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    change_day_me_week_day_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DayChangeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    move_session_me_week_move_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_week_me_week_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

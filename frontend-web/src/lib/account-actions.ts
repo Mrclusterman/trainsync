@@ -98,3 +98,19 @@ export async function deleteAccountAction(form: FormData) {
   (await cookies()).delete(TOKEN_COOKIE);
   redirect("/entrar");
 }
+
+// Mejora 3 (replica/fixes.md): cambiar la semana desde el móvil; el backend la recalcula desde hoy
+export async function moveSessionAction(form: FormData) {
+  await api("/me/week/move", { method: "POST", body: JSON.stringify({ from_date: form.get("from"), to_date: form.get("to") }) });
+  revalidatePath("/salud");
+}
+
+export async function changeDayAction(form: FormData) {
+  await api("/me/week/day", { method: "POST", body: JSON.stringify({ date: form.get("date"), minutes: Number(form.get("minutes")) }) });
+  revalidatePath("/salud");
+}
+
+export async function resetWeekAction() {
+  await api("/me/week", { method: "DELETE" });
+  revalidatePath("/salud");
+}
