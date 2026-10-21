@@ -313,3 +313,29 @@ def adjust_day(p: HealthProfile, sessions: list[dict], status: str, week: int) -
             easier = cardio_session(p, s["sport"], "aerobic", s["equivalent_min"] * 0.7, week, s["duration_min"])
             out.append(easier or s)
     return out, "Hoy en versión suave: has dormido o te notas peor de lo normal."
+
+
+# ---------------------------------------------------------------- §4 adherencia desde el historial
+
+def position(block_start: date, monday: date) -> tuple[int, int]:
+    """(bloque, semana dentro del bloque) de la semana que empieza en `monday`."""
+    weeks = max((monday - block_start).days // 7, 0)
+    return weeks // 4, weeks % 4
+
+
+def adherence_history(p: HealthProfile, block_start: date, done: dict[str, int], blocks: int) -> list[float]:
+    """Adherencia de cada bloque terminado: sesiones hechas / planificadas (como mucho las planificadas cada día).
+
+    Se reconstruye cada bloque con el plan que tocaba entonces: el plan es determinista (§1).
+    """
+    history: list[float] = []
+    for b in range(blocks):
+        planned = completed = 0
+        for w in range(4):
+            week = week_plan(p, block_start + timedelta(weeks=4 * b + w), history, w)
+            for day in week["days"]:
+                n = len(day["sessions"])
+                planned += n
+                completed += min(done.get(day["date"], 0), n)
+        history.append(round(completed / planned, 3) if planned else 1.0)
+    return history

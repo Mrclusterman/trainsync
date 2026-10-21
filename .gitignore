@@ -8,3 +8,6 @@ __pycache__/
 replica/*-appstore.csv
 replica/*-hn.csv
 replica/reviews-*.csv
+
+# Base de datos local (SQLite)
+backend/data/

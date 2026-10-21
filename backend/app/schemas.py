@@ -200,3 +200,42 @@ class HealthPlan(BaseModel):
     equivalent_min: int
     days: list[HealthDay]
     warnings: list[str]
+
+
+# ---- Cuenta y perfil (Fase 1)
+
+class RegisterIn(BaseModel):
+    email: str = Field(pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$", max_length=254)
+    password: str = Field(min_length=10, max_length=200)
+    birth_year: int = Field(ge=1900, le=2100)
+    accept_terms: bool
+    health_consent: bool = Field(description="Consentimiento explícito y separado para datos de salud (RGPD art. 9.2.a)")
+
+
+class LoginIn(BaseModel):
+    email: str
+    password: str
+
+
+class Token(BaseModel):
+    token: str
+
+
+class ProfileIn(BaseModel):
+    goal: Literal["fitness", "strength", "fat_loss"]
+    days: dict[Weekday, int]
+    strength: Literal["gym", "bodyweight", "none"] = "gym"
+    cardio: list[Literal["walking", "running", "cycling", "swimming_pool"]] = ["walking"]
+    level: Literal["beginner", "intermediate", "advanced"] = "beginner"
+    screening: ScreeningIn
+
+
+class SessionLogIn(BaseModel):
+    date: date
+    sport: Literal["strength", "walking", "running", "cycling", "swimming_pool"]
+    rpe: int | None = Field(None, ge=1, le=10)
+
+
+class UserPlan(HealthPlan):
+    block: int
+    adherence: list[float]
