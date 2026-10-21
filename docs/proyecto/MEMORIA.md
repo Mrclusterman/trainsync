@@ -5,9 +5,8 @@
 **Fecha:** 21 de octubre de 2026
 **Código y documentación:** repositorio `trainsync` (licencia AGPL-3.0-only)
 
-> TrainSync es un proyecto de aplicación, no un trabajo académico para presentar. Esta memoria sigue la estructura y las
-> exigencias de un trabajo académico (estado del arte con fuentes verificadas, diseño trazable, validación reproducible y límites
-> declarados) para que las decisiones del producto sean revisables con el mismo rigor.
+> Esta memoria documenta el motor de TrainSync con rigor académico: estado del arte con fuentes verificadas, diseño
+> trazable, validación reproducible y límites declarados, para que cada decisión del producto se pueda revisar.
 
 ---
 

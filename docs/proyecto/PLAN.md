@@ -1,6 +1,6 @@
 # Plan del proyecto — Motor de entrenamiento de TrainSync
 
-> **Fecha:** 2026-10-21 · **Entregable final:** la memoria académica (`docs/proyecto/MEMORIA.md`). Todo lo que la memoria
+> **Fecha:** 2026-10-21 · **Entregable final:** la memoria del proyecto (`docs/proyecto/MEMORIA.md`). Todo lo que la memoria
 > afirme tiene que estar respaldado por bibliografía verificada o por una validación ejecutada y reproducible en este repo.
 
 ## Decisiones de partida (Gabriel, 2026-10-21)
