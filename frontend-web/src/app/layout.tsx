@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { DM_Mono, Geist, Instrument_Sans } from "next/font/google";
 import { BottomNav } from "@/components/BottomNav";
+import { Offline } from "@/components/Offline";
 import "./globals.css";
 
 // Tipografía del diseño: DM Mono (métricas), Geist (interfaz), Instrument Sans (cuerpo)
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="es" className={`${dmMono.variable} ${geist.variable} ${instrument.variable} h-full antialiased`}>
       <body className="min-h-full">
         <main className="mx-auto max-w-xl px-4 pb-28">
+          <Offline />
           {children}
           <footer className="mt-10 text-center font-ui text-xs text-secondary">
             Gratis y de código abierto (AGPL-3.0). Sin niveles de pago, sin anuncios y sin notificaciones comerciales.
