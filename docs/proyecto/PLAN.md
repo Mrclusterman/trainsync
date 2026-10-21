@@ -12,7 +12,11 @@
 3. **Modalidades combinables:** solo gimnasio (o peso corporal), o gimnasio complementado con correr, nadar o bici.
 4. **Sin depender de intervals.icu:** modo manual por sensación (RPE) e integraciones con las marcas de reloj más
    populares (estudiar qué APIs hay y en qué condiciones).
-5. **Seguridad:** cuestionario PAR-Q+ al empezar; con alguna alerta, recomendar consulta médica y empezar en nivel muy
+5. **El producto final es una app** (móvil + web). Cada usuario vincula una vez cada servicio (OAuth con token que se
+   renueva solo); Apple Salud y Health Connect se leen desde la app móvil, que es la vía principal de integración.
+   El alta de la app en cada programa de desarrolladores se hace una vez por marca (Polar inmediato; Suunto con acuerdo;
+   Garmin solo empresas y con altas pausadas).
+6. **Seguridad:** cuestionario PAR-Q+ al empezar; con alguna alerta, recomendar consulta médica y empezar en nivel muy
    suave. Nada de consejo médico ni dietas (ver `docs/CUMPLIMIENTO.md`).
 
 ## Fases
