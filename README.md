@@ -54,10 +54,10 @@ Swagger UI: http://localhost:8000/docs
 | `GET /me/goals`, `POST /me/goals`, `PUT /me/goals/{id}`, `DELETE /me/goals/{id}` | Carreras objetivo creadas en la app (nombre, deporte, fecha, distancia, prioridad A/B/C, trail). Se copian al calendario de intervals.icu (RACE_A/B/C, `external_id` trainsync-goal-…) y se borran con él. El plan de carrera elige entre estas y las del calendario: prioridad A > B > C y, a igual prioridad, la más cercana |
 | `POST /me/week/move`, `POST /me/week/day`, `DELETE /me/week` | Mover una sesión a otro día, "no puedo este día" o "puedo entrenar": la semana se recalcula desde hoy; los días pasados no cambian |
 | `POST /me/sessions`, `POST /me/readiness` | Marcar una sesión como hecha; estado del día sin reloj |
-| `PUT /me/intervals`, `POST /me/plan/today/send` | Vincular intervals.icu una vez (clave cifrada con AES-256-GCM) y enviar al reloj las sesiones de hoy |
+| `PUT /me/intervals`, `POST /me/plan/today/send` | Vincular intervals.icu una vez (clave cifrada con AES-256-GCM) y enviar al reloj las sesiones de hoy. Con `{"sport": …}`, solo la que vas a hacer: la planificada o una alternativa en otro de tus deportes (mismo trabajo aeróbico), que ocupa su sitio en el calendario |
 | `GET /me/export`, `DELETE /me` | Exportar todos tus datos (RGPD art. 20) y borrar la cuenta (art. 17) |
 | `GET /state`, `GET /plan`, `GET /plan/today` | Plan de carrera con la sesión del usuario y **su** cuenta de intervals.icu vinculada (401 sin sesión; 409 sin vincular). Nunca se usa una cuenta del servidor |
-| `POST /plan/today/send` | Envía la sesión de hoy al calendario de intervals.icu como entrenamiento estructurado; intervals.icu la pasa al reloj si tienes activada la sincronización (Garmin, Wahoo, Zwift). Reenviar la actualiza (`external_id` por día) |
+| `POST /plan/today/send` | Envía la sesión de hoy (o, con `{"sport": …}`, la alternativa que vas a hacer) al calendario de intervals.icu como entrenamiento estructurado; intervals.icu la pasa al reloj si tienes activada la sincronización (Garmin, Wahoo, Zwift). Reenviar la actualiza (`external_id` por día) |
 
 ## Frontend web (`frontend-web/`)
 

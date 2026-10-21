@@ -66,7 +66,8 @@ export interface paths {
         put?: never;
         /**
          * Send Today
-         * @description Envía la sesión principal de hoy al calendario de intervals.icu (reenviar la sustituye, no la duplica).
+         * @description Envía al calendario de intervals.icu la sesión de hoy que vas a hacer: la principal o, con `sport`, la alternativa
+         *     de ese deporte. Mismo external_id: reenviar o cambiar de sesión la sustituye, no la duplica.
          */
         post: operations["send_today_plan_today_send_post"];
         delete?: never;
@@ -391,6 +392,9 @@ export interface paths {
         /**
          * Send Today
          * @description Envía las sesiones de hoy al calendario de intervals.icu (resistencia estructurada; fuerza como lista).
+         *
+         *     Con `sport`, solo la que vas a hacer: la planificada de ese deporte o una alternativa, que ocupa el sitio (mismo
+         *     external_id) de la sesión a la que sustituye en el calendario.
          */
         post: operations["send_today_me_plan_today_send_post"];
         delete?: never;
@@ -637,6 +641,12 @@ export interface components {
             if_good: string;
             /** Equivalent Min */
             equivalent_min: number;
+            /**
+             * Alternatives
+             * @description La misma sesión en tus otros deportes, para elegir
+             * @default []
+             */
+            alternatives: components["schemas"]["HealthCardio"][];
         };
         /** HealthDay */
         HealthDay: {
@@ -1034,6 +1044,14 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** SendIn */
+        SendIn: {
+            /**
+             * Sport
+             * @description Deporte de la sesión que vas a hacer (la planificada o una alternativa); sin él, lo planificado
+             */
+            sport?: string | null;
+        };
         /** Sent */
         Sent: {
             /** Id */
@@ -1306,7 +1324,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SendIn"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -1315,6 +1337,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Sent"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -1888,7 +1919,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SendIn"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -1897,6 +1932,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SentEvent"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

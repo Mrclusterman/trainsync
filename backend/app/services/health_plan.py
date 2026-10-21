@@ -229,6 +229,13 @@ def cardio_session(p: HealthProfile, sport: str, kind: str, equivalent: float, w
     return session
 
 
+def alternatives(p: HealthProfile, session: dict, week: int) -> list[dict]:
+    """La misma sesión en los otros deportes elegidos: mismo trabajo aeróbico y sin pasar de su duración, para que el
+    usuario elija la que acaba haciendo (y la envíe al reloj)."""
+    return [a for sport in p.cardio if sport != session["sport"]
+            if (a := cardio_session(p, sport, session["type"], session["equivalent_min"], week, session["duration_min"]))]
+
+
 def cardio_kinds(p: HealthProfile, n: int) -> list[str]:
     """Intensidad de las sesiones de la semana: moderada para principiantes y sin permiso de vigorosa; si no, polarizada
     (una de calidad cada 3 sesiones, como mucho dos). [MOTOR §1; Inferencia en el reparto]"""

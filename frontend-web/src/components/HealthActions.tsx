@@ -27,12 +27,12 @@ export function ReadinessForm() {
   );
 }
 
-export function SendHealthToday() {
-  const [state, send, sending] = useActionState(sendHealthTodayAction, null);
+export function SendHealthToday({ sport = null, label = "Enviar hoy a mi reloj" }: { sport?: string | null; label?: string }) {
+  const [state, send, sending] = useActionState(sendHealthTodayAction.bind(null, sport), null);
   return (
     <form action={send} className="flex flex-wrap items-center gap-3">
       <button disabled={sending} className="rounded-full bg-accent px-5 py-2 font-ui text-sm font-medium text-canvas disabled:opacity-60">
-        {sending ? "Enviando…" : "Enviar hoy a mi reloj"}
+        {sending ? "Enviando…" : label}
       </button>
       {state?.message && <p role="status" className="text-sm text-bio">{state.message}</p>}
       {state?.error && <p role="alert" className="text-sm text-alert">{state.error}</p>}

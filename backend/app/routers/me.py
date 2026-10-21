@@ -162,7 +162,11 @@ def user_plan(user: db.User, session: Session, monday: date, ephys: engine.Profi
     readiness = schemas.Readiness(sleep=ready.sleep, energy=ready.energy, soreness=ready.soreness) if ready else None
     plan = build_plan(req, monday, adherence, week, readiness, physio, *changes.get(monday.isoformat(), (None, None)))
     plan |= {"block": block, "adherence": adherence}
+    p = profile_from(req, physio)[0]
     for day in plan["days"]:
+        for s in day["sessions"]:
+            if s["sport"] != "strength":
+                s["alternatives"] = hp.alternatives(p, s, monday.isocalendar().week)
         day["matches"] = hp.match_day(day["sessions"], done.get(day["date"], []))
         day["done"] = sorted(m["matched"] for m in day["matches"] if m["matched"])
         day["done_from_watch"] = sorted(m["matched"] for m in day["matches"] if m["matched"] and m["source"] == "watch")
@@ -349,8 +353,13 @@ def unlink_intervals(user: db.User = Depends(auth.current_user), session: Sessio
 
 
 @router.post("/me/plan/today/send", response_model=list[schemas.SentEvent])
-def send_today(user: db.User = Depends(auth.current_user), session: Session = Depends(db.get_session)):
-    """Envía las sesiones de hoy al calendario de intervals.icu (resistencia estructurada; fuerza como lista)."""
+def send_today(req: schemas.SendIn | None = None, user: db.User = Depends(auth.current_user),
+               session: Session = Depends(db.get_session)):
+    """Envía las sesiones de hoy al calendario de intervals.icu (resistencia estructurada; fuerza como lista).
+
+    Con `sport`, solo la que vas a hacer: la planificada de ese deporte o una alternativa, que ocupa el sitio (mismo
+    external_id) de la sesión a la que sustituye en el calendario.
+    """
     client = linked_client(user, session)
     if client is None:
         raise HTTPException(409, "Vincula primero tu cuenta de intervals.icu (PUT /me/intervals)")
@@ -360,8 +369,16 @@ def send_today(user: db.User = Depends(auth.current_user), session: Session = De
     sessions = next(d["sessions"] for d in plan["days"] if d["date"] == today.isoformat())
     if not sessions:
         raise HTTPException(409, "Hoy no hay sesiones que enviar")
+    # (sesión, deporte de la planificada que ocupa en el calendario)
+    chosen = [(s, s["sport"]) for s in sessions]
+    if req and req.sport:
+        options = [(s, s["sport"]) for s in sessions] + [(a, s["sport"]) for s in sessions
+                                                         for a in s.get("alternatives", [])]
+        chosen = [next((o for o in options if o[0]["sport"] == req.sport), None)]
+        if chosen[0] is None:
+            raise HTTPException(404, "Hoy no hay una sesión de ese deporte")
     events = [workout_text.strength_event(s, today.isoformat()) if s["sport"] == "strength"
-              else workout_text.event(s, today.isoformat(), ephys, key=s["sport"]) for s in sessions]
+              else workout_text.event(s, today.isoformat(), ephys, key=slot) for s, slot in chosen]
     created = client.upsert_workouts(events)
     return [{"id": c["id"], "name": e["name"]} for c, e in zip(created, events)]
 

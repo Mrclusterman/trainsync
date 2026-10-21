@@ -15,4 +15,5 @@ export const getPlan = (days = 14) => api<Plan>(`/plan?days=${days}`);
 
 export type Sent = components["schemas"]["Sent"];
 
-export const sendToday = () => api<Sent>("/plan/today/send", { method: "POST" });
+export const sendToday = (sport: string | null) =>
+  api<Sent>("/plan/today/send", { method: "POST", body: JSON.stringify({ sport }) });

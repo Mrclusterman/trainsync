@@ -81,7 +81,7 @@ async function Dashboard() {
           <p className="rounded-module bg-surface-1 p-4 text-secondary">Descanso. Recuperar también es entrenar.</p>
         )}
         {today.strength && <StrengthCard strength={today.strength} />}
-        <Alternatives sessions={today.alternatives} />
+        <Alternatives sessions={today.alternatives} today />
       </section>
 
       <section aria-labelledby="proximos">

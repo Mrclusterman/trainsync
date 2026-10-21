@@ -247,3 +247,11 @@ def test_extra_rest_day_can_be_taken_back():
     day = rested[0]["weekday"]
     back = hp.week_with_changes(p, MONDAY, [0.95], 1, {day: rested[0]["available_min"]}, MONDAY)
     assert next(d for d in back["days"] if d["weekday"] == day)["sessions"]  # el usuario lo pidió: se entrena
+
+
+def test_alternatives_match_the_work_and_fit_the_time():
+    p = profile(level="intermediate", cardio=["walking", "cycling", "running"], lthr=170, max_hr=190)
+    session = next(s for s in sessions(hp.week_plan(p, MONDAY)) if s["sport"] != "strength")
+    alts = hp.alternatives(p, session, 2)
+    assert {a["sport"] for a in alts} <= set(p.cardio) - {session["sport"]} and alts
+    assert all(a["duration_min"] <= session["duration_min"] and a["type"] == session["type"] for a in alts)

@@ -83,6 +83,12 @@ def test_send_today(monkeypatch):
     body = json.loads(req.content)[0]
     assert body["external_id"] == f"trainsync-{TODAY.isoformat()}" and body["category"] == "WORKOUT"
     assert "- " in body["description"]
+    alts = api.get("/plan/today", headers=h).json()["alternatives"]
+    if alts:  # la alternativa elegida ocupa el sitio de la principal en el calendario
+        r = api.post("/plan/today/send", json={"sport": alts[0]["sport"]}, headers=h)
+        alt = json.loads(sent[-1].content)[0]
+        assert r.status_code == 200 and alt["external_id"] == body["external_id"] and alt["type"] != body["type"]
+    assert api.post("/plan/today/send", json={"sport": "swimming_open"}, headers=h).status_code == 404
 
 
 def test_implausible_lthr_is_replaced_and_flagged():

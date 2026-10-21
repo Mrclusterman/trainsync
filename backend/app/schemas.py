@@ -117,6 +117,11 @@ class State(BaseModel):
     last_activity: LastActivity | None
 
 
+class SendIn(BaseModel):
+    sport: str | None = Field(None, description="Deporte de la sesión que vas a hacer (la planificada o una alternativa); "
+                                                "sin él, lo planificado")
+
+
 class Sent(BaseModel):
     id: int
     date: date
@@ -164,6 +169,7 @@ class HealthPlanRequest(BaseModel):
 
 class HealthCardio(Session):
     equivalent_min: int
+    alternatives: list["HealthCardio"] = Field([], description="La misma sesión en tus otros deportes, para elegir")
 
 
 class HealthStrength(BaseModel):

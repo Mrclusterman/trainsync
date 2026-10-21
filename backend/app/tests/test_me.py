@@ -217,3 +217,33 @@ def test_saved_fat_loss_profiles_fall_back_to_fitness():
         row.plan = row.plan | {"goal": "fat_loss"}
         s.commit()
     assert api.get("/me/plan", headers=h).json()["goal"] == "fitness"
+
+
+def test_send_the_alternative_you_will_do(monkeypatch):
+    monkeypatch.setenv("ENCRYPTION_KEY", base64.b64encode(os.urandom(32)).decode())
+    posted = []
+
+    def fake(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/activities"):
+            return httpx.Response(200, json=[])
+        if request.method == "POST":
+            events = json.loads(request.content)
+            posted.extend(events)
+            return httpx.Response(200, json=[{"id": 100 + i, **e} for i, e in enumerate(events)])
+        return httpx.Response(200, json={"sportSettings": [{"types": ["Run", "Ride"], "lthr": 170, "max_hr": 190}]})
+
+    monkeypatch.setattr(links, "make_client", lambda a, k: IntervalsClient(a, k, httpx.MockTransport(fake)))
+    h = auth("alternativa@x.es")
+    every_day = {d: 60 for d in hp.WEEKDAYS}
+    api.put("/me/profile", json=PROFILE | {"days": every_day, "cardio": ["walking", "cycling"], "strength": "none"},
+            headers=h)
+    api.put("/me/intervals", json={"athlete_id": "i123", "api_key": "clave-de-pruebas-1234"}, headers=h)
+    today = next(d for d in api.get("/me/plan", headers=h).json()["days"] if d["date"] == date.today().isoformat())
+    planned = next((s for s in today["sessions"] if s["alternatives"]), None)
+    if planned is None:  # hoy no hay cardio con alternativa
+        return
+    alt = planned["alternatives"][0]
+    r = api.post("/me/plan/today/send", json={"sport": alt["sport"]}, headers=h)
+    assert r.status_code == 200 and len(posted) == 1  # solo la elegida
+    assert posted[0]["external_id"] == f"trainsync-{date.today().isoformat()}-{planned['sport']}"  # en su sitio
+    assert api.post("/me/plan/today/send", json={"sport": "swimming_pool"}, headers=h).status_code == 404

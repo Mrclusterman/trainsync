@@ -100,9 +100,10 @@ export async function readinessAction(_: FormState, form: FormData): Promise<For
   return { message: "Plan de hoy actualizado" };
 }
 
-export async function sendHealthTodayAction(): Promise<FormState> {
+// sport: solo la sesión que vas a hacer (planificada o alternativa); null = todas las de hoy
+export async function sendHealthTodayAction(sport: string | null): Promise<FormState> {
   try {
-    const sent = await api<{ name: string }[]>("/me/plan/today/send", { method: "POST" });
+    const sent = await api<{ name: string }[]>("/me/plan/today/send", { method: "POST", body: JSON.stringify({ sport }) });
     return { message: `Enviado a intervals.icu: ${sent.map((s) => s.name.replace("TrainSync · ", "")).join(", ")}` };
   } catch (e) { return fail(e); }
 }

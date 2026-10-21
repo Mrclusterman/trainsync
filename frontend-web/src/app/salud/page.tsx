@@ -34,7 +34,31 @@ function pulse(s: HealthCardio) {
   return target?.endsWith("ppm") ? `Pulso: ${target.replace("ppm", "pulsaciones por minuto")}` : null;
 }
 
-function Session({ s, date, past, done, watch }: { s: HealthStrength | HealthCardio; date: string; past: boolean; done: boolean; watch: boolean }) {
+// Hoy, la misma sesión en tus otros deportes: elige la que vas a hacer, envíala al reloj o márcala como hecha
+function Alternatives({ s, date }: { s: HealthCardio; date: string }) {
+  if (!s.alternatives?.length) return null;
+  return (
+    <details className="mt-2">
+      <summary className="cursor-pointer font-ui text-xs text-accent">¿Hoy prefieres otro deporte?</summary>
+      {s.alternatives.map((a) => (
+        <div key={a.sport} className="mt-2 space-y-2 rounded-card bg-surface-1 p-2">
+          <p className="text-sm">{SPORT_LABEL[a.sport] ?? a.sport} · {PLAIN[a.type]?.[0] ?? a.name} · {minutes(a.duration_min)}</p>
+          {pulse(a) && <p className="text-xs text-secondary">{pulse(a)}</p>}
+          <div className="flex flex-wrap items-center gap-2">
+            <SendHealthToday sport={a.sport} label="Haré esta: enviarla a mi reloj" />
+            <form action={logSessionAction}>
+              <input type="hidden" name="date" value={date} />
+              <input type="hidden" name="sport" value={a.sport} />
+              <button className="rounded-full border border-accent/40 px-3 py-1 font-ui text-xs text-accent">Ya la hice</button>
+            </form>
+          </div>
+        </div>
+      ))}
+    </details>
+  );
+}
+
+function Session({ s, date, past, done, watch, today }: { s: HealthStrength | HealthCardio; date: string; past: boolean; done: boolean; watch: boolean; today: boolean }) {
   return (
     <article className="rounded-card bg-surface-2 p-3">
       <div className="flex items-center gap-2">
@@ -52,6 +76,7 @@ function Session({ s, date, past, done, watch }: { s: HealthStrength | HealthCar
           {PLAIN[s.type]?.[1] ?? s.goal}{pulse(s) && <><br />{pulse(s)}</>}
         </p>
       )}
+      {today && !done && "alternatives" in s && <Alternatives s={s} date={date} />}
       {done && <p className="mt-2 font-ui text-xs text-bio">{watch ? "Hecha · detectada en tu reloj" : "Hecha"}</p>}
       {past && !done && (
         <form action={logSessionAction} className="mt-2">
@@ -117,7 +142,7 @@ function Day({ day, today, upcoming }: { day: HealthDay; today: string; upcoming
       {day.note && <p className="mt-1 text-sm text-secondary">{day.note}</p>}
       {day.sessions.length === 0 ? <p className="mt-1 text-sm text-secondary">Descanso</p> : (
         <div className="mt-2 space-y-2">
-          {day.sessions.map((s) => <Session key={s.sport} s={s} date={day.date} past={day.date <= today} done={day.done?.includes(s.sport) ?? false} watch={day.done_from_watch?.includes(s.sport) ?? false} />)}
+          {day.sessions.map((s) => <Session key={s.sport} s={s} date={day.date} past={day.date <= today} today={day.date === today} done={day.done?.includes(s.sport) ?? false} watch={day.done_from_watch?.includes(s.sport) ?? false} />)}
         </div>
       )}
       {day.matches?.length > 0 && (

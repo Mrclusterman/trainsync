@@ -233,14 +233,19 @@ def plan(days: int = Query(14, ge=1, le=42), c: IntervalsClient = Depends(user_c
 
 
 @router.post("/plan/today/send", response_model=schemas.Sent)
-def send_today(c: IntervalsClient = Depends(user_client), base: engine.Profile = Depends(race_base),
-         goals: list[engine.Goal] = Depends(own_goals)):
-    """Envía la sesión principal de hoy al calendario de intervals.icu (reenviar la sustituye, no la duplica)."""
+def send_today(req: schemas.SendIn | None = None, c: IntervalsClient = Depends(user_client),
+               base: engine.Profile = Depends(race_base), goals: list[engine.Goal] = Depends(own_goals)):
+    """Envía al calendario de intervals.icu la sesión de hoy que vas a hacer: la principal o, con `sport`, la alternativa
+    de ese deporte. Mismo external_id: reenviar o cambiar de sesión la sustituye, no la duplica."""
     today = date.today()
     profile, goal, s, _ = load_context(c, today, base, goals)
-    main = engine.plan(today, 1, profile, goal, s)[0]["main"]
-    if main is None:
+    day = engine.plan(today, 1, profile, goal, s)[0]
+    if day["main"] is None:
         raise HTTPException(409, "Hoy toca descanso: no hay sesión que enviar")
+    sport = req.sport if req else None
+    main = next((x for x in [day["main"], *day["alternatives"]] if sport in (None, x["sport"])), None)
+    if main is None:
+        raise HTTPException(404, "Hoy no hay una sesión de ese deporte")
     event = workout_text.event(main, today.isoformat(), profile)
     created = c.upsert_workouts([event])[0]
     return {"id": created["id"], "date": today, "name": event["name"], "description": event["description"]}

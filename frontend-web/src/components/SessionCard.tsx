@@ -1,5 +1,6 @@
 import type { Block, Session, Strength, Zone } from "@/lib/api";
 import { minutes, SPORT_LABEL, ZONE_COLOR } from "@/lib/format";
+import { SendToWatch } from "./SendToWatch";
 import { SportIcon } from "./SportIcon";
 
 function Pill({ children }: { children: React.ReactNode }) {
@@ -117,7 +118,8 @@ export function StrengthCard({ strength }: { strength: Strength }) {
   );
 }
 
-export function Alternatives({ sessions }: { sessions: Session[] }) {
+// today: en la sesión de hoy, cada alternativa se puede elegir y enviar al reloj en lugar de la principal
+export function Alternatives({ sessions, today = false }: { sessions: Session[]; today?: boolean }) {
   if (!sessions.length) return null;
   return (
     <section aria-label="Alternativas" className="space-y-2">
@@ -129,7 +131,10 @@ export function Alternatives({ sessions }: { sessions: Session[] }) {
             <span className="font-ui text-sm">{SPORT_LABEL[s.sport]} · {s.name}</span>
             <span className="ml-auto font-mono text-xs text-secondary">{minutes(s.duration_min)} · {s.tss} TSS</span>
           </summary>
-          <div className="px-1 pb-1"><SessionCard session={s} /></div>
+          <div className="space-y-2 px-1 pb-1">
+            {today && <div className="px-2 pt-1"><SendToWatch sport={s.sport} label="Haré esta: enviarla a mi reloj" /></div>}
+            <SessionCard session={s} />
+          </div>
         </details>
       ))}
     </section>
