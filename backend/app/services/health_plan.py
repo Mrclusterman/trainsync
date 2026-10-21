@@ -6,7 +6,7 @@ docs/proyecto/ESTADO_DEL_ARTE.md. Las sesiones de resistencia salen del catálog
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 from itertools import combinations
-from math import ceil
+from math import ceil, floor
 
 from app.services import training_engine as engine
 from app.services.training_engine import WEEKDAYS
@@ -80,14 +80,17 @@ def week_dose(p: HealthProfile, adherence: list[float], week_in_block: int) -> d
     aero = max(60.0, target["aerobic"] * START[p.level])
     sets = float(n_strength * START_SETS_PER_SESSION[p.level])
     for done in adherence:
-        aero = min(next_base(aero, min(aero * AEROBIC_STEP ** 2, target["aerobic"]), done), target["aerobic"])
+        # Nunca por debajo de 60 min: algo de actividad es mejor que nada (OMS 2020) [Inferencia en la cifra]
+        aero = max(min(next_base(aero, min(aero * AEROBIC_STEP ** 2, target["aerobic"]), done), target["aerobic"]), 60)
         sets = min(next_base(sets, min(sets + 2, target["sets"]), done), target["sets"])
     week = min(week_in_block, 2)
-    aero = min(aero * AEROBIC_STEP ** week, target["aerobic"])
+    minutes = round(aero)
+    for _ in range(week):  # sobre el valor ya redondeado y hacia abajo: la subida que se ve nunca pasa del 10 %
+        minutes = min(floor(minutes * AEROBIC_STEP), target["aerobic"])
     sets = min(sets + week, target["sets"])  # +1 serie por patrón y semana de carga
     if week_in_block == 3:
-        aero, sets = aero * DELOAD, sets * DELOAD
-    return {"aerobic": round(aero), "strength_days": n_strength, "sets": max(round(sets), n_strength)}
+        minutes, sets = round(minutes * DELOAD), sets * DELOAD
+    return {"aerobic": minutes, "strength_days": n_strength, "sets": max(round(sets), n_strength)}
 
 
 # ---------------------------------------------------------------- §5 reparto semanal
@@ -155,18 +158,22 @@ def strength_session(p: HealthProfile, patterns: tuple, sets_per_exercise: int, 
                      "sube la carga un 2–10 % y vuelve al mínimo de repeticiones."}
 
 
-def strength_week(p: HealthProfile, days: list[str], sets: int) -> dict[str, dict]:
-    """Cuerpo completo con ≤ 3 días; torso/pierna alternos con 4 (§5.2)."""
+def strength_week(p: HealthProfile, days: list[str], sets: int, budget: dict[str, int] | None = None) -> dict[str, dict]:
+    """Cuerpo completo con ≤ 3 días; torso/pierna alternos con 4 (§5.2). budget: minutos máximos por día."""
     if not days:
         return {}
     plan = [FULL_BODY] * len(days) if len(days) <= 3 else [UPPER, LOWER] * (len(days) // 2)
     times = {pt: sum(pt in s for s in plan) for pt in PATTERNS}
     out = {}
-    for day, patterns in zip(days, plan):
-        per_ex = max(ceil(sets / max(times[pt] for pt in patterns if pt != "core")), 1)
+    # Ondulación diaria: con 3 días de cuerpo completo, pesado / ligero / medio con las mismas series en total, para
+    # variar la carga diaria (monotonía de Foster). [Práctica; ACSM 2026: la periodización no cambia el resultado medio]
+    wave = (1, -1, 0) if len(days) == 3 else (0,) * len(days)
+    for (day, patterns), delta in zip(zip(days, plan), wave):
+        per_ex = max(ceil(sets / max(times[pt] for pt in patterns if pt != "core")) + delta, 1)
         session = strength_session(p, patterns, per_ex)
         # Tiene que caber en los minutos del día (§5.5): primero menos series, luego fuera los accesorios
-        while session["duration_min"] > p.days[day] and (per_ex > 1 or any(a in patterns for a in ACCESSORY)):
+        limit = budget[day] if budget else p.days[day]
+        while session["duration_min"] > limit and (per_ex > 1 or any(a in patterns for a in ACCESSORY)):
             if per_ex > 1:
                 per_ex -= 1
             else:
@@ -199,14 +206,14 @@ def cardio_session(p: HealthProfile, sport: str, kind: str, equivalent: float, w
     mid = sum(entry["duration"]) / 2
     total = min(max(equivalent, 20), cap)
     session = None
-    for _ in range(5):  # la relación duración/equivalentes no es lineal (calentamientos en Z1): se itera
+    for _ in range(6):  # equivalentes ≈ duración − parte fija en Z1 (calentamientos): corrección aditiva
         candidate = engine.build_session(kind, sport, ep, total / mid, "base", week)
         if candidate["duration_min"] > cap:
             break
         session, got = candidate, equivalent_minutes(candidate)
         if got <= 0 or abs(got - equivalent) <= 0.1 * equivalent or total >= cap:
             break
-        total = min(total * equivalent / got, cap)
+        total = min(max(total + equivalent - got, 20), cap)
     if session is None:
         return None
     session["equivalent_min"] = round(equivalent_minutes(session))
@@ -225,13 +232,61 @@ def cardio_kinds(p: HealthProfile, n: int) -> list[str]:
 
 # ---------------------------------------------------------------- semana completa
 
+def _cardio(p: HealthProfile, start: date, dose: dict, days: list[str], strength: dict[str, dict]) -> tuple[dict, float]:
+    """Resistencia de la semana (§5.3–§5.5): primero los días sin fuerza; si no llegan, también los de fuerza."""
+    free = [d for d in days if d not in strength]
+    slots = free + [d for d in strength if p.days[d] - strength[d]["duration_min"] >= 20]
+    sports = p.cardio or ["walking"]
+    pending, plan_days, done_eq = float(dose["aerobic"]), {}, 0.0
+    caps = {d: p.days[d] - (strength[d]["duration_min"] if d in strength else 0) for d in slots}
+    # Días duros y suaves alternos (monotonía de Foster < 2, MOTOR §3): entre los días libres, de más a menos tiempo,
+    # 1,3 y 0,7 alternos; los días que ya tienen fuerza llevan menos aeróbico (0,5). [Inferencia en los factores]
+    by_cap = sorted(free, key=lambda d: (-caps[d], WEEKDAYS.index(d)))
+    weight = {d: caps[d] * (1.3 if by_cap.index(d) % 2 == 0 else 0.7) for d in free}
+    weight |= {d: caps[d] * 0.5 for d in slots if d in strength}
+    kinds = cardio_kinds(p, len(slots))
+    for i, day in enumerate(slots):
+        if pending <= 5:
+            break
+        cap = caps[day]
+        # Reparto proporcional al peso de cada día que queda (§5.5); lo que no cabe pasa a los siguientes
+        share = min(pending * weight[day] / sum(weight[d] for d in slots[i:]), cap)
+        sport = sports[i % len(sports)]
+        # En fuerza y músculo, nada de carrera el día de pierna si hay otra opción (Schumann/Lundberg 2022, §5.4)
+        if day in strength and "sentadilla" in strength[day]["patterns"] and sport == "running":
+            sport = next((s for s in sports if s != "running"), sport)
+            if sport == "running" and p.goal == "strength":
+                kinds[i] = "aerobic"
+        week_no = WEEKDAYS.index(day) + start.isocalendar().week
+        # Si el deporte no tiene ese tipo de calidad o no cabe, se prueba el otro antes de quedarse en aeróbico
+        options = [kinds[i]] + [k for k in ("vo2max", "threshold") if kinds[i] != "aerobic" and k != kinds[i]] + ["aerobic"]
+        session = next((s for k in options if (s := cardio_session(p, sport, k, share, week_no, cap))), None)
+        if session:
+            plan_days[day] = session
+            pending -= session["equivalent_min"]
+            done_eq += session["equivalent_min"]
+    return plan_days, done_eq
+
+
+STRENGTH_SHARES = (1.0, 0.85, 0.7, 0.55, 0.4, 0.3)  # parte del día que puede ocupar la fuerza [Inferencia]
+
+
 def week_plan(p: HealthProfile, start: date, adherence: list[float] | None = None, week_in_block: int = 0) -> dict:
     """Plan de 7 días a partir de `start` (lunes). Devuelve la dosis, los días y los avisos."""
     adherence = adherence or []
     dose = week_dose(p, adherence, week_in_block)
     days = training_days(p)
     s_days = spread(days, dose["strength_days"])
-    strength = strength_week(p, s_days, dose["sets"])
+    # El suelo aeróbico de la OMS va antes que seguir subiendo series (§1.2): si no se alcanza, la fuerza ocupa menos
+    # parte del día y se vuelve a repartir, hasta llegar al suelo o a la sesión mínima de fuerza
+    floor_eq = min(dose["aerobic"], FLOOR_AEROBIC)
+    for share in STRENGTH_SHARES:
+        budget = {d: max(round(p.days[d] * share), 20) for d in s_days}
+        strength = strength_week(p, s_days, dose["sets"], budget)
+        plan_days, done_eq = _cardio(p, start, dose, days, strength)
+        if done_eq >= floor_eq:
+            break
+
     warnings = []
     if p.strength == "none":
         warnings.append("Sin fuerza no se cumple la recomendación de la OMS (2 días o más por semana).")
@@ -242,33 +297,6 @@ def week_plan(p: HealthProfile, start: date, adherence: list[float] | None = Non
     if strength and min(planned_sets.values()) < dose["sets"]:
         warnings.append(f"Con el tiempo disponible haces {min(planned_sets.values())} de {dose['sets']} series "
                         "semanales por grupo muscular.")
-
-    # Resistencia: primero los días sin fuerza; si no llegan, también los de fuerza (sesión combinada)
-    free = [d for d in days if d not in s_days]
-    slots = free + [d for d in s_days if p.days[d] - strength[d]["duration_min"] >= 20]
-    sports = p.cardio or ["walking"]
-    pending, plan_days, done_eq = float(dose["aerobic"]), {}, 0.0
-    caps = {d: p.days[d] - (strength[d]["duration_min"] if d in strength else 0) for d in slots}
-    kinds = cardio_kinds(p, len(slots))
-    for i, day in enumerate(slots):
-        if pending <= 5:
-            break
-        cap = caps[day]
-        # Reparto proporcional a los minutos libres de cada día que queda (§5.5)
-        share = pending * cap / sum(caps[d] for d in slots[i:])
-        sport = sports[i % len(sports)]
-        # En fuerza y músculo, nada de carrera el día de pierna si hay otra opción (Schumann/Lundberg 2022, §5.4)
-        if day in strength and "sentadilla" in strength[day]["patterns"] and sport == "running":
-            sport = next((s for s in sports if s != "running"), sport)
-            if sport == "running" and p.goal == "strength":
-                kinds[i] = "aerobic"
-        session = cardio_session(p, sport, kinds[i], share, WEEKDAYS.index(day) + start.isocalendar().week, cap)
-        if session is None and kinds[i] != "aerobic":
-            session = cardio_session(p, sport, "aerobic", share, start.isocalendar().week, cap)
-        if session:
-            plan_days[day] = session
-            pending -= session["equivalent_min"]
-            done_eq += session["equivalent_min"]
     if done_eq + 5 < dose["aerobic"]:
         warnings.append(f"Con los días y minutos disponibles llegas a {done_eq:.0f} de {dose['aerobic']} min "
                         "aeróbicos equivalentes esta semana.")
@@ -308,7 +336,10 @@ def adjust_day(p: HealthProfile, sessions: list[dict], status: str, week: int) -
     out = []
     for s in sessions:
         if s["sport"] == "strength":
-            out.append(strength_session(p, tuple(s["patterns"]), max(s["sets_per_exercise"] - 1, 1), extra_rir=1))
+            patterns = tuple(s["patterns"])
+            if s["sets_per_exercise"] == 1:  # ya en 1 serie: fuera un accesorio
+                patterns = tuple(pt for pt in patterns if pt != next((a for a in ACCESSORY if a in patterns), None))
+            out.append(strength_session(p, patterns, max(s["sets_per_exercise"] - 1, 1), extra_rir=1))
         else:
             easier = cardio_session(p, s["sport"], "aerobic", s["equivalent_min"] * 0.7, week, s["duration_min"])
             out.append(easier or s)

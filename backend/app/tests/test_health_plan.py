@@ -27,8 +27,8 @@ def test_dose_starts_low_and_grows_within_the_block():
     p = profile(level="beginner")
     weeks = [hp.week_dose(p, [], w) for w in range(4)]
     assert weeks[0]["aerobic"] == 180  # 60 % de 300 (fitness)
-    assert weeks[1]["aerobic"] == round(180 * 1.1) and weeks[2]["aerobic"] == round(180 * 1.21)
-    assert weeks[3]["aerobic"] == round(180 * 1.21 * 0.7)  # descarga
+    assert weeks[1]["aerobic"] == 198 and weeks[2]["aerobic"] == 217  # cada semana, sobre la anterior redondeada hacia abajo
+    assert weeks[3]["aerobic"] == round(217 * 0.7)  # descarga
     assert all(b["aerobic"] <= a["aerobic"] * 1.1 + 1 for a, b in zip(weeks[:3], weeks[1:3]))
 
 
