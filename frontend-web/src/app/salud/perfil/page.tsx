@@ -1,12 +1,14 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { ResendVerification } from "@/components/AuthForms";
 import { GoalsForm } from "@/components/GoalsForm";
 import { IntervalsLinkForm } from "@/components/IntervalsLinkForm";
 import { ProfileForm, type SavedProfile } from "@/components/ProfileForm";
 import { api, ApiError, hasSession, type RaceGoal } from "@/lib/account";
 import { deleteAccountAction, logoutAction } from "@/lib/account-actions";
 
-type Export = { profile: { plan: NonNullable<SavedProfile> } | null;
+type Export = { account: { email: string; email_verified_at: string | null };
+  profile: { plan: NonNullable<SavedProfile> } | null;
   intervals: { athlete_id: string } | null };
 
 async function PerfilView() {
@@ -23,6 +25,13 @@ async function PerfilView() {
   return (
     <div className="space-y-6 pt-4">
       <h1 className="font-ui text-2xl font-bold">Tu perfil</h1>
+      {!data.account.email_verified_at && (
+        <section className="rounded-card border-l-2 border-alert bg-surface-1 p-3 text-sm">
+          <p>Confirma tu email ({data.account.email}) con el enlace que te enviamos: es la única forma de recuperar la
+            cuenta si olvidas la contraseña.</p>
+          <ResendVerification />
+        </section>
+      )}
       <ProfileForm saved={saved} />
 
       <section aria-labelledby="objetivos" className="rounded-module bg-surface-1 p-4">

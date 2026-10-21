@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { loginAction, registerAction, type FormState } from "@/lib/account-actions";
+import Link from "next/link";
+import { forgotAction, loginAction, registerAction, resendVerificationAction, resetAction, type FormState } from "@/lib/account-actions";
 
 const field = "mt-1 w-full rounded-card bg-surface-2 px-3 py-2 text-primary";
 const button = "mt-4 w-full rounded-full bg-accent px-5 py-2.5 font-ui text-sm font-medium text-canvas disabled:opacity-60";
@@ -31,6 +32,7 @@ export function AuthForms() {
             <input name="password" type="password" required autoComplete="current-password" className={field} /></label>
           <Error state={loginState} />
           <button disabled={loggingIn} className={button}>{loggingIn ? "Entrando…" : "Entrar"}</button>
+          <Link href="/entrar/recuperar" className="mt-3 block text-center text-sm text-accent">¿Has olvidado la contraseña?</Link>
         </form>
       ) : (
         <form action={register} className="mt-4">
@@ -54,5 +56,45 @@ export function AuthForms() {
         </form>
       )}
     </div>
+  );
+}
+
+function Message({ state }: { state: FormState }) {
+  return state?.message ? <p role="status" className="mt-3 text-sm text-bio">{state.message}</p> : null;
+}
+
+export function ForgotForm() {
+  const [state, send, sending] = useActionState(forgotAction, null);
+  return (
+    <form action={send} className="rounded-module bg-surface-1 p-4">
+      <label className="block text-sm">Email de tu cuenta<input name="email" type="email" required autoComplete="email" className={field} /></label>
+      <Error state={state} />
+      <Message state={state} />
+      <button disabled={sending} className={button}>{sending ? "Enviando…" : "Enviarme un enlace"}</button>
+    </form>
+  );
+}
+
+export function ResetForm({ token }: { token: string }) {
+  const [state, reset, saving] = useActionState(resetAction, null);
+  return (
+    <form action={reset} className="rounded-module bg-surface-1 p-4">
+      <input type="hidden" name="token" value={token} />
+      <label className="block text-sm">Contraseña nueva (10 caracteres o más)
+        <input name="password" type="password" required minLength={10} autoComplete="new-password" className={field} /></label>
+      <Error state={state} />
+      <button disabled={saving} className={button}>{saving ? "Guardando…" : "Cambiar contraseña"}</button>
+    </form>
+  );
+}
+
+export function ResendVerification() {
+  const [state, resend, sending] = useActionState(resendVerificationAction, null);
+  return (
+    <form action={resend}>
+      <Error state={state} />
+      <Message state={state} />
+      {!state?.message && <button disabled={sending} className="mt-2 text-sm text-accent">{sending ? "Enviando…" : "Reenviar el email"}</button>}
+    </form>
   );
 }

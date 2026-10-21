@@ -25,7 +25,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     const detail = Array.isArray(body?.detail) ? "Revisa los datos del formulario" : body?.detail;
     throw new ApiError(res.status, detail ?? `El backend respondió ${res.status}`);
   }
-  return res.status === 204 ? (undefined as T) : res.json();
+  return res.status === 204 || res.status === 202 ? (undefined as T) : res.json();
 }
 
 export async function hasSession() {

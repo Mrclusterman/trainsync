@@ -37,19 +37,35 @@ def verify_password(password: str, stored: str) -> bool:
     return hmac.compare_digest(got, base64.b64decode(key))
 
 
-def create_token(user_id: str) -> str:
-    return jwt.encode({"sub": user_id, "exp": db.now() + timedelta(days=TOKEN_DAYS)}, SECRET, algorithm="HS256")
+# Cada token sirve para una sola cosa: sesión, enlace de recuperar contraseña o de verificar el email
+PURPOSE_HOURS = {"session": 24 * TOKEN_DAYS, "reset": 1, "verify": 48}
+
+
+def password_stamp(user: db.User) -> str:
+    """Cambia con la contraseña: al cambiarla caducan las sesiones abiertas y los enlaces ya enviados."""
+    return hmac.new(SECRET.encode(), user.password_hash.encode(), "sha256").hexdigest()[:16]
+
+
+def create_token(user: db.User, purpose: str = "session") -> str:
+    return jwt.encode({"sub": user.id, "purpose": purpose, "pw": password_stamp(user),
+                       "exp": db.now() + timedelta(hours=PURPOSE_HOURS[purpose])}, SECRET, algorithm="HS256")
+
+
+def user_from(token: str, purpose: str, session: Session) -> db.User:
+    try:
+        claims = jwt.decode(token, SECRET, algorithms=["HS256"])
+    except jwt.PyJWTError:
+        raise HTTPException(401, "Sesión o enlace no válidos o caducados")
+    user = session.get(db.User, claims.get("sub"))
+    if user is None:
+        raise HTTPException(401, "La cuenta ya no existe")
+    if claims.get("purpose") != purpose or claims.get("pw") != password_stamp(user):
+        raise HTTPException(401, "Sesión o enlace no válidos o caducados")
+    return user
 
 
 def current_user(creds: HTTPAuthorizationCredentials | None = Depends(bearer),
                  session: Session = Depends(db.get_session)) -> db.User:
     if creds is None:
         raise HTTPException(401, "Falta el token de sesión")
-    try:
-        user_id = jwt.decode(creds.credentials, SECRET, algorithms=["HS256"])["sub"]
-    except jwt.PyJWTError:
-        raise HTTPException(401, "Sesión no válida o caducada")
-    user = session.get(db.User, user_id)
-    if user is None:
-        raise HTTPException(401, "La cuenta ya no existe")
-    return user
+    return user_from(creds.credentials, "session", session)

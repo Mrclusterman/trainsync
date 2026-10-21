@@ -78,6 +78,13 @@ class WeekChange(Base):
     since: Mapped[date] = mapped_column(Date)  # día del último cambio: los anteriores no se recalculan
 
 
+class EmailVerification(Base):
+    """Email confirmado. Tabla aparte para no alterar `users` (sin migraciones, ver init)."""
+    __tablename__ = "email_verifications"
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    verified_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
 class IntervalsLink(Base):
     """Cuenta de intervals.icu vinculada; la clave va cifrada (app/crypto.py)."""
     __tablename__ = "intervals_links"

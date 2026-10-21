@@ -39,6 +39,30 @@ export async function registerAction(_: FormState, form: FormData): Promise<Form
   redirect("/salud/perfil");
 }
 
+export async function forgotAction(_: FormState, form: FormData): Promise<FormState> {
+  try {
+    await api("/auth/forgot", { method: "POST", body: JSON.stringify({ email: form.get("email") }) });
+  } catch (e) { return fail(e); }
+  return { message: "Si hay una cuenta con ese email, te hemos enviado un enlace para cambiar la contraseña. Caduca en 1 hora." };
+}
+
+export async function resetAction(_: FormState, form: FormData): Promise<FormState> {
+  try {
+    const { token } = await api<{ token: string }>("/auth/reset", {
+      method: "POST", body: JSON.stringify({ token: form.get("token"), password: form.get("password") }),
+    });
+    await startSession(token);
+  } catch (e) { return fail(e); }
+  redirect("/salud");
+}
+
+export async function resendVerificationAction(): Promise<FormState> {
+  try {
+    await api("/me/verify", { method: "POST" });
+  } catch (e) { return fail(e); }
+  return { message: "Enviado. Revisa tu correo (y la carpeta de spam)." };
+}
+
 export async function logoutAction() {
   (await cookies()).delete(TOKEN_COOKIE);
   redirect("/entrar");

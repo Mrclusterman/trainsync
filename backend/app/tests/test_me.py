@@ -169,3 +169,40 @@ def test_watch_detection_never_breaks_the_plan():
         def activities(self, *_):
             raise httpx.ConnectError("sin red")
     assert me_router.watch_sessions(Down(), date.today()) == {}
+
+
+def test_forgot_and_reset_password(monkeypatch):
+    from app import mail
+    sent = {}
+    monkeypatch.setattr(mail, "send", lambda to, subject, body: sent.update({to: body}))
+    old = auth("olvido@x.es")
+    assert api.post("/auth/forgot", json={"email": "nadie@x.es"}).status_code == 202  # no revela si existe
+    assert api.post("/auth/forgot", json={"email": "Olvido@x.es"}).status_code == 202
+    token = sent["olvido@x.es"].split("token=")[1].split()[0]
+    assert api.post("/auth/reset", json={"token": token, "password": "corta"}).status_code == 422
+    assert api.post("/auth/reset", json={"token": token, "password": "otra-clave-larga"}).status_code == 200
+    assert api.post("/auth/reset", json={"token": token, "password": "otra-clave-mas"}).status_code == 401  # un solo uso
+    assert api.get("/me", headers=old).status_code == 401  # la sesión anterior se cierra
+    assert api.post("/auth/login", json={"email": "olvido@x.es", "password": "otra-clave-larga"}).status_code == 200
+    assert api.get("/me", headers=old | {"Authorization": f"Bearer {token}"}).status_code == 401  # no sirve de sesión
+
+
+def test_email_verification(monkeypatch):
+    from app import mail
+    sent = {}
+    monkeypatch.setattr(mail, "send", lambda to, subject, body: sent.update({to: body}))
+    h = auth("verifica@x.es")
+    assert api.get("/me", headers=h).json() == {"email": "verifica@x.es", "email_verified": False}
+    token = sent["verifica@x.es"].split("token=")[1].split()[0]
+    assert api.post("/auth/verify", json={"token": "basura"}).status_code == 401
+    assert api.post("/auth/verify", json={"token": token}).status_code == 204
+    assert api.get("/me", headers=h).json()["email_verified"] is True
+    assert api.get("/me/export", headers=h).json()["account"]["email_verified_at"]
+
+
+def test_login_attempts_are_limited():
+    register("fuerza@x.es")
+    for _ in range(10):
+        assert api.post("/auth/login", json={"email": "fuerza@x.es", "password": "mala-clave-123"}).status_code == 401
+    blocked = api.post("/auth/login", json={"email": "fuerza@x.es", "password": "una-clave-larga"})
+    assert blocked.status_code == 429 and int(blocked.headers["Retry-After"]) > 0

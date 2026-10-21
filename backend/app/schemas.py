@@ -233,6 +233,24 @@ class Token(BaseModel):
     token: str
 
 
+class ForgotIn(BaseModel):
+    email: str
+
+
+class ResetIn(BaseModel):
+    token: str
+    password: str = Field(min_length=10, max_length=200)
+
+
+class LinkTokenIn(BaseModel):
+    token: str
+
+
+class Account(BaseModel):
+    email: str
+    email_verified: bool
+
+
 class ProfileIn(BaseModel):
     goal: Literal["fitness", "strength", "fat_loss"]
     days: dict[Weekday, int]

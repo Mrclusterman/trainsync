@@ -1,11 +1,11 @@
 """Cuenta, perfil e historial del usuario (Fase 1, CUMPLIMIENTO #6, #17 y #20)."""
 from datetime import date, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from app import auth, crypto, db, links, schemas
+from app import auth, crypto, db, links, mail, ratelimit, schemas
 from app.links import linked_client
 from app.routers import plan as event_plan
 from app.routers.health import build_plan, profile_from
@@ -20,7 +20,7 @@ MIN_AGE = 14  # LOPDGDD art. 7: edad mínima para consentir en España (CUMPLIMI
 
 
 @router.post("/auth/register", response_model=schemas.Token, status_code=201)
-def register(req: schemas.RegisterIn, session: Session = Depends(db.get_session)):
+def register(req: schemas.RegisterIn, tasks: BackgroundTasks, session: Session = Depends(db.get_session)):
     if not (req.accept_terms and req.health_consent):
         raise HTTPException(422, "Hace falta aceptar los términos y, por separado, el tratamiento de datos de salud")
     if date.today().year - req.birth_year < MIN_AGE:
@@ -32,15 +32,60 @@ def register(req: schemas.RegisterIn, session: Session = Depends(db.get_session)
                    health_consent_at=db.now(), terms_version=TERMS_VERSION)
     session.add(user)
     session.commit()
-    return {"token": auth.create_token(user.id)}
+    tasks.add_task(mail.verify_email, user.email, auth.create_token(user, "verify"))
+    return {"token": auth.create_token(user)}
 
 
 @router.post("/auth/login", response_model=schemas.Token)
 def login(req: schemas.LoginIn, session: Session = Depends(db.get_session)):
-    user = session.scalar(select(db.User).where(db.User.email == req.email.strip().lower()))
+    email = req.email.strip().lower()
+    ratelimit.check(f"login:{email}", 10, 15 * 60)  # [Práctica: OWASP, limitar intentos por cuenta]
+    user = session.scalar(select(db.User).where(db.User.email == email))
     if user is None or not auth.verify_password(req.password, user.password_hash):
         raise HTTPException(401, "Email o contraseña incorrectos")
-    return {"token": auth.create_token(user.id)}
+    return {"token": auth.create_token(user)}
+
+
+@router.post("/auth/forgot", status_code=202)
+def forgot_password(req: schemas.ForgotIn, tasks: BackgroundTasks, session: Session = Depends(db.get_session)):
+    """Siempre 202 y el email sale en segundo plano: la respuesta no revela si la cuenta existe."""
+    email = req.email.strip().lower()
+    ratelimit.check(f"forgot:{email}", 3, 60 * 60)
+    user = session.scalar(select(db.User).where(db.User.email == email))
+    if user:
+        tasks.add_task(mail.reset_password, user.email, auth.create_token(user, "reset"))
+    return Response(status_code=202)
+
+
+@router.post("/auth/reset", response_model=schemas.Token)
+def reset_password(req: schemas.ResetIn, session: Session = Depends(db.get_session)):
+    """Nueva contraseña con el enlace del email; cierra las demás sesiones (auth.password_stamp)."""
+    user = auth.user_from(req.token, "reset", session)
+    user.password_hash = auth.hash_password(req.password)
+    session.merge(db.EmailVerification(user_id=user.id))  # quien abre el enlace recibe los emails de la cuenta
+    session.commit()
+    return {"token": auth.create_token(user)}
+
+
+@router.post("/auth/verify", status_code=204)
+def verify_email(req: schemas.LinkTokenIn, session: Session = Depends(db.get_session)):
+    user = auth.user_from(req.token, "verify", session)
+    if session.get(db.EmailVerification, user.id) is None:
+        session.add(db.EmailVerification(user_id=user.id))
+        session.commit()
+    return Response(status_code=204)
+
+
+@router.get("/me", response_model=schemas.Account)
+def account(user: db.User = Depends(auth.current_user), session: Session = Depends(db.get_session)):
+    return {"email": user.email, "email_verified": session.get(db.EmailVerification, user.id) is not None}
+
+
+@router.post("/me/verify", status_code=202)
+def resend_verification(tasks: BackgroundTasks, user: db.User = Depends(auth.current_user)):
+    ratelimit.check(f"verify:{user.id}", 3, 60 * 60)
+    tasks.add_task(mail.verify_email, user.email, auth.create_token(user, "verify"))
+    return Response(status_code=202)
 
 
 @router.put("/me/profile", status_code=204)
@@ -350,8 +395,10 @@ def export(user: db.User = Depends(auth.current_user), session: Session = Depend
     ready = session.scalars(select(db.ReadinessLog).where(db.ReadinessLog.user_id == user.id)).all()
     link = session.get(db.IntervalsLink, user.id)  # la clave no se exporta: es un secreto, no un dato personal
     goals = session.scalars(select(db.RaceGoal).where(db.RaceGoal.user_id == user.id)).all()
+    verified = session.get(db.EmailVerification, user.id)
     return {"account": {"email": user.email, "birth_year": user.birth_year, "created_at": user.created_at.isoformat(),
-                        "health_consent_at": user.health_consent_at.isoformat(), "terms_version": user.terms_version},
+                        "health_consent_at": user.health_consent_at.isoformat(), "terms_version": user.terms_version,
+                        "email_verified_at": verified.verified_at.isoformat() if verified else None},
             "profile": {"plan": row.plan, "screening": row.screening, "block_start": row.block_start.isoformat()} if row else None,
             "intervals": {"athlete_id": link.athlete_id, "linked_at": link.linked_at.isoformat()} if link else None,
             "goals": [{"name": g.name, "sport": g.sport, "date": g.date.isoformat(), "priority": g.priority,
@@ -364,7 +411,8 @@ def export(user: db.User = Depends(auth.current_user), session: Session = Depend
 @router.delete("/me", status_code=204)
 def delete_account(user: db.User = Depends(auth.current_user), session: Session = Depends(db.get_session)):
     """Borrado inmediato de la cuenta y de todos sus datos (RGPD art. 17, CUMPLIMIENTO #20)."""
-    for model in (db.SessionLog, db.ReadinessLog, db.HealthProfileRow, db.IntervalsLink, db.WeekChange, db.RaceGoal):
+    for model in (db.SessionLog, db.ReadinessLog, db.HealthProfileRow, db.IntervalsLink, db.WeekChange, db.RaceGoal,
+                  db.EmailVerification):
         session.execute(delete(model).where(model.user_id == user.id))
     session.delete(session.get(db.User, user.id))
     session.commit()
