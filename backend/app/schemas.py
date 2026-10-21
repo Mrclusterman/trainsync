@@ -239,3 +239,13 @@ class SessionLogIn(BaseModel):
 class UserPlan(HealthPlan):
     block: int
     adherence: list[float]
+
+
+class IntervalsLinkIn(BaseModel):
+    athlete_id: str = Field(pattern=r"^i?\d{1,12}$")
+    api_key: str = Field(min_length=10, max_length=200)
+
+
+class SentEvent(BaseModel):
+    id: int
+    name: str

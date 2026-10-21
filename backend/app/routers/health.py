@@ -11,16 +11,17 @@ from app.services import health_plan as hp
 from app.services import screening
 
 
-def profile_from(req: schemas.HealthPlanRequest) -> tuple[hp.HealthProfile, screening.Result]:
+def profile_from(req: schemas.HealthPlanRequest, physio: dict | None = None) -> tuple[hp.HealthProfile, screening.Result]:
+    """physio: lthr, max_hr y css de una cuenta vinculada, para que los objetivos coincidan con los del reloj."""
     check = screening.screen(screening.Screening(**req.screening.model_dump()))
     p = hp.HealthProfile(goal=req.goal, days=dict(req.days), strength=req.strength, cardio=list(req.cardio),
-                         level=req.level, age=req.age, intensity_cap=check.intensity_cap)
+                         level=req.level, age=req.age, intensity_cap=check.intensity_cap, **(physio or {}))
     return p, check
 
 
 def build_plan(req: schemas.HealthPlanRequest, monday: date, adherence: list[float], week_in_block: int,
-               readiness: schemas.Readiness | None) -> dict:
-    p, check = profile_from(req)
+               readiness: schemas.Readiness | None, physio: dict | None = None) -> dict:
+    p, check = profile_from(req, physio)
     if check.clearance == "stop":  # síntomas estando activo: el algoritmo del ACSM manda parar y consultar
         return {"goal": req.goal, "week_in_block": week_in_block, "dose": {"aerobic": 0, "strength_days": 0, "sets": 0},
                 "equivalent_min": 0, "warnings": [check.message], "screening": check.__dict__,

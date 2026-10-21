@@ -104,11 +104,20 @@ def describe(session: dict, profile: Profile) -> str:
     return "\n".join(lines).replace("\n\n\n", "\n\n").strip() + "\n"
 
 
-def event(session: dict, day: str, profile: Profile) -> dict:
+def event(session: dict, day: str, profile: Profile, key: str | None = None) -> dict:
     """Evento para POST /events/bulk?upsert=true: un external_id por día, así reenviar lo actualiza.
 
     intervals.icu ignora un uid propio y asigna el suyo (comprobado 2026-10-20); external_id sí se respeta.
     """
     return {"category": "WORKOUT", "start_date_local": f"{day}T00:00:00", "type": SPORT_TYPES[session["sport"]],
             "name": f"TrainSync · {session['name']}", "description": describe(session, profile),
-            "moving_time": session["duration_min"] * 60, "external_id": f"trainsync-{day}"}
+            "moving_time": session["duration_min"] * 60,
+            "external_id": f"trainsync-{day}" + (f"-{key}" if key else "")}  # varias sesiones el mismo día: una por clave
+
+
+def strength_event(session: dict, day: str) -> dict:
+    """Fuerza como entrenamiento de pesas: lista de ejercicios sin guiones, para que no se lea como pasos con objetivo."""
+    text = "\n".join([*(f"• {e}" for e in session["exercises"]), "", session["notes"]])
+    return {"category": "WORKOUT", "start_date_local": f"{day}T00:00:00", "type": "WeightTraining",
+            "name": f"TrainSync · {session['name']}", "description": text, "moving_time": session["duration_min"] * 60,
+            "external_id": f"trainsync-{day}-strength"}

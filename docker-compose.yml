@@ -1,10 +1,12 @@
-# shortcut: solo el backend; PostgreSQL/TimescaleDB, Redis y Celery entran en la Fase 1 (multiusuario)
+# shortcut: SQLite en un volumen; PostgreSQL (DATABASE_URL), Redis y Celery cuando haya más de un servidor
 services:
   backend:
     build: ./backend
     env_file: .env
     ports:
       - "8000:8000"
+    volumes:
+      - trainsync-data:/app/data  # cuentas e historial (SQLite)
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
@@ -17,3 +19,6 @@ services:
       - "3000:3000"
     depends_on:
       - backend
+
+volumes:
+  trainsync-data:

@@ -7,7 +7,7 @@ import os
 import uuid
 from datetime import date, datetime, timezone
 
-from sqlalchemy import JSON, Boolean, Date, DateTime, ForeignKey, Integer, String, UniqueConstraint, create_engine
+from sqlalchemy import JSON, Date, DateTime, ForeignKey, Integer, String, UniqueConstraint, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///data/trainsync.db")
@@ -54,6 +54,15 @@ class SessionLog(Base):
     date: Mapped[date] = mapped_column(Date)
     sport: Mapped[str] = mapped_column(String(20))
     rpe: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+
+class IntervalsLink(Base):
+    """Cuenta de intervals.icu vinculada; la clave va cifrada (app/crypto.py)."""
+    __tablename__ = "intervals_links"
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    athlete_id: Mapped[str] = mapped_column(String(40))
+    api_key_encrypted: Mapped[str] = mapped_column(String(500))
+    linked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
 
 class ReadinessLog(Base):

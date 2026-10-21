@@ -70,3 +70,60 @@ def test_readiness_export_and_delete():
     assert api.delete("/me", headers=h).status_code == 204
     assert api.get("/me/export", headers=h).status_code == 401  # la cuenta ya no existe
     assert api.post("/auth/login", json={"email": "borrar@x.es", "password": "una-clave-larga"}).status_code == 401
+
+
+# ---- intervals.icu por usuario (clave cifrada) y envío del plan de salud
+
+import base64  # noqa: E402
+import json  # noqa: E402
+import os  # noqa: E402
+
+import httpx  # noqa: E402
+from sqlalchemy import select  # noqa: E402
+
+from app import crypto, db  # noqa: E402
+from app.routers import me  # noqa: E402
+from app.services.intervals_client import IntervalsClient  # noqa: E402
+
+
+def test_crypto_roundtrip_and_requires_a_key(monkeypatch):
+    monkeypatch.setenv("ENCRYPTION_KEY", base64.b64encode(os.urandom(32)).decode())
+    token = crypto.encrypt("clave-secreta")
+    assert token != crypto.encrypt("clave-secreta") and crypto.decrypt(token) == "clave-secreta"  # nonce aleatorio
+    monkeypatch.delenv("ENCRYPTION_KEY")
+    try:
+        crypto.encrypt("x")
+        raise AssertionError("sin ENCRYPTION_KEY no debe cifrar")
+    except Exception as exc:
+        assert getattr(exc, "status_code", None) == 503
+
+
+def test_link_intervals_and_send_today(monkeypatch):
+    monkeypatch.setenv("ENCRYPTION_KEY", base64.b64encode(os.urandom(32)).decode())
+    posted = []
+
+    def fake(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST":
+            events = json.loads(request.content)
+            posted.extend(events)
+            return httpx.Response(200, json=[{"id": 100 + i, **e} for i, e in enumerate(events)])
+        return httpx.Response(200, json={"icu_resting_hr": 50, "sportSettings": [
+            {"types": ["Run"], "lthr": 170, "max_hr": 190}, {"types": ["Ride"], "lthr": 165, "max_hr": 190}]})
+
+    monkeypatch.setattr(me, "make_client", lambda a, k: IntervalsClient(a, k, httpx.MockTransport(fake)))
+    h = auth("reloj@x.es")
+    every_day = {d: 60 for d in ("MON", "TUE", "WED", "THU", "FRI", "SAT")}
+    api.put("/me/profile", json=PROFILE | {"days": every_day, "cardio": ["walking", "cycling"]}, headers=h)
+    assert api.post("/me/plan/today/send", headers=h).status_code == 409  # sin vincular
+    assert api.put("/me/intervals", json={"athlete_id": "i123", "api_key": "clave-de-pruebas-1234"},
+                   headers=h).status_code == 204
+    with db.SessionLocal() as s:  # la clave no se guarda en claro
+        stored = s.get(db.IntervalsLink, s.scalar(select(db.User.id).where(db.User.email == "reloj@x.es")))
+        assert "clave-de-pruebas" not in stored.api_key_encrypted
+    r = api.post("/me/plan/today/send", headers=h)
+    if r.status_code == 409:  # hoy es domingo: día de descanso
+        return
+    assert r.status_code == 200 and posted
+    assert all(e["external_id"].startswith(f"trainsync-{date.today().isoformat()}-") for e in posted)
+    assert {e["type"] for e in posted} <= {"WeightTraining", "Walk", "Ride"}
+    assert "clave-de-pruebas" not in json.dumps(api.get("/me/export", headers=h).json())

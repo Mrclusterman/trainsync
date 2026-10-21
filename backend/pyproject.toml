@@ -3,7 +3,7 @@ name = "trainsync-backend"
 version = "0.1.0"
 requires-python = ">=3.12"
 license = "AGPL-3.0-only"
-dependencies = ["fastapi>=0.111", "uvicorn[standard]>=0.30", "httpx>=0.27", "sqlalchemy>=2.0", "pyjwt>=2.8"]
+dependencies = ["fastapi>=0.111", "uvicorn[standard]>=0.30", "httpx>=0.27", "sqlalchemy>=2.0", "pyjwt>=2.8", "cryptography>=42"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]

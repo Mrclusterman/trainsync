@@ -5,9 +5,15 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from app import auth, db, schemas
+from app import auth, crypto, db, schemas
+from app.routers import plan as event_plan
 from app.routers.health import build_plan, profile_from
 from app.services import health_plan as hp
+from app.services import training_engine as engine
+from app.services import workout_text
+from app.services.intervals_client import IntervalsClient
+
+make_client = IntervalsClient  # se sustituye en los tests
 
 router = APIRouter()
 TERMS_VERSION = "2026-10-21"
@@ -57,7 +63,17 @@ def put_profile(req: schemas.ProfileIn, user: db.User = Depends(auth.current_use
     return Response(status_code=204)
 
 
-def user_plan(user: db.User, session: Session, monday: date) -> dict:
+def linked_client(user: db.User, session: Session) -> IntervalsClient | None:
+    link = session.get(db.IntervalsLink, user.id)
+    return make_client(link.athlete_id, crypto.decrypt(link.api_key_encrypted)) if link else None
+
+
+def physiology(client: IntervalsClient) -> engine.Profile:
+    """LTHR, FC máx., CSS y ritmo umbral de la cuenta vinculada (mismas reglas que el plan de eventos)."""
+    return event_plan.fill_physiology(engine.Profile(active_sports=["running", "cycling"]), client.athlete())
+
+
+def user_plan(user: db.User, session: Session, monday: date, ephys: engine.Profile | None = None) -> dict:
     row = session.get(db.HealthProfileRow, user.id)
     if row is None:
         raise HTTPException(404, "Primero completa tu perfil (PUT /me/profile)")
@@ -67,10 +83,11 @@ def user_plan(user: db.User, session: Session, monday: date) -> dict:
     done: dict[str, int] = {}
     for log in logs:
         done[log.date.isoformat()] = done.get(log.date.isoformat(), 0) + 1
-    adherence = hp.adherence_history(profile_from(req)[0], row.block_start, done, block)
+    physio = {"lthr": ephys.lthr, "max_hr": ephys.max_hr, "css": ephys.css} if ephys else None
+    adherence = hp.adherence_history(profile_from(req, physio)[0], row.block_start, done, block)
     ready = session.get(db.ReadinessLog, (user.id, date.today()))
     readiness = schemas.Readiness(sleep=ready.sleep, energy=ready.energy, soreness=ready.soreness) if ready else None
-    return build_plan(req, monday, adherence, week, readiness) | {"block": block, "adherence": adherence}
+    return build_plan(req, monday, adherence, week, readiness, physio) | {"block": block, "adherence": adherence}
 
 
 @router.get("/me/plan", response_model=schemas.UserPlan)
@@ -78,7 +95,46 @@ def get_plan(start: date | None = None, user: db.User = Depends(auth.current_use
              session: Session = Depends(db.get_session)):
     today = date.today()
     monday = (start or today) - timedelta((start or today).weekday())
-    return user_plan(user, session, monday)
+    client = linked_client(user, session)
+    return user_plan(user, session, monday, physiology(client) if client else None)
+
+
+@router.put("/me/intervals", status_code=204)
+def link_intervals(req: schemas.IntervalsLinkIn, user: db.User = Depends(auth.current_user),
+                   session: Session = Depends(db.get_session)):
+    """Vincula intervals.icu una vez: se comprueba la clave y se guarda cifrada."""
+    try:
+        make_client(req.athlete_id, req.api_key).athlete()
+    except Exception:
+        raise HTTPException(422, "intervals.icu no acepta ese ID de atleta o esa clave")
+    session.merge(db.IntervalsLink(user_id=user.id, athlete_id=req.athlete_id, api_key_encrypted=crypto.encrypt(req.api_key)))
+    session.commit()
+    return Response(status_code=204)
+
+
+@router.delete("/me/intervals", status_code=204)
+def unlink_intervals(user: db.User = Depends(auth.current_user), session: Session = Depends(db.get_session)):
+    session.execute(delete(db.IntervalsLink).where(db.IntervalsLink.user_id == user.id))
+    session.commit()
+    return Response(status_code=204)
+
+
+@router.post("/me/plan/today/send", response_model=list[schemas.SentEvent])
+def send_today(user: db.User = Depends(auth.current_user), session: Session = Depends(db.get_session)):
+    """Envía las sesiones de hoy al calendario de intervals.icu (resistencia estructurada; fuerza como lista)."""
+    client = linked_client(user, session)
+    if client is None:
+        raise HTTPException(409, "Vincula primero tu cuenta de intervals.icu (PUT /me/intervals)")
+    ephys = physiology(client)
+    today = date.today()
+    plan = user_plan(user, session, today - timedelta(today.weekday()), ephys)
+    sessions = next(d["sessions"] for d in plan["days"] if d["date"] == today.isoformat())
+    if not sessions:
+        raise HTTPException(409, "Hoy no hay sesiones que enviar")
+    events = [workout_text.strength_event(s, today.isoformat()) if s["sport"] == "strength"
+              else workout_text.event(s, today.isoformat(), ephys, key=s["sport"]) for s in sessions]
+    created = client.upsert_workouts(events)
+    return [{"id": c["id"], "name": e["name"]} for c, e in zip(created, events)]
 
 
 @router.post("/me/sessions", status_code=201)
@@ -110,9 +166,11 @@ def export(user: db.User = Depends(auth.current_user), session: Session = Depend
     row = session.get(db.HealthProfileRow, user.id)
     logs = session.scalars(select(db.SessionLog).where(db.SessionLog.user_id == user.id)).all()
     ready = session.scalars(select(db.ReadinessLog).where(db.ReadinessLog.user_id == user.id)).all()
+    link = session.get(db.IntervalsLink, user.id)  # la clave no se exporta: es un secreto, no un dato personal
     return {"account": {"email": user.email, "birth_year": user.birth_year, "created_at": user.created_at.isoformat(),
                         "health_consent_at": user.health_consent_at.isoformat(), "terms_version": user.terms_version},
             "profile": {"plan": row.plan, "screening": row.screening, "block_start": row.block_start.isoformat()} if row else None,
+            "intervals": {"athlete_id": link.athlete_id, "linked_at": link.linked_at.isoformat()} if link else None,
             "sessions": [{"date": x.date.isoformat(), "sport": x.sport, "rpe": x.rpe} for x in logs],
             "readiness": [{"date": x.date.isoformat(), "sleep": x.sleep, "energy": x.energy, "soreness": x.soreness}
                           for x in ready]}
@@ -121,7 +179,7 @@ def export(user: db.User = Depends(auth.current_user), session: Session = Depend
 @router.delete("/me", status_code=204)
 def delete_account(user: db.User = Depends(auth.current_user), session: Session = Depends(db.get_session)):
     """Borrado inmediato de la cuenta y de todos sus datos (RGPD art. 17, CUMPLIMIENTO #20)."""
-    for model in (db.SessionLog, db.ReadinessLog, db.HealthProfileRow):
+    for model in (db.SessionLog, db.ReadinessLog, db.HealthProfileRow, db.IntervalsLink):
         session.execute(delete(model).where(model.user_id == user.id))
     session.delete(session.get(db.User, user.id))
     session.commit()
