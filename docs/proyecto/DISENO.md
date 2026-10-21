@@ -101,7 +101,9 @@ Entrada: días disponibles, minutos por sesión, dosis de la semana. Algoritmo d
 
 ## 9. Seguridad
 
-- **Cribado del ACSM** en lugar del PAR-Q+ (su licencia no permite incluirlo en una app sin permiso escrito, EA §5).
+- **Aviso legal y de salud** (decisión del 2026-10-21) al crear el perfil: no es un servicio médico, cuándo consultar
+  y cuándo parar. Sin cuestionario, la intensidad la limitan el nivel (principiantes, solo moderada) y el aviso.
+- **Cribado del ACSM, opcional y sin formulario** (para integraciones futuras), en lugar del PAR-Q+ (su licencia no permite incluirlo en una app sin permiso escrito, EA §5).
   El resultado fija el tope de intensidad del plan: ligera-moderada (resistencia sin Z4+ y fuerza a RIR ≥ 3), moderada
   (sin vigorosa, RIR ≥ 2) o vigorosa (sin tope). Activo con síntomas → el plan queda vacío y pide parar y consultar.
   Consulta recomendada → aviso visible y tope ligero-moderado hasta que se confirme. [EA §5]

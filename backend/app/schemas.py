@@ -155,7 +155,7 @@ class HealthPlanRequest(BaseModel):
     cardio: list[Literal["walking", "running", "cycling", "swimming_pool"]] = ["walking"]
     level: Literal["beginner", "intermediate", "advanced"] = "beginner"
     age: int | None = Field(None, ge=14, le=110)  # España: 14 años para consentir (CUMPLIMIENTO #17)
-    screening: ScreeningIn = Field(description="Cribado previo del ACSM (screening.py)")
+    screening: ScreeningIn | None = Field(None, description="Cribado previo del ACSM (opcional; la app usa un aviso legal)")
     start: date | None = Field(None, description="Lunes de la semana; por defecto, el de esta semana")
     adherence: list[float] = Field([], description="Fracción de sesiones hechas en cada bloque terminado")
     week_in_block: int = Field(0, ge=0, le=3)
@@ -195,7 +195,7 @@ class HealthDose(BaseModel):
 
 class HealthPlan(BaseModel):
     goal: str
-    screening: ScreeningOut
+    screening: ScreeningOut | None = None
     week_in_block: int
     dose: HealthDose
     equivalent_min: int
@@ -228,7 +228,7 @@ class ProfileIn(BaseModel):
     strength: Literal["gym", "bodyweight", "none"] = "gym"
     cardio: list[Literal["walking", "running", "cycling", "swimming_pool"]] = ["walking"]
     level: Literal["beginner", "intermediate", "advanced"] = "beginner"
-    screening: ScreeningIn
+    screening: ScreeningIn | None = None
 
 
 class SessionLogIn(BaseModel):

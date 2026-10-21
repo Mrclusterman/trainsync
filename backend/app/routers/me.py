@@ -48,7 +48,8 @@ def login(req: schemas.LoginIn, session: Session = Depends(db.get_session)):
 def put_profile(req: schemas.ProfileIn, user: db.User = Depends(auth.current_user),
                 session: Session = Depends(db.get_session)):
     row = session.get(db.HealthProfileRow, user.id)
-    plan, screening = req.model_dump(exclude={"screening"}), req.screening.model_dump()
+    # Sin cribado se guarda {}: la columna es NOT NULL en las bases ya creadas
+    plan, screening = req.model_dump(exclude={"screening"}), (req.screening.model_dump() if req.screening else {})
     if row is None:
         today = date.today()
         session.add(db.HealthProfileRow(user_id=user.id, plan=plan, screening=screening,
@@ -77,7 +78,7 @@ def user_plan(user: db.User, session: Session, monday: date, ephys: engine.Profi
     row = session.get(db.HealthProfileRow, user.id)
     if row is None:
         raise HTTPException(404, "Primero completa tu perfil (PUT /me/profile)")
-    req = schemas.HealthPlanRequest(**row.plan, age=date.today().year - user.birth_year, screening=row.screening)
+    req = schemas.HealthPlanRequest(**row.plan, age=date.today().year - user.birth_year, screening=row.screening or None)
     block, week = hp.position(row.block_start, monday)
     logs = session.scalars(select(db.SessionLog).where(db.SessionLog.user_id == user.id)).all()
     done: dict[str, int] = {}

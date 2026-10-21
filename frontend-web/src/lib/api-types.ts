@@ -92,26 +92,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/screening/questions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Screening Questions
-         * @description Preguntas del cribado (texto propio sobre el algoritmo del ACSM) para los formularios.
-         */
-        get: operations["screening_questions_screening_questions_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/auth/register": {
         parameters: {
             query?: never;
@@ -470,7 +450,7 @@ export interface components {
         HealthPlan: {
             /** Goal */
             goal: string;
-            screening: components["schemas"]["ScreeningOut"];
+            screening?: components["schemas"]["ScreeningOut"] | null;
             /** Week In Block */
             week_in_block: number;
             dose: components["schemas"]["HealthDose"];
@@ -516,8 +496,8 @@ export interface components {
             level: "beginner" | "intermediate" | "advanced";
             /** Age */
             age?: number | null;
-            /** @description Cribado previo del ACSM (screening.py) */
-            screening: components["schemas"]["ScreeningIn"];
+            /** @description Cribado previo del ACSM (opcional; la app usa un aviso legal) */
+            screening?: components["schemas"]["ScreeningIn"] | null;
             /**
              * Start
              * @description Lunes de la semana; por defecto, el de esta semana
@@ -651,7 +631,7 @@ export interface components {
              * @enum {string}
              */
             level: "beginner" | "intermediate" | "advanced";
-            screening: components["schemas"]["ScreeningIn"];
+            screening?: components["schemas"]["ScreeningIn"] | null;
         };
         /** Readiness */
         Readiness: {
@@ -859,7 +839,7 @@ export interface components {
         UserPlan: {
             /** Goal */
             goal: string;
-            screening: components["schemas"]["ScreeningOut"];
+            screening?: components["schemas"]["ScreeningOut"] | null;
             /** Week In Block */
             week_in_block: number;
             dose: components["schemas"]["HealthDose"];
@@ -1016,26 +996,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    screening_questions_screening_questions_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
                 };
             };
         };

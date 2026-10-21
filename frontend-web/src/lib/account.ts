@@ -5,7 +5,6 @@ export type UserPlan = components["schemas"]["UserPlan"];
 export type HealthDay = components["schemas"]["HealthDay"];
 export type HealthStrength = components["schemas"]["HealthStrength"];
 export type HealthCardio = components["schemas"]["HealthCardio"];
-export type Questions = { active: string; diseases: string[]; symptoms: string[]; other_conditions: string };
 
 const API_URL = process.env.TRAINSYNC_API_URL ?? "http://localhost:8000";
 export const TOKEN_COOKIE = "ts_session";

@@ -2,12 +2,11 @@
 
 import { useActionState } from "react";
 import { saveProfileAction } from "@/lib/account-actions";
-import type { Questions } from "@/lib/account";
+import { HealthNotice } from "./HealthNotice";
 import { WEEKDAY_LABEL } from "@/lib/format";
 
 export type SavedProfile = {
   goal: string; days: Record<string, number>; strength: string; cardio: string[]; level: string;
-  screening?: { active: boolean; known_disease: boolean; symptoms: boolean; other_conditions: boolean };
 } | null;
 
 const GOALS = [
@@ -19,7 +18,7 @@ const CARDIO = [["walking", "Caminar"], ["running", "Correr"], ["cycling", "Bici
 const legend = "font-ui text-sm text-secondary";
 const box = "rounded-module bg-surface-1 p-4 space-y-2";
 
-export function ProfileForm({ questions, saved }: { questions: Questions; saved: SavedProfile }) {
+export function ProfileForm({ saved }: { saved: SavedProfile }) {
   const [state, save, saving] = useActionState(saveProfileAction, null);
   const p = saved ?? { goal: "fitness", days: { MON: 45, WED: 45, FRI: 45 }, strength: "gym", cardio: ["walking"], level: "beginner" };
   return (
@@ -68,30 +67,7 @@ export function ProfileForm({ questions, saved }: { questions: Questions; saved:
         ))}
       </fieldset>
 
-      {/* Cribado previo del ACSM (Riebe 2015), con preguntas propias */}
-      <fieldset className={box}>
-        <legend className={legend}>Antes de empezar</legend>
-        <p className="text-sm">{questions.active}</p>
-        <div className="flex gap-4 text-sm">
-          <label className="flex gap-2"><input type="radio" name="active" value="yes" required defaultChecked={p.screening?.active} />Sí</label>
-          <label className="flex gap-2"><input type="radio" name="active" value="no" defaultChecked={p.screening && !p.screening.active} />No</label>
-        </div>
-        <p className="pt-2 text-sm">¿Te han diagnosticado alguna de estas enfermedades?</p>
-        {questions.diseases.map((d) => (
-          <label key={d} className="flex gap-2 text-sm"><input type="checkbox" name="disease" value={d} />{d}</label>
-        ))}
-        <p className="pt-2 text-sm">¿Notas alguno de estos síntomas?</p>
-        {questions.symptoms.map((s) => (
-          <label key={s} className="flex gap-2 text-sm"><input type="checkbox" name="symptom" value={s} className="mt-1" />{s}</label>
-        ))}
-        <p className="pt-2 text-sm">{questions.other_conditions}</p>
-        <div className="flex gap-4 text-sm">
-          <label className="flex gap-2"><input type="radio" name="other" value="yes" />Sí</label>
-          <label className="flex gap-2"><input type="radio" name="other" value="no" defaultChecked />No</label>
-        </div>
-        <p className="pt-1 text-xs text-secondary">Solo sirve para ajustar la intensidad y decirte cuándo conviene
-          consultar a tu médico. No es un diagnóstico.</p>
-      </fieldset>
+      <HealthNotice />
 
       {state?.error && <p role="alert" className="text-sm text-alert">{state.error}</p>}
       <button disabled={saving} className="w-full rounded-full bg-accent px-5 py-2.5 font-ui text-sm font-medium text-canvas disabled:opacity-60">

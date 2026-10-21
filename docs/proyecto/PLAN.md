@@ -16,8 +16,8 @@
    renueva solo); Apple Salud y Health Connect se leen desde la app móvil, que es la vía principal de integración.
    El alta de la app en cada programa de desarrolladores se hace una vez por marca (Polar inmediato; Suunto con acuerdo;
    Garmin solo empresas y con altas pausadas).
-6. **Seguridad:** cribado previo del ACSM (Riebe 2015) al empezar, en lugar del PAR-Q+, cuya licencia no permite
-   incluirlo en una app sin permiso escrito; fija el tope de intensidad y cuándo recomendar consulta médica. Nada de consejo médico ni dietas (ver `docs/CUMPLIMIENTO.md`).
+6. **Seguridad:** aviso legal y de salud visible al crear el perfil (decisión del 2026-10-21: un cuestionario no encaja
+   con el público general). El cribado del ACSM queda en el backend como dato opcional, sin formulario. Nada de consejo médico ni dietas (ver `docs/CUMPLIMIENTO.md`).
 
 ## Fases
 

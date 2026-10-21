@@ -11,24 +11,29 @@ from app.services import health_plan as hp
 from app.services import screening
 
 
-def profile_from(req: schemas.HealthPlanRequest, physio: dict | None = None) -> tuple[hp.HealthProfile, screening.Result]:
-    """physio: lthr, max_hr y css de una cuenta vinculada, para que los objetivos coincidan con los del reloj."""
-    check = screening.screen(screening.Screening(**req.screening.model_dump()))
+def profile_from(req: schemas.HealthPlanRequest, physio: dict | None = None) -> tuple[hp.HealthProfile, screening.Result | None]:
+    """physio: lthr, max_hr y css de una cuenta vinculada, para que los objetivos coincidan con los del reloj.
+
+    Sin cribado (la app usa un aviso legal, decisión del 2026-10-21) no hay tope: la intensidad la limitan el nivel
+    (principiantes, solo moderada) y el aviso de consultar al médico.
+    """
+    check = screening.screen(screening.Screening(**req.screening.model_dump())) if req.screening else None
     p = hp.HealthProfile(goal=req.goal, days=dict(req.days), strength=req.strength, cardio=list(req.cardio),
-                         level=req.level, age=req.age, intensity_cap=check.intensity_cap, **(physio or {}))
+                         level=req.level, age=req.age, intensity_cap=check.intensity_cap if check else "vigorous",
+                         **(physio or {}))
     return p, check
 
 
 def build_plan(req: schemas.HealthPlanRequest, monday: date, adherence: list[float], week_in_block: int,
                readiness: schemas.Readiness | None, physio: dict | None = None) -> dict:
     p, check = profile_from(req, physio)
-    if check.clearance == "stop":  # síntomas estando activo: el algoritmo del ACSM manda parar y consultar
+    if check and check.clearance == "stop":  # síntomas estando activo: el algoritmo del ACSM manda parar y consultar
         return {"goal": req.goal, "week_in_block": week_in_block, "dose": {"aerobic": 0, "strength_days": 0, "sets": 0},
                 "equivalent_min": 0, "warnings": [check.message], "screening": check.__dict__,
                 "days": [{"date": (monday + timedelta(d)).isoformat(), "weekday": hp.WEEKDAYS[d], "sessions": []}
                          for d in range(7)]}
-    plan = hp.week_plan(p, monday, adherence, week_in_block) | {"screening": check.__dict__}
-    if check.clearance != "none":
+    plan = hp.week_plan(p, monday, adherence, week_in_block) | {"screening": check.__dict__ if check else None}
+    if check and check.clearance != "none":
         plan["warnings"].insert(0, check.message)
     if readiness:
         status = hp.readiness(readiness.sleep, readiness.energy, readiness.soreness)
@@ -46,12 +51,3 @@ def health_plan(req: schemas.HealthPlanRequest):
     today = date.today()
     monday = req.start or today - timedelta(today.weekday())
     return build_plan(req, monday, req.adherence, req.week_in_block, req.readiness)
-
-
-@router.get("/screening/questions")
-def screening_questions():
-    """Preguntas del cribado (texto propio sobre el algoritmo del ACSM) para los formularios."""
-    return {"active": "¿Haces ejercicio planificado al menos 30 minutos a intensidad moderada, 3 días o más por semana, "
-                      "desde hace al menos 3 meses?",
-            "diseases": list(screening.DISEASES), "symptoms": list(screening.SYMPTOMS),
-            "other_conditions": "¿Tienes alguna lesión, problema de huesos o articulaciones, o estás embarazada?"}

@@ -151,3 +151,9 @@ def test_endpoint_stops_when_active_with_symptoms():
     assert r.status_code == 200 and body["screening"]["clearance"] == "stop"
     assert all(not d["sessions"] for d in body["days"]) and "médico" in body["warnings"][0]
     assert TestClient(app).post("/health-plan", json={"goal": "x", "days": {}}).status_code == 422
+
+
+def test_endpoint_without_screening_uses_no_cap():
+    r = TestClient(app).post("/health-plan", json={"goal": "fitness", "days": {"MON": 60, "WED": 60, "SAT": 60},
+                                                   "level": "advanced", "start": MONDAY.isoformat()})
+    assert r.status_code == 200 and r.json()["screening"] is None and r.json()["days"]

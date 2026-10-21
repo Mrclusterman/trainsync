@@ -53,10 +53,6 @@ export async function saveProfileAction(_: FormState, form: FormData): Promise<F
       method: "PUT", body: JSON.stringify({
         goal: form.get("goal"), days, strength: form.get("strength"), level: form.get("level"),
         cardio: form.getAll("cardio"),
-        screening: {
-          active: form.get("active") === "yes", known_disease: form.getAll("disease").length > 0,
-          symptoms: form.getAll("symptom").length > 0, other_conditions: form.get("other") === "yes",
-        },
       }),
     });
   } catch (e) { return fail(e); }

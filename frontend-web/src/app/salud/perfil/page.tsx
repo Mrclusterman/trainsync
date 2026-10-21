@@ -2,10 +2,10 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { IntervalsLinkForm } from "@/components/IntervalsLinkForm";
 import { ProfileForm, type SavedProfile } from "@/components/ProfileForm";
-import { api, ApiError, hasSession, type Questions } from "@/lib/account";
+import { api, ApiError, hasSession } from "@/lib/account";
 import { deleteAccountAction, logoutAction } from "@/lib/account-actions";
 
-type Export = { profile: { plan: Omit<NonNullable<SavedProfile>, "screening">; screening: NonNullable<SavedProfile>["screening"] } | null;
+type Export = { profile: { plan: NonNullable<SavedProfile> } | null;
   intervals: { athlete_id: string } | null };
 
 async function PerfilView() {
@@ -17,12 +17,11 @@ async function PerfilView() {
     if (e instanceof ApiError && e.status === 401) redirect("/entrar");
     throw e;
   }
-  const questions = await api<Questions>("/screening/questions");
-  const saved = data.profile ? { ...data.profile.plan, screening: data.profile.screening } : null;
+  const saved = data.profile?.plan ?? null;
   return (
     <div className="space-y-6 pt-4">
       <h1 className="font-ui text-2xl font-bold">Tu perfil</h1>
-      <ProfileForm questions={questions} saved={saved} />
+      <ProfileForm saved={saved} />
 
       <section aria-labelledby="reloj" className="rounded-module bg-surface-1 p-4">
         <h2 id="reloj" className="font-ui text-sm text-secondary">Reloj (intervals.icu)</h2>
