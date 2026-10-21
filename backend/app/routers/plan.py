@@ -90,8 +90,11 @@ def day_state(wellness: list[dict], activities: list[dict], today: date) -> engi
         streak += 1
     by_day = {w["id"]: w.get("hrv") for w in wellness}
     recent = [a for a in activities if a.get("start_date_local", "")[:10] >= (today - timedelta(2)).isoformat()]
+    days_ago = [(today - date.fromisoformat(d)).days for d in trained if d <= today.isoformat()]
+    month = [a for a in activities if a.get("start_date_local", "")[:10] > (today - timedelta(28)).isoformat()]
     return engine.DayState(
         ctl=last["ctl"], atl=last["atl"],
+        load_focus=engine.load_focus(month), days_since_activity=min(days_ago) if days_ago else None,
         effort_mismatch=any(engine.effort_mismatch(a.get("icu_rpe"), a.get("icu_hr_zone_times")) for a in recent),
         hrv_history=[by_day.get((today - timedelta(d)).isoformat()) for d in range(34, -1, -1)],
         sleep_score=last.get("sleepScore") if last["id"] == today.isoformat() else None,
@@ -110,13 +113,44 @@ def last_activity(activities: list[dict]) -> dict | None:
             "hr_zone_secs": zones, "gray_zone": engine.gray_zone(zones)}
 
 
+@lru_cache(maxsize=64)
+def run_samples(activity_id: str) -> tuple:
+    """(FC, velocidad, pendiente) segundo a segundo, sin los 5 primeros minutos (la FC va con retraso)."""
+    st = client().streams(activity_id)
+    return tuple(zip(st.get("heartrate", []), st.get("velocity_smooth", []), st.get("grade_smooth", [])))[300:]
+
+
+RUNS_FOR_MODEL = 12  # carreras recientes para la relación FC-velocidad [Inferencia]
+
+
+def fit_run_model(profile: engine.Profile, activities: list[dict]) -> None:
+    """Relación FC-velocidad de tus carreras (como Garmin: ritmos desde la FC) y aviso si choca con la LTHR."""
+    runs = sorted((a for a in activities if a.get("type") == "Run" and a.get("average_heartrate")),
+                  key=lambda a: a["start_date_local"])[-RUNS_FOR_MODEL:]
+    if "running" not in profile.active_sports or not runs:
+        return
+    profile.run_model = engine.hr_pace_model([x for a in runs for x in run_samples(str(a["id"]))])
+    lthr = profile.lthr_for("running")
+    if profile.run_model and lthr and profile.run_pace:
+        predicted = engine.pace_at(lthr, profile.run_model)
+        # [Inferencia] más de un 5 % de diferencia: LTHR o ritmo umbral desajustados
+        if abs(predicted / profile.run_pace - 1) > 0.05:
+            fmt = lambda sec: f"{int(sec // 60)}:{round(sec % 60):02d}"
+            profile.warnings.append(
+                f"Con tu LTHR de carrera ({lthr:.0f}) tus carreras predicen {fmt(predicted)}/km en umbral, pero tu ritmo "
+                f"umbral en intervals.icu es {fmt(profile.run_pace)}/km. Una de las dos está desajustada: haz el test "
+                "de LTHR (R-TEST-LTHR).")
+
+
 def load_context(today: date):
     c = client()
     profile = fill_physiology(config.load_profile(), c.athlete())
     wellness = c.wellness(today - timedelta(35), today)  # 7 d + 28 d de línea base HRV
-    activities = c.activities(today - timedelta(7), today)
+    activities = c.activities(today - timedelta(365), today)  # 28 d de reparto de carga; carreras para el modelo
+    fit_run_model(profile, activities)
     goal = goal_from_races(c.races(today, today + timedelta(days=365)), today)
-    return profile, goal, day_state(wellness, activities, today), activities
+    week = [a for a in activities if a.get("start_date_local", "")[:10] >= (today - timedelta(7)).isoformat()]
+    return profile, goal, day_state(wellness, activities, today), week
 
 
 def load_warnings(srpe: dict) -> list[str]:

@@ -17,6 +17,9 @@ Backend FastAPI monousuario con el motor de entrenamiento (sección 8 de la memo
 - Plantilla polarizada 80/20; Z3 nunca es objetivo; detección de zona gris en la última actividad.
 - Propuesta diaria: sesión principal + alternativa de igual TSS por deporte activo + fuerza.
 - Objetivo = carrera A/B/C más próxima del calendario de intervals.icu.
+- Como las sugerencias de Garmin, pero con la fórmula a la vista ([`MOTOR_ENTRENAMIENTO.md`](docs/MOTOR_ENTRENAMIENTO.md) §12–§15):
+  la calidad del día cubre el tipo de carga que te falta (aeróbico bajo, alto o anaeróbico, 28 días), sesiones tempo y
+  anaeróbicas, vuelta a la base tras 7 días sin entrenar y ritmos de carrera calculados desde tu FC con tus propias carreras.
 
 Lo marcado `[Inferencia]` en `backend/app/services/training_engine.py` no tiene evidencia publicada
 (ver `docs/MOTOR_ENTRENAMIENTO.md` §11.2).

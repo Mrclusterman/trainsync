@@ -82,3 +82,25 @@ def test_missing_credentials_returns_503(monkeypatch):
     monkeypatch.setattr(plan_router.config, "INTERVALS_API_KEY", "")
     plan_router.client.cache_clear()
     assert TestClient(app).get("/plan/today").status_code == 503
+
+
+def test_run_model_warns_when_lthr_and_threshold_pace_disagree(monkeypatch):
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/streams"):
+            hr = [140 + i // 70 for i in range(3800)]  # 140-194 ppm, 70 s por ppm, en llano
+            return httpx.Response(200, json=[{"type": "heartrate", "data": hr},
+                                             {"type": "velocity_smooth", "data": [-0.9 + 0.024 * h for h in hr]},
+                                             {"type": "grade_smooth", "data": [0.0] * len(hr)}])
+        if request.url.path.endswith("/activities"):
+            return httpx.Response(200, json=[{"id": "r1", "type": "Run", "average_heartrate": 165,
+                                              "start_date_local": f"{(TODAY - timedelta(3)).isoformat()}T08:00:00"}])
+        if request.url.path.rstrip("/").endswith("/i1"):
+            return httpx.Response(200, json={"sportSettings": [{"types": ["Run"], "lthr": 174, "max_hr": 192,
+                                                                "threshold_pace": 1000 / 281}]})
+        return fake_intervals(request)
+
+    monkeypatch.setattr(plan_router, "client", lambda: IntervalsClient("i1", "k", httpx.MockTransport(handler)))
+    plan_router.run_samples.cache_clear()
+    state = TestClient(app).get("/state").json()
+    # 174 ppm → ~5:06/km con esta recta (punto medio de cada tramo de 5 ppm) frente a 4:41/km: más de un 5 %
+    assert any("5:06/km" in w and "4:41/km" in w for w in state["warnings"]), state["warnings"]

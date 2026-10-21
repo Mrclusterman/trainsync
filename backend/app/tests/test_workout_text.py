@@ -89,3 +89,12 @@ def test_event():
     ev = w.event(session, "2026-10-20", PROFILE)
     assert ev["external_id"] == "trainsync-2026-10-20" and ev["type"] == "Ride" and ev["category"] == "WORKOUT"
     assert ev["start_date_local"] == "2026-10-20T00:00:00" and ev["moving_time"] == session["duration_min"] * 60
+
+
+def test_with_a_model_every_running_session_goes_by_pace():
+    profile = e.Profile(active_sports=["running"], lthr=174, max_hr=192, run_model=(-0.9, 0.024))
+    aerobic = e.build_session("aerobic", "running", profile)
+    assert w.metric(aerobic, profile) == "pace"
+    text = w.describe(aerobic, profile)
+    # techo de sesión fácil 144 ppm → 6:31/km con esta recta; el reloj vigila el ritmo
+    assert all("/km Pace" in s for s in steps(text)) and "-6:31/km Pace" in text

@@ -7,7 +7,7 @@ Lo marcado con [Inferencia] no tiene evidencia publicada y es un parámetro ajus
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 from math import exp, log
-from statistics import mean, stdev
+from statistics import linear_regression, median, mean, stdev
 
 from app.services.session_catalog import CATALOG, CORE, LOWER, NOTES, PLYO, STRENGTH_DOSE, UPPER
 
@@ -194,10 +194,10 @@ TEMPLATES = {
 # Fuerza: más peso en base/construcción, menos en peak, nada en taper (RF-08)
 STRENGTH_DAYS = {"base_early": ("TUE", "FRI"), "base": ("TUE", "FRI"), "build": ("TUE", "FRI"), "peak": ("TUE",), "taper": ()}
 PHASE_VOLUME = {"base_early": 0.9, "base": 1.0, "build": 1.1, "peak": 1.15, "taper": 0.55}  # [Inferencia]
-QUALITY = ("vo2max", "threshold", "race_specific", "brick", "test")
+QUALITY = ("vo2max", "threshold", "race_specific", "brick", "test", "tempo", "anaerobic")
 DOWNGRADE = {"vo2max": "aerobic", "threshold": "aerobic", "race_specific": "aerobic", "brick": "aerobic",
              "test": "aerobic", "neuromuscular": "aerobic", "long": "aerobic", "aerobic": "recovery",
-             "recovery": "rest", "rest": "rest"}
+             "recovery": "rest", "rest": "rest", "tempo": "aerobic", "anaerobic": "aerobic"}
 
 # Deporte principal por día en objetivos multideporte (distribución aproximada de 8.4)
 ROTATION = {
@@ -237,6 +237,8 @@ class DayState:
     sleep_score: float | None = None
     consecutive_days: int = 0
     effort_mismatch: bool = False  # RPE alto con FC baja en los últimos 2 días
+    load_focus: dict[str, float] | None = None  # reparto de la carga de 28 días (ver load_focus)
+    days_since_activity: int | None = None
 
     @property
     def tsb(self) -> float:
@@ -262,10 +264,102 @@ def adjust(session_type: str, state: DayState) -> tuple[str, float, list[str]]:
             session_type = DOWNGRADE[session_type]
         volume = 0.7
         reasons.append(f"Sueño {state.sleep_score:.0f}/100: -30 % de carga y sin calidad")
+    # Tras una parada se reconstruye la base antes de la intensidad [Práctica: Garmin, tipos de sesión sugerida;
+    # umbral de 7 días: Inferencia]
+    if state.days_since_activity is not None and state.days_since_activity >= 7 and session_type in QUALITY:
+        session_type = "aerobic"
+        reasons.append(f"{state.days_since_activity} días sin entrenar: primero base, la intensidad vuelve después")
     if state.consecutive_days >= 3 and session_type in QUALITY and tsb < -20:  # [Inferencia]
         session_type = "aerobic"
         reasons.append(f"{state.consecutive_days} días seguidos entrenando con TSB {tsb:.1f}: sin calidad hoy")
     return session_type, volume, reasons
+
+
+# ---------------------------------------------------------------- 12 reparto de la carga (como el "load focus" de Garmin)
+
+# Fracción objetivo de la carga de 28 días: aeróbico bajo (Z1-Z2), aeróbico alto (Z3-Z5a) y anaeróbico (Z5b+).
+# Garmin/Firstbeat no publican sus rangos: estos salen del modelo polarizado de §8.4 (80/20) [Inferencia]
+FOCUS_TARGET = {"base_early": {"low": 0.80, "high": 0.15, "anaerobic": 0.05},
+                "base": {"low": 0.80, "high": 0.15, "anaerobic": 0.05},
+                "build": {"low": 0.75, "high": 0.20, "anaerobic": 0.05},
+                "peak": {"low": 0.75, "high": 0.20, "anaerobic": 0.05}}
+FOCUS_MARGIN = 0.05  # déficit mínimo para cambiar la sesión de la plantilla [Inferencia]
+
+
+def load_focus(activities: list[dict]) -> dict[str, float] | None:
+    """Reparto de la carga (icu_training_load) según el tiempo en las 7 zonas de FC de intervals.icu.
+
+    Garmin necesita 7 días de datos para su load focus; aquí, cualquier carga > 0 en la ventana que se pase.
+    """
+    totals = {"low": 0.0, "high": 0.0, "anaerobic": 0.0}
+    for a in activities:
+        zones, load = a.get("icu_hr_zone_times") or [], a.get("icu_training_load") or 0
+        time = sum(zones)
+        if time and load:
+            totals["low"] += load * sum(zones[:2]) / time
+            totals["high"] += load * sum(zones[2:5]) / time
+            totals["anaerobic"] += load * sum(zones[5:]) / time
+    total = sum(totals.values())
+    return {k: v / total for k, v in totals.items()} if total else None
+
+
+def focus_kind(kind: str, phase: str, focus: dict[str, float] | None, goal: Goal | None) -> tuple[str, str | None]:
+    """La sesión de calidad de la plantilla cubre el tipo de carga que más falta (como las sugerencias de Garmin)."""
+    if focus is None or phase not in FOCUS_TARGET or kind not in ("vo2max", "threshold", "neuromuscular"):
+        return kind, None
+    target = FOCUS_TARGET[phase]
+    gaps = {k: target[k] - focus[k] for k in target}
+    worst = max(gaps, key=gaps.get)
+    if gaps[worst] < FOCUS_MARGIN:
+        return kind, None
+    share = f"{focus[worst]:.0%} de tu carga frente al {target[worst]:.0%} objetivo"
+    if worst == "low":
+        return "aerobic", f"Falta carga aeróbica baja ({share}): hoy base"
+    if worst == "anaerobic":
+        return "anaerobic", f"Falta carga anaeróbica ({share})"
+    if run_class(goal) in ("half", "marathon") and phase in ("build", "peak"):
+        return "tempo", f"Falta carga aeróbica alta ({share}): tempo a ritmo de maratón"
+    return ("vo2max" if kind == "neuromuscular" else kind), f"Falta carga aeróbica alta ({share})"
+
+
+# ---------------------------------------------------------------- 13 ritmos a partir de la FC (como Garmin)
+
+def hr_pace_model(samples: list[tuple[float, float, float]]) -> tuple[float, float] | None:
+    """Recta velocidad (m/s) = a + b·FC con muestras (FC, velocidad, pendiente %) segundo a segundo.
+
+    Solo llano (|pendiente| <= 2 %) y corriendo (> 1,5 m/s); mediana por tramos de 5 ppm con >= 60 s,
+    para que pesen igual todas las intensidades. Hace falta >= 4 tramos y 15 ppm de rango. [Inferencia]
+    """
+    bins: dict[int, list[float]] = {}
+    for hr, v, grade in samples:
+        if hr and v and v > 1.5 and grade is not None and abs(grade) <= 2:
+            bins.setdefault(int(hr) // 5 * 5, []).append(v)
+    points = [(h + 2.5, median(v)) for h, v in bins.items() if len(v) >= 60]
+    if len(points) < 4 or max(p[0] for p in points) - min(p[0] for p in points) < 15:
+        return None
+    b, a = linear_regression([p[0] for p in points], [p[1] for p in points])
+    return (a, b) if b > 0 else None
+
+
+def pace_at(bpm: float, model: tuple[float, float]) -> float:
+    """Ritmo (seg/km) que tus carreras predicen para esa FC."""
+    a, b = model
+    return 1000 / max(a + b * bpm, 1.5)
+
+
+def hr_bounds(zone: str, sport: str, lthr: float, max_hr: float | None, hr_cap: int | None) -> tuple[float, float] | None:
+    """Límites de FC (ppm) de una zona de TrainSync; None en Z6 (abierta: manda el RPE)."""
+    lo, hi = HR_ZONES["running" if sport == "running" else "cycling"][zone]
+    if hi is None:
+        return None
+    lo_bpm, hi_bpm = lthr * lo, lthr * hi
+    if zone == "Z1":
+        lo_bpm = 0.5 * max_hr if max_hr else 0.65 * lthr  # abierta por abajo: límite holgado [Inferencia]
+        hi_bpm = min(hi_bpm, hr_cap) if hr_cap else hi_bpm
+    if zone == "Z2" and hr_cap:
+        # El techo LTHR − 30 manda en sesiones fáciles; 5 % de margen si queda por debajo de la Z2
+        hi_bpm, lo_bpm = hr_cap, min(lo_bpm, hr_cap - 0.05 * lthr)
+    return lo_bpm, hi_bpm
 
 
 # ---------------------------------------------------------------- sesiones
@@ -282,6 +376,7 @@ class Profile:
     css: float | None = None  # seg/100m
     run_pace: float | None = None  # ritmo umbral de carrera, seg/km (intervals.icu threshold_pace)
     ftp: float | None = None  # vatios; sin FTP la bici se prescribe por FC
+    run_model: tuple[float, float] | None = None  # velocidad (m/s) = a + b·FC, de tus carreras (hr_pace_model)
     plan_start: date | None = None
     warnings: list[str] = field(default_factory=list)
     needs_test: set[str] = field(default_factory=set)  # deportes sin LTHR/CSS fiable (onboarding RF-03)
@@ -295,12 +390,14 @@ ZONE_IF = {"Z1": 0.65, "Z2": 0.75, "Z3": 0.88, "Z4": 0.97, "Z5": 1.05, "Z6": 1.1
 NAMES = {"recovery": "Recuperación", "aerobic": "Aeróbico base", "long": "Tirada larga",
          "vo2max": "Intervalos VO2max", "threshold": "Umbral", "race_specific": "Específico de carrera",
          "rest": "Descanso", "strength": "Fuerza", "neuromuscular": "Neuromuscular", "brick": "Brick (transición)",
-         "test": "Test de campo"}
+         "test": "Test de campo", "tempo": "Tempo", "anaerobic": "Anaeróbico"}
 GOALS = {"recovery": "Recuperar sin generar fatiga", "aerobic": "Base aeróbica y eficiencia (Z2 pura, sin zona gris)",
          "long": "Resistencia aeróbica y economía", "vo2max": "Elevar el techo aeróbico",
          "threshold": "Subir el umbral de lactato", "race_specific": "Ritmo y sensaciones de competición",
          "neuromuscular": "Potencia y economía sin fatiga (esfuerzos muy cortos, recuperación completa)",
-         "brick": "Acostumbrar las piernas a correr tras la bici", "test": "Medir LTHR o CSS para fijar tus zonas"}
+         "brick": "Acostumbrar las piernas a correr tras la bici", "test": "Medir LTHR o CSS para fijar tus zonas",
+         "tempo": "Ritmo de maratón sostenido (aeróbico alto)",
+         "anaerobic": "Capacidad anaeróbica: esfuerzos de 40–60″ por encima del VO2max"}
 
 
 def _blocks_tss(blocks: list[dict]) -> float:
@@ -362,6 +459,13 @@ def build_session(kind: str, sport: str, profile: Profile, volume: float = 1.0, 
         targets["Z2"] = f"{z2_lo}-{hr_cap} ppm" if z2_lo < hr_cap else f"<= {hr_cap} ppm"
         if targets.get("Z1") and z2_lo > hr_cap:
             targets["Z1"] = f"< {hr_cap} ppm"
+    if sport == "running" and profile.run_model and lthr and kind != "test" and not entry["id"].startswith("T-"):
+        # Como Garmin: ritmos calculados desde tus zonas de FC con tu propia relación FC-velocidad (§13)
+        fmt = lambda sec: f"{int(sec // 60)}:{round(sec % 60):02d}"
+        bounds = {z: hr_bounds(z, sport, lthr, profile.max_hr, hr_cap) for z in targets}
+        targets = {z: (f"> {fmt(pace_at(b[1], profile.run_model))} /km" if z == "Z1"  # abierta: más lento que
+                       else f"{fmt(pace_at(b[0], profile.run_model))}-{fmt(pace_at(b[1], profile.run_model))} /km")
+                   if b else targets[z] for z, b in bounds.items()}
     return {
         "id": entry["id"], "sport": sport, "type": kind, "name": NAMES[kind], "goal": GOALS[kind],
         "duration_min": round(sum(b["reps"] * (b["minutes"] + b.get("rest_minutes", 0)) for b in blocks)),
@@ -407,6 +511,8 @@ def propose_day(day: date, profile: Profile, goal: Goal | None, state: DayState 
             kind = "aerobic"
         reasons.append("Semana de descarga (patrón 3+1): -30 % de volumen")
     if state is not None:
+        kind, focus_reason = focus_kind(kind, phase, state.load_focus, goal)
+        reasons += [focus_reason] if focus_reason else []
         kind, factor, why = adjust(kind, state)
         volume *= factor
         reasons += why
@@ -456,7 +562,7 @@ def day_tss(day: dict) -> float:
 
 # Peso de cada tipo de sesión en el TSS semanal (MOTOR §9.1). [Inferencia]
 WEIGHTS = {"long": 25, "vo2max": 15, "threshold": 15, "race_specific": 15, "brick": 15, "test": 15,
-           "aerobic": 11, "neuromuscular": 11, "recovery": 5}
+           "aerobic": 11, "neuromuscular": 11, "recovery": 5, "tempo": 15, "anaerobic": 11}
 
 
 def plan(start: date, days: int, profile: Profile, goal: Goal | None, today_state: DayState | None = None) -> list[dict]:

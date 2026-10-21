@@ -1,7 +1,7 @@
 # MOTOR DE ENTRENAMIENTO — TrainSync
 
-> **Versión:** 0.4 — Reconstrucción de `PROMPT_MOTOR_ENTRENAMIENTO.md` (original no localizado), contrastada con fuentes
-> **Fecha:** 2026-10-19
+> **Versión:** 0.5 — Reparto de la carga, ritmos desde la FC y envío al reloj, comparados con el método de Garmin (§12–§15)
+> **Fecha:** 2026-10-21
 > **Estado:** Verificado por Claude contra bibliografía (sección 11). Cambios de §11.1 aprobados el 2026-10-19 y aplicados en Memoria v0.4
 > **Complementa a:** `MEMORIA_TECNICA.md` §8 (fórmulas de TSS, CTL/ATL/TSB, zonas, HRV). Este documento no las repite: define **qué sesiones existen, cómo se eligen y cómo se organizan**.
 
@@ -14,7 +14,7 @@ Cada regla lleva una etiqueta de certeza:
 | Etiqueta | Significado |
 |---|---|
 | **[Memoria]** | Ya decidido en `MEMORIA_TECNICA.md`. No se discute aquí. |
-| **[Verificado: ref]** | Respaldado por la referencia citada (sección 12). Se ha comprobado el resumen o el texto, no siempre el texto completo. |
+| **[Verificado: ref]** | Respaldado por la referencia citada (sección 16). Se ha comprobado el resumen o el texto, no siempre el texto completo. |
 | **[Práctica: fuente]** | Recomendación publicada de un entrenador o plataforma de referencia (Friel, TrainingPeaks, Daniels), sin ensayo controlado detrás. |
 | **[Práctica]** | Práctica habitual de entrenadores; no se ha encontrado fuente concreta ni ensayo. |
 | **[Inferencia]** | Decisión de diseño de TrainSync. Se buscó evidencia y no la hay; es un parámetro razonable que se podrá ajustar con datos reales. |
@@ -92,6 +92,8 @@ ENTRADA: AthleteInput, fecha D
    sleep ← sleepScore[D] (None si no existe)
    streak ← días consecutivos con actividad hasta D-1
    gray_flags_7d ← nº de sesiones fáciles con zona gris en 7 días (sección 7)
+   load_focus ← reparto de la carga de 28 días: aeróbico bajo / alto / anaeróbico (sección 12)
+   days_since_activity ← días desde la última actividad
 
 2. CAPACIDAD DEL DÍA → normal | low | rest_only
    rest_only  si tsb < -30                                   [Práctica: Friel — < -30 riesgo alto]
@@ -109,9 +111,11 @@ ENTRADA: AthleteInput, fecha D
    sport ← deporte principal del slot                   (sección 6.3)
 
 5. AJUSTE
+   si slot es vo2max/threshold/neuromuscular → cubre el tipo de carga que más falta (sección 12)
    si capacity == rest_only           → slot = recovery (o rest)
    si capacity == low  y slot es calidad → slot = aerobic; si HRV fuera de SWC y sleep < 50 → recovery
    si sleep < 50                       → volumen × 0.7 [Memoria 8.4]
+   si days_since_activity ≥ 7 y slot es calidad → slot = aerobic (vuelta a la base)   [Práctica: Garmin; 7 d: Inferencia]
    si streak ≥ 3 y tsb < -20 y slot es calidad → slot = aerobic   [Inferencia]
    si gray_flags_7d ≥ 2               → sesiones Z2 con techo explícito de FC (sección 7)
 
@@ -538,7 +542,66 @@ Clave: `plan:{user_id}:{fecha}`. Se invalida cuando: [Memoria RF-05/Fase 3 + Inf
 
 - Polarizado/piramidal frente a umbral, fuerza obligatoria y su dosis, mantenimiento en peak y eliminación en taper, taper de 2 semanas con −41–60 % (prioridad A), protocolo CSS 200/400, uso de sRPE como medida válida de carga.
 
-## 12. Referencias
+## 12. Reparto de la carga (el "load focus" de Garmin)
+
+Garmin elige la sesión sugerida según el tipo de carga que te falta: aeróbico bajo, aeróbico alto o anaeróbico
+[Verificado: Garmin, "Daily Suggested Workouts"; Forerunner 965, "Training Status"]. Firstbeat no publica sus rangos
+objetivo, así que TrainSync los toma de su propio modelo polarizado (§1, Memoria §8.4).
+
+- **Medida:** la carga (`icu_training_load`) de cada actividad de los últimos 28 días se reparte según su tiempo en las
+  7 zonas de FC de intervals.icu: Z1–Z2 aeróbico bajo, Z3–Z5a aeróbico alto, Z5b+ anaeróbico. [Inferencia: las zonas
+  son las de intervals.icu; en carrera dependen de la LTHR que tenga guardada]
+- **Objetivo** [Inferencia, desde el 80/20]: base 80 / 15 / 5 %, construcción y peak 75 / 20 / 5 %. En taper no se aplica.
+- **Regla:** si el mayor déficit supera 5 puntos, la sesión de calidad del día (VO2max, umbral o neuromuscular) pasa a:
+  - aeróbico bajo → `aerobic`;
+  - anaeróbico → `anaerobic` (8×45″ por encima del VO2max);
+  - aeróbico alto → `tempo` si el objetivo es media maratón o maratón en construcción o peak; si no, VO2max o umbral.
+- Solo se aplica al día de hoy, que es el único con datos reales; los días siguientes muestran la plantilla.
+
+## 13. Ritmos desde la FC (como Garmin)
+
+Garmin propone las sesiones de carrera con ritmos calculados a partir de la FC. [Práctica: experiencia del usuario
+con Garmin; Garmin no publica la fórmula. Verificado solo que los objetivos pueden ser FC o ritmo: manual del Forerunner 55]
+
+- **Modelo:** recta velocidad = a + b·FC con los datos segundo a segundo (`/activity/{id}/streams`) de las 12 carreras
+  más recientes: solo llano (|pendiente| ≤ 2 %), corriendo (> 1,5 m/s) y sin los 5 primeros minutos; mediana por tramos de
+  5 ppm con ≥ 60 s; hacen falta ≥ 4 tramos y 15 ppm de rango. [Inferencia]
+- **Uso:** los límites de FC de cada zona de TrainSync (§3, techo LTHR − 30 incluido) se convierten en ritmo con la recta.
+  Con modelo, toda la carrera va por ritmo salvo trail (por FC), tests (por RPE) y Z6 (RPE). Sin modelo, la calidad usa
+  el ritmo umbral de intervals.icu con las zonas de Friel [Práctica: Friel, "Quick guide to setting zones"] y el resto, FC.
+- **Comprobación:** si el ritmo que la recta predice en la LTHR difiere más de un 5 % del ritmo umbral de intervals.icu,
+  aparece un aviso: una de las dos está desajustada. [Inferencia]
+- Caso real (2026-10-21, cuenta de pruebas): r = 0,96 con 12 carreras; a 174 ppm predice 5:08/km frente a 4:41/km de
+  ritmo umbral, que corresponde a ~186 ppm.
+
+## 14. Envío al reloj
+
+`POST /plan/today/send` crea la sesión de hoy en el calendario de intervals.icu (`/events/bulk?upsert=true` con
+`external_id` = `trainsync-AAAA-MM-DD`; reenviar la actualiza) y intervals.icu la pasa al reloj si está activado.
+
+- **Una métrica por sesión:** según usuarios del foro de intervals.icu, al reloj solo llega la métrica principal; mezclar
+  ritmo y FC pierde la segunda. [Práctica: foro de intervals.icu, sin confirmar por el desarrollador]
+- **FC:** en % de la FC máx. con decimales, porque intervals.icu no acepta ppm y "% LTHR" usaría la LTHR guardada allí.
+- **Potencia:** % del FTP (Coggan, Memoria §8.3) si hay FTP; sin FTP la bici va por FC (Garmin no propone bici sin potenciómetro).
+- **Natación:** ritmo absoluto desde el CSS (umbral de natación de intervals.icu); los descansos, sin objetivo.
+- Formatos comprobados contra la API el 2026-10-21 (`backend/app/services/workout_text.py`).
+
+## 15. TrainSync frente a Garmin
+
+Objetivo del proyecto: una fórmula propia, determinista y documentada, igual o mejor que las sugerencias de Garmin y su
+competencia, sin depender de una IA para proponer sesiones.
+
+| Pieza | Garmin | TrainSync |
+|---|---|---|
+| Tipos de sesión | Recuperación, base, tempo, umbral, VO2max, anaeróbico, sprint [Verificado: Garmin] | Los mismos (tempo y anaeróbico desde v0.5) + larga, específico de carrera, brick, test y fuerza |
+| Elección diaria | Carga, load focus, tiempo de recuperación, sueño, sesiones recientes [Verificado] | Reparto de la carga (§12), TSB, HRV, sueño, RPE, días seguidos y vuelta tras una parada (§3) |
+| Hacia una carrera | Sugerencias específicas con fecha; fases no publicadas [Verificado parcial] | Fases, taper por distancia y prioridad A/B/C, todo citado (§8) |
+| Objetivos | Carrera por FC (o ritmo); bici solo con potenciómetro [Verificado] | Carrera por ritmo desde tu FC (§13); bici por potencia o FC; natación por CSS (§14) |
+| Transparencia | Fórmulas cerradas (Firstbeat) | Cada regla con etiqueta de evidencia y motivos visibles en la app |
+
+No replicable: el EPOC y el Training Effect de Firstbeat (algoritmos cerrados) y los rangos de objetivo de Garmin.
+
+## 16. Referencias
 
 1. Seiler S. What is best practice for training intensity and duration distribution in endurance athletes? *Int J Sports Physiol Perform.* 2010;5(3):276-291. doi:10.1123/ijspp.5.3.276 — https://pubmed.ncbi.nlm.nih.gov/20861519/
 2. Esteve-Lanao J, Foster C, Seiler S, Lucía A. Impact of training intensity distribution on performance in endurance athletes. *J Strength Cond Res.* 2007;21(3):943-949. doi:10.1519/R-19725.1
@@ -589,10 +652,11 @@ Clave: `plan:{user_id}:{fecha}`. Se invalida cuando: [Memoria RF-05/Fase 3 + Inf
 
 ---
 
-## 13. Control de cambios
+## 17. Control de cambios
 
 | Versión | Fecha | Cambios |
 |---|---|---|
+| 0.5 | 2026-10-21 | Reparto de la carga como el load focus de Garmin (§12), sesiones tempo y anaeróbicas, vuelta a la base tras 7 días sin entrenar, ritmos de carrera desde la FC con la relación FC-velocidad propia (§13), envío al reloj con una métrica por sesión (§14) y comparación con Garmin (§15). |
 | 0.4 | 2026-10-19 | RPE verificado e implementado (§3.3). Todas las pruebas: running por distancia (5K→ultra), trail (§4.1.b), ciclismo de fondo, natación en piscina y aguas abiertas, triatlón/duatlón (§6.4). Taper por distancia (§8.2), topes de larga 5K/ultra (§8.4). Implementados: neuromusculares, tests de onboarding, brick, notas si te sientes mal/bien, pesos por tipo de sesión (§9.1) e intermitentes con fracción de trabajo. Corregido: sin PLAN_START la fase no avanzaba. 12 referencias nuevas. |
 | 0.3 | 2026-10-19 | Catálogo implementado en `backend/app/services/session_catalog.py`. Añadida C-OPENER y S-RACE en taper (huecos de la plantilla). En código: S-TECH cubre el slot `recovery`; natación en minutos (~1:45/100 m) mientras no se use el CSS; con poco volumen las series se reducen (mínimo 2, o 1 en bloques ≥ 10′). Pendiente en código: sesiones neuromusculares, tests de campo, bricks, notas "si te sientes mal/bien" y pesos por tipo de sesión (§9.1). |
 | 0.2 | 2026-10-19 | Verificación de todas las [Inferencia] contra bibliografía. Nuevas reglas de HRV (§3.1) y TSB (§3.2); zonas de running separadas; techo LTHR − 30 en sesiones fáciles; Z4 contada como moderada; rampa de CTL según TrainingPeaks; TSB de carrera +15/+25; taper B/C; regla de Daniels para la tirada larga; orden fuerza/resistencia (Eddens 2018); descartado 30/15 en carrera; 14 referencias nuevas. Sección 11 reescrita sin revisor externo. |

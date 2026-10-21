@@ -9,15 +9,15 @@ El texto anterior a la duración es el aviso del paso. Formatos comprobados cont
 Una sola métrica por sesión: según usuarios del foro, al reloj solo llega la métrica principal y mezclar ritmo y FC
 pierde la segunda (forum.intervals.icu/t/run-intervals-using-pace-pace-not-synced-to-garmin-connect/118130).
 """
-from app.services.training_engine import HR_ZONES, RPE_BY_ZONE, SWIM, SWIM_ZONES, Profile
+from app.services.training_engine import RPE_BY_ZONE, SWIM, SWIM_ZONES, Profile, hr_bounds, pace_at
 
 SPORT_TYPES = {"running": "Run", "cycling": "Ride", "swimming_pool": "Swim", "swimming_open": "Swim"}
-# Running por ritmo, en % del ritmo umbral como tiempo por km (más % = más lento). Z5 = 5a + 5b.
+# Running por ritmo sin modelo FC-velocidad: % del ritmo umbral como tiempo por km (más % = más lento). Z5 = 5a + 5b.
 # [Práctica: Friel, "Quick guide to setting zones", TrainingPeaks]; el límite lento de Z1 es [Inferencia]
 RUN_PACE_ZONES = {"Z1": (1.29, 1.60), "Z2": (1.14, 1.29), "Z3": (1.06, 1.13), "Z4": (0.99, 1.05), "Z5": (0.90, 1.00)}
 # Potencia en % del FTP (Coggan, MEMORIA §8.3); el límite bajo de Z1 es [Inferencia]
 POWER_ZONES = {"Z1": (40, 55), "Z2": (56, 75), "Z3": (76, 90), "Z4": (91, 105), "Z5": (106, 120), "Z6": (121, 150)}
-PACE_FIRST = ("vo2max", "threshold", "race_specific")  # calidad en llano; lo fácil y el trail, por FC [Práctica]
+PACE_FIRST = ("vo2max", "threshold", "race_specific", "tempo")  # sin modelo: solo calidad por ritmo umbral [Práctica]
 
 
 def duration(minutes: float) -> str:
@@ -42,8 +42,10 @@ def metric(session: dict, profile: Profile) -> str:
         return "pace" if profile.css else "rpe"
     if sport == "cycling" and profile.ftp:
         return "power"
-    if sport == "running" and profile.run_pace and kind in PACE_FIRST and not session["id"].startswith("T-"):
-        return "pace"
+    if sport == "running" and not session["id"].startswith("T-"):  # en trail el ritmo no sirve: por FC
+        # Como Garmin: con tu relación FC-velocidad, toda la carrera va por ritmo; sin ella, solo la calidad
+        if profile.run_model and profile.lthr_for(sport) or profile.run_pace and kind in PACE_FIRST:
+            return "pace"
     return "hr" if profile.lthr_for(sport) and profile.max_hr else "rpe"
 
 
@@ -59,22 +61,18 @@ def target(zone: str, session: dict, profile: Profile, mode: str) -> str | None:
         fast, slow = SWIM_ZONES[zone]  # factores del CSS (seg/100m): (más rápido, más lento)
         slow = slow or fast + 0.15  # Z1 abierta: 15 % más lenta como límite [Inferencia]
         return f"{pace(profile.css * slow)}-{pace(profile.css * fast)}/100m Pace"  # más lento primero
+    lthr = profile.lthr_for(sport)
+    bounds = hr_bounds(zone, sport, lthr, profile.max_hr, session.get("hr_cap")) if lthr else None
+    if mode == "pace" and profile.run_model and bounds:
+        # Ritmos desde tus zonas de FC con tu relación FC-velocidad (training_engine §13)
+        lo_bpm, hi_bpm = bounds
+        return f"{pace(pace_at(lo_bpm, profile.run_model))}-{pace(pace_at(hi_bpm, profile.run_model))}/km Pace"
     if mode == "pace":
         fast, slow = RUN_PACE_ZONES[zone]
         return f"{pace(profile.run_pace * slow)}-{pace(profile.run_pace * fast)}/km Pace"
     # FC: pulsaciones de las zonas de TrainSync expresadas en % de la FC máx., porque intervals.icu no acepta ppm
     # y "% LTHR" usaría la LTHR guardada en intervals.icu, que puede no ser la que usa TrainSync
-    lthr = profile.lthr_for(sport)
-    lo, hi = HR_ZONES["running" if sport == "running" else "cycling"][zone]
-    lo_bpm, hi_bpm = lthr * lo, lthr * hi
-    cap = session.get("hr_cap")
-    if zone == "Z1":
-        lo_bpm = 0.5 * profile.max_hr  # Z1 abierta por abajo: 50 % de la FC máx. para no avisar al ir suave [Inferencia]
-        hi_bpm = min(hi_bpm, cap) if cap else hi_bpm
-    if zone == "Z2" and cap:
-        # El techo LTHR − 30 manda en sesiones fáciles (como en build_session); 5 % de margen si queda por debajo de Z2
-        hi_bpm = cap
-        lo_bpm = min(lo_bpm, cap - 0.05 * lthr)
+    lo_bpm, hi_bpm = bounds
     pct = lambda bpm: f"{100 * bpm / profile.max_hr:.1f}".rstrip("0").rstrip(".")
     return f"{pct(lo_bpm)}-{pct(hi_bpm)}% HR"
 

@@ -30,6 +30,12 @@ class IntervalsClient:
         """Objetivos = eventos de carrera A/B/C del calendario de intervals.icu."""
         return self._get("/events", oldest=oldest, newest=newest, category="RACE_A,RACE_B,RACE_C")
 
+    def streams(self, activity_id: str, types: str = "heartrate,velocity_smooth,grade_smooth") -> dict[str, list]:
+        """Datos segundo a segundo de una actividad (endpoint fuera de /athlete/{id})."""
+        r = self.http.get(f"{BASE_URL}/activity/{activity_id}/streams", params={"types": types})
+        r.raise_for_status()
+        return {s["type"]: s.get("data") or [] for s in r.json()}
+
     def upsert_workouts(self, events: list[dict]) -> list[dict]:
         """Crea o actualiza (por external_id) entrenamientos del calendario; intervals.icu los pasa al reloj si está configurado."""
         r = self.http.post("/events/bulk", params={"upsert": "true", "upsertOnUid": "false", "updatePlanApplied": "false"}, json=events)

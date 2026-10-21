@@ -245,7 +245,7 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type: "recovery" | "aerobic" | "long" | "neuromuscular" | "vo2max" | "threshold" | "race_specific" | "brick" | "test";
+            type: "recovery" | "aerobic" | "long" | "neuromuscular" | "vo2max" | "threshold" | "tempo" | "anaerobic" | "race_specific" | "brick" | "test";
             /** Name */
             name: string;
             /** Goal */

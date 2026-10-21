@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 Zone = Literal["Z1", "Z2", "Z3", "Z4", "Z5", "Z6"]
 Sport = Literal["running", "cycling", "swimming_pool", "swimming_open"]
-SessionType = Literal["recovery", "aerobic", "long", "neuromuscular", "vo2max", "threshold",
+SessionType = Literal["recovery", "aerobic", "long", "neuromuscular", "vo2max", "threshold", "tempo", "anaerobic",
                       "race_specific", "brick", "test"]
 Phase = Literal["base_early", "base", "build", "peak", "taper"]
 

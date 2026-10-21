@@ -163,10 +163,24 @@ CATALOG = [
     S("S-OW", "swimming_open", "race_specific", ("build", "peak"), (30, 60),
       [B("calentamiento", 10, "Z2", detail="orientación cada 6–9 brazadas"), B("principal", 3, "Z4", 4, 2),
        B("vuelta a la calma", None, "Z1")]),
+
+    # ---- Tempo y anaeróbico: los dos tipos de Garmin que faltaban (docs/MOTOR_ENTRENAMIENTO.md §12 y §15)
+    # Tempo = ritmo de maratón, continuo o en bloques suaves; solo para media/maratón (polarizado: Z3 no es objetivo
+    # salvo cuando es el ritmo de carrera). Anaeróbico = 40–60″ por encima del VO2max con recuperación larga.
+    # [Práctica: Garmin, "Types of daily suggested workouts for runners"; series y descansos: Inferencia]
+    S("R-TEMPO", "running", "tempo", ("build", "peak"), (50, 75), intervals(3, 10, "Z3", 2, "a ritmo de maratón")),
+    S("R-ANA", "running", "anaerobic", ("base", "build", "peak"), (40, 55),
+      intervals(8, 0.75, "Z6", 2.5, "8×45″ muy fuerte; recuperación al trote", warmup=15)),
+    S("C-TEMPO", "cycling", "tempo", ("build", "peak"), (75, 105), intervals(3, 15, "Z3", 4, "a ritmo de prueba larga")),
+    S("C-ANA", "cycling", "anaerobic", ("base", "build", "peak"), (55, 75),
+      intervals(8, 0.75, "Z6", 3, "8×45″ muy fuerte; recuperación suave", warmup=20)),
+    S("S-TEMPO", "swimming_pool", "tempo", ("build", "peak"), (40, 55), intervals(4, 5, "Z3", 0.5, "4×300, desc. 30″", warmup=10)),
+    S("S-ANA", "swimming_pool", "anaerobic", ("base", "build", "peak"), (30, 45),
+      intervals(8, 0.8, "Z6", 1.5, "8×50 muy fuerte, desc. 1′30″", warmup=10)),
 ]
 
 # Sesiones donde la Regla 1 permite Z3 (simulacros y progresivos, MOTOR §1.2)
-Z3_ALLOWED = {"R-LONG-MP", "R-THR-PROG", "C-RACE-SIM"}
+Z3_ALLOWED = {"R-LONG-MP", "R-THR-PROG", "C-RACE-SIM", "R-TEMPO", "C-TEMPO", "S-TEMPO"}  # tempo = ritmo de carrera larga
 
 # Notas de adaptación por categoría (diseño: "si te sientes mal / bien"). [Práctica]
 NOTES = {
@@ -178,6 +192,8 @@ NOTES = {
     "threshold": ("Si no sostienes la zona: quita la última serie.", "Si te sientes bien: mantén la zona, no la subas a Z5."),
     "race_specific": ("Si no aguantas el ritmo objetivo: pasa a Z2 y vuelve a intentarlo la semana siguiente.", "Si te sientes bien: aguanta el ritmo exacto; no lo superes."),
     "brick": ("Si te sientes mal: haz solo la bici en Z2.", "Si te sientes bien: céntrate en una transición rápida, no en ir más fuerte."),
+    "tempo": ("Si no sostienes el ritmo de maratón: haz el resto en Z2.", "Si te sientes bien: ritmo exacto de carrera, no más rápido."),
+    "anaerobic": ("Si la 3.ª serie ya sale lenta: termina en Z1.", "Si te sientes bien: no añadas series; descansa completo entre ellas."),
     "test": ("Si no estás descansado: aplaza el test; un test fatigado da zonas erróneas.", "Hazlo en solitario y en terreno constante."),
 }
 

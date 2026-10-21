@@ -261,3 +261,56 @@ def test_phase_progresses_without_plan_start():
     g = goal(km=42.2, weeks=30)
     phases = [e.phase_for(date(2026, 10, 19) + timedelta(weeks=w), g, None)[0] for w in range(30)]
     assert phases[0] == "base" and "base_early" in phases and "build" in phases and phases[-1] == "taper"
+
+
+# ---- §12 reparto de la carga y §13 ritmos desde la FC
+
+def test_load_focus_splits_load_by_zone_time():
+    acts = [{"icu_training_load": 100, "icu_hr_zone_times": [600, 1800, 600, 0, 0, 0, 0]},  # 80 % bajo, 20 % alto
+            {"icu_training_load": 50, "icu_hr_zone_times": [0, 0, 0, 0, 0, 300, 300]}]  # todo anaeróbico
+    focus = e.load_focus(acts)
+    assert focus == pytest.approx({"low": 80 / 150, "high": 20 / 150, "anaerobic": 50 / 150})
+    assert e.load_focus([{"icu_training_load": 0, "icu_hr_zone_times": [60]}]) is None
+
+
+@pytest.mark.parametrize("focus, kind, expected", [
+    ({"low": 0.60, "high": 0.35, "anaerobic": 0.05}, "vo2max", "aerobic"),  # falta base
+    ({"low": 0.82, "high": 0.18, "anaerobic": 0.00}, "threshold", "anaerobic"),
+    ({"low": 0.90, "high": 0.05, "anaerobic": 0.05}, "neuromuscular", "vo2max"),
+    ({"low": 0.80, "high": 0.15, "anaerobic": 0.05}, "vo2max", "vo2max"),  # equilibrado: plantilla
+    ({"low": 0.60, "high": 0.35, "anaerobic": 0.05}, "long", "long"),  # solo cambia la calidad
+])
+def test_focus_kind_covers_the_biggest_shortage(focus, kind, expected):
+    assert e.focus_kind(kind, "base", focus, None)[0] == expected
+
+
+def test_focus_kind_tempo_for_marathon_build():
+    goal = e.Goal(name="M", sport="running", date=date(2027, 4, 1), distance_km=42.2)
+    kind, reason = e.focus_kind("threshold", "build", {"low": 0.85, "high": 0.10, "anaerobic": 0.05}, goal)
+    assert kind == "tempo" and "maratón" in reason
+    assert e.focus_kind("threshold", "taper", {"low": 0.5, "high": 0.5, "anaerobic": 0}, goal)[0] == "threshold"
+
+
+def test_back_after_a_break_starts_with_base():
+    state = e.DayState(ctl=40, atl=35, days_since_activity=9)
+    kind, _, reasons = e.adjust("vo2max", state)
+    assert kind == "aerobic" and "9 días sin entrenar" in reasons[0]
+    assert e.adjust("vo2max", e.DayState(ctl=40, atl=35, days_since_activity=2))[0] == "vo2max"
+
+
+def test_hr_pace_model_recovers_the_line_on_flat_ground():
+    true_a, true_b = -0.9, 0.024
+    samples = [(hr, true_a + true_b * hr, 0.5) for hr in range(140, 190) for _ in range(70)]
+    samples += [(160, 1.0, 8.0)] * 500  # cuesta: se descarta
+    a, b = e.hr_pace_model(samples)
+    assert a == pytest.approx(true_a, abs=0.02) and b == pytest.approx(true_b, abs=0.001)
+    assert e.pace_at(174, (a, b)) == pytest.approx(1000 / (true_a + true_b * 174), rel=0.01)
+    assert e.hr_pace_model([(160, 3.0, 0)] * 500) is None  # un solo tramo de FC: sin recta
+
+
+def test_running_targets_show_pace_with_a_model():
+    profile = e.Profile(active_sports=["running"], lthr=174, max_hr=192, run_model=(-0.9, 0.024))
+    targets = e.build_session("threshold", "running", profile, phase="build")["targets"]
+    assert targets["Z4"].endswith("/km") and all(t.endswith("/km") for t in targets.values() if "RPE" not in t)
+    trail = e.build_session("threshold", "running", profile, phase="build", event="trail")
+    assert trail["id"].startswith("T-") and trail["targets"]["Z4"].endswith("ppm")
