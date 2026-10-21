@@ -124,3 +124,5 @@
 | corredor | baja vs alta | V11 | sí | último bloque: 98 min (baja) frente a 300 (alta) |
 | pérdida de grasa | baja vs alta | V11 | sí | último bloque: 66 min (baja) frente a 250 (alta) |
 | cribado con tope | baja vs alta | V11 | sí | último bloque: 82 min (baja) frente a 250 (alta) |
+
+Caso real: LTHR 174, FC máx. 192 → techo fácil 144 ppm = 75.0 % de la FC máx.; 4 sesiones aeróbicas, objetivos 50.0–75.0 % HR: cumple

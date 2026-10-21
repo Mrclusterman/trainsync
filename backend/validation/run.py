@@ -176,5 +176,40 @@ def main() -> None:
             print("NO CUMPLE:", r)
 
 
+def real_case() -> str:
+    """Caso real: perfil de prueba con la fisiología de la cuenta de intervals.icu del .env (INTERVALS_*).
+
+    Comprueba que los objetivos de FC que llegarían al reloj salen de la LTHR y la FC máx. reales: techo de las sesiones
+    fáciles = LTHR − 30 (MOTOR §3) expresado en % de la FC máx., y ningún objetivo fuera de 50–100 % de la FC máx.
+    """
+    import os
+    import re
+
+    from app.routers.plan import fill_physiology
+    from app.services import training_engine as engine
+    from app.services import workout_text
+    from app.services.intervals_client import IntervalsClient
+
+    athlete = IntervalsClient(os.environ["INTERVALS_ATHLETE_ID"], os.environ["INTERVALS_API_KEY"]).athlete()
+    ep = fill_physiology(engine.Profile(active_sports=["running", "cycling"]), athlete)
+    p = hp.HealthProfile("fitness", {"MON": 60, "WED": 60, "FRI": 60, "SAT": 90}, cardio=["running", "cycling"],
+                         level="intermediate", lthr=ep.lthr, max_hr=ep.max_hr, css=ep.css)
+    week = hp.week_plan(p, START)
+    texts = [workout_text.describe(s, ep) for s in sessions(week) if s["sport"] != "strength"]
+    pct = [float(x) for t in texts for pair in re.findall(r"(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)% HR", t) for x in pair]
+    cap_pct = round(100 * (ep.lthr - 30) / ep.max_hr, 1)
+    ok = bool(pct) and all(50 <= x <= 100 for x in pct) and any(abs(x - cap_pct) < 0.1 for x in pct)
+    return (f"Caso real: LTHR {ep.lthr:.0f}, FC máx. {ep.max_hr:.0f} → techo fácil {ep.lthr - 30:.0f} ppm = {cap_pct} % "
+            f"de la FC máx.; {len(texts)} sesiones aeróbicas, objetivos {min(pct, default=0)}–{max(pct, default=0)} % HR: "
+            f"{'cumple' if ok else 'NO cumple'}")
+
+
 if __name__ == "__main__":
+    import sys
+
     main()
+    if "--real" in sys.argv:
+        line = real_case()
+        print(line)
+        with open(OUT / "resultados.md", "a", encoding="utf-8") as fh:
+            fh.write("\n" + line + "\n")
