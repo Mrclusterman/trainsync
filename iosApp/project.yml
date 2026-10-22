@@ -19,8 +19,14 @@ targets:
         CURRENT_PROJECT_VERSION: "1"
         ENABLE_USER_SCRIPT_SANDBOXING: NO
         EXCLUDED_ARCHS[sdk=iphonesimulator*]: x86_64  # el núcleo solo compila el simulador de Apple Silicon
+        INFOPLIST_KEY_NSHealthShareUsageDescription: "TrainSync lee tu sueño, tu variabilidad cardíaca, tu pulso en reposo, tu peso, tus pasos y tus entrenamientos para ajustar tu plan y enseñarte tu evolución. Los datos no salen de tu iPhone."
         FRAMEWORK_SEARCH_PATHS: $(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)
         OTHER_LDFLAGS: [-framework, Shared]
+    entitlements:
+      path: iosApp/iosApp.entitlements
+      properties:
+        com.apple.developer.healthkit: true
+        com.apple.developer.healthkit.access: []
     preBuildScripts:
       - name: Compilar el núcleo compartido (Kotlin)
         script: cd "$SRCROOT/.." && ./gradlew :shared:embedAndSignAppleFrameworkForXcode

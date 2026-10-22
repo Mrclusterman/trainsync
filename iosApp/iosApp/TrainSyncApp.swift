@@ -79,6 +79,8 @@ struct RootView: View {
         .task {
             // Al abrir, datos frescos de intervals.icu si está vinculado; sin red, la copia guardada
             if model.core.linkedAthlete != nil { try? await model.core.sync() }
+            // Apple Salud, si ya dio permiso: datos frescos sin pulsar nada
+            if model.core.data.health != nil { try? await HealthKitReader.shared.sync(model.core) }
             model.refresh()
         }
         .alert(model.message ?? "", isPresented: Binding(get: { model.message != nil }, set: { if !$0 { model.message = nil } })) {

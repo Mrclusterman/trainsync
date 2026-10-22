@@ -102,6 +102,28 @@ struct ProfileView: View {
                     Button("Guardar") { model.run("Perfil guardado") { core.saveProfile(profile: draft.core) } }.buttonStyle(.borderedProminent)
                 }
                 Module {
+                    Secondary("Datos de salud del iPhone (Apple Salud)")
+                    if let health = core.data.health {
+                        Text("Conectado: \(health.days.count) días y \(health.workouts.count) entrenamientos").font(.headline)
+                        Secondary("Datos al día del \(health.syncedAt). Los permisos se cambian en Ajustes → Salud → Acceso a datos.")
+                        HStack {
+                            Button("Actualizar ahora") { model.runAsync("Datos actualizados") { try await HealthKitReader.shared.sync(core) } }
+                                .buttonStyle(.borderedProminent)
+                            Button("Olvidar") { model.run { core.clearHealth() } }.buttonStyle(.bordered)
+                        }
+                    } else if HealthKitReader.shared.available {
+                        Secondary("Lee de Apple Salud tu sueño, tu variabilidad cardíaca, tu pulso en reposo, tu peso, tus pasos y tus entrenamientos de cualquier reloj o app. Solo lectura y solo en este iPhone.")
+                        Button("Conectar Apple Salud") {
+                            model.runAsync("Datos de Apple Salud leídos") {
+                                try await HealthKitReader.shared.requestAccess()
+                                try await HealthKitReader.shared.sync(core)
+                            }
+                        }.buttonStyle(.borderedProminent)
+                    } else {
+                        Secondary("Apple Salud no está disponible en este dispositivo.")
+                    }
+                }
+                Module {
                     Secondary("Reloj (intervals.icu)")
                     if let linked = core.linkedAthlete {
                         Text("Vinculado: \(linked)").font(.headline)
