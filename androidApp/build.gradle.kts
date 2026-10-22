@@ -18,6 +18,16 @@ android {
     buildFeatures {
         compose = true
     }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // shortcut: firmada con la clave de depuración para probar en el móvil; una clave propia antes de publicar
+            signingConfig = signingConfigs.getByName("debug")
+        }
+    }
 }
 
 kotlin {
