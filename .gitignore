@@ -11,3 +11,11 @@ replica/reviews-*.csv
 
 # Base de datos local (SQLite)
 prototype/backend/data/
+
+# Gradle, Android y Xcode
+.gradle/
+build/
+local.properties
+.kotlin/
+iosApp/iosApp.xcodeproj/
+*.xcuserstate

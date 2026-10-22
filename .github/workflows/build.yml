@@ -1,0 +1,47 @@
+# Compila y prueba las apps en cada push. iOS solo puede compilarse en macOS: por eso va en la nube.
+name: build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "21" }
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew :shared:jvmTest :androidApp:assembleDebug --console=plain
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trainsync-debug-apk
+          path: androidApp/build/outputs/apk/debug/*.apk
+
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "21" }
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew :shared:iosSimulatorArm64Test --console=plain
+      - run: brew install xcodegen
+      - working-directory: iosApp
+        run: |
+          xcodegen
+          xcodebuild -project iosApp.xcodeproj -scheme iosApp -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO
+
+  prototype:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: prototype/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install "fastapi>=0.111" "uvicorn[standard]>=0.30" "httpx>=0.27" "sqlalchemy>=2.0" "pyjwt>=2.8" "cryptography>=42" "pytest>=8"
+      - run: python -m pytest -q
