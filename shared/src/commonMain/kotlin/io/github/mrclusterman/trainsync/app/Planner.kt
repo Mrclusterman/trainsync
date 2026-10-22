@@ -103,7 +103,7 @@ fun mondayOf(date: LocalDate): LocalDate = date.plusDays(-(date.dayOfWeek.isoDay
 class Planner(private val data: AppData, private val today: LocalDate) {
     private val profile = data.profile ?: UserProfile()
     private val goal = data.goal
-    private val cache = data.cache
+    private val cache = data.deviceData(today)
 
     /** Fisiología de intervals.icu (LTHR, FC máx., CSS…) si está vinculado. */
     val physiology: Profile? = cache?.let {

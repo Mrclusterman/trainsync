@@ -31,7 +31,8 @@ class TrainSyncApp(
 ) {
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
-    var data: AppData = store.read(DATA_KEY)?.let { runCatching { json.decodeFromString<AppData>(it) }.getOrNull() } ?: AppData()
+    var data: AppData = store.read(DATA_KEY)?.let { runCatching { migrate(json.decodeFromString<AppData>(it)) }.getOrNull() }
+        ?: AppData()
         private set
 
     private fun save(new: AppData) {
@@ -200,6 +201,16 @@ class TrainSyncApp(
             c.close()
         }
     }
+
+    // ------------------------------------------------------------ datos de salud del móvil
+
+    /** Guarda lo leído de Health Connect o Apple Salud (lo lee cada plataforma con su permiso). */
+    fun importHealth(snapshot: HealthSnapshot) = save(data.copy(health = snapshot))
+
+    fun clearHealth() = save(data.copy(health = null))
+
+    /** Límites de las zonas de FC para repartir los pulsos de cada entrenamiento al leerlos del móvil. */
+    fun zoneBounds(measuredMaxHr: Double?): List<Double> = heartRateZoneBounds(data.profile, today(), measuredMaxHr)
 
     // ------------------------------------------------------------ tus datos
 

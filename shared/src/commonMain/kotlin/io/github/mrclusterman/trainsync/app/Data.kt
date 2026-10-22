@@ -56,8 +56,12 @@ data class IntervalsCache(
     val syncedAt: String,
 )
 
+/** Versión del formato guardado: al cambiarlo, `migrate` adapta los datos antiguos (sin servidor no hay migraciones). */
+const val SCHEMA = 2
+
 @Serializable
 data class AppData(
+    val schema: Int = SCHEMA,
     val profile: UserProfile? = null,
     val goal: UserGoal? = null,
     val blockStart: String? = null,  // inicio del primer bloque de 4 semanas (lunes)
@@ -68,4 +72,11 @@ data class AppData(
     val renamed: Set<String> = emptySet(),  // actividades ya renombradas en intervals.icu
     val cache: IntervalsCache? = null,
     val intervalsAthlete: String? = null,  // ID del atleta (no es secreto); la clave va en el almacén seguro
+    val health: HealthSnapshot? = null,  // Health Connect o Apple Salud, leídos en el propio móvil
 )
+
+/** Adapta datos guardados con un formato anterior. v1 → v2: añade los datos de salud del móvil (vacíos). */
+fun migrate(data: AppData): AppData = when {
+    data.schema >= SCHEMA -> data
+    else -> data.copy(schema = SCHEMA)
+}

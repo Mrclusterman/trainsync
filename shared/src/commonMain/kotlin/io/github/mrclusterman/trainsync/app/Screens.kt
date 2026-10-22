@@ -66,7 +66,7 @@ fun buildToday(data: AppData, today: LocalDate): TodayScreen {
         weekLine = "Esta semana: ${week.activeMinutes} min de actividad y fuerza $strength ${if (strength == 1) "día" else "días"}",
         meetsWho = week.activeMinutes >= 150 && strength >= 2,
         warnings = week.warnings, info = week.info,
-        askReadiness = data.cache == null && data.readiness[today.toString()] == null && day.items.isNotEmpty(),
+        askReadiness = data.deviceData(today) == null && data.readiness[today.toString()] == null && day.items.isNotEmpty(),
         linked = data.cache != null, goalFinished = goalFinished,
     )
 }
@@ -116,7 +116,7 @@ fun buildMonth(data: AppData, today: LocalDate, year: Int, month: Int): MonthScr
     val planner = Planner(data, today)
     val first = LocalDate(year, month, 1)
     var monday = mondayOf(first)
-    val activities = data.cache?.activities ?: emptyList()
+    val activities = data.deviceData(today)?.activities ?: emptyList()
     val weeks = mutableListOf<List<CalendarDay>>()
     while (monday.month.number == month || monday < first) {
         val week = planner.week(monday)
@@ -160,7 +160,7 @@ data class Metric(
 data class ProgressScreen(val linked: Boolean, val metrics: List<Metric>, val weeklyMinutes: List<Point>)
 
 fun buildProgress(data: AppData, today: LocalDate, days: Int = 90): ProgressScreen {
-    val cache = data.cache ?: return ProgressScreen(false, emptyList(), emptyList())
+    val cache = data.deviceData(today) ?: return ProgressScreen(false, emptyList(), emptyList())
     val since = today.plusDays(-days).toString()
     val wellness = cache.wellness.filter { (it["id"].str() ?: "") >= since }.sortedBy { it["id"].str() }
     fun series(key: String, label: String, unit: String, explanation: String, better: Boolean?,
