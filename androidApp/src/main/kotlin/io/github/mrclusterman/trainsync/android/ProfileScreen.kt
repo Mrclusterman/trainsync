@@ -1,7 +1,9 @@
 package io.github.mrclusterman.trainsync.android
 
 import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.layout.Arrangement
+import androidx.health.connect.client.PermissionController
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -112,7 +114,8 @@ fun ProfileTab(app: TrainSyncApp, version: Int, act: Act, changeGoal: () -> Unit
             ProfileForm(draft) { draft = it }
             Button(onClick = { act.run("Perfil guardado") { app.saveProfile(draft) } }) { Text("Guardar") }
         }
-        IntervalsCard(app, act)
+        HealthCard(app, act, version)
+        IntervalsCard(app, act, version)
         Module {
             SectionTitle("Tus datos")
             Secondary(PRIVACY_NOTE)
@@ -147,8 +150,37 @@ fun ProfileTab(app: TrainSyncApp, version: Int, act: Act, changeGoal: () -> Unit
     }
 }
 
+/** Health Connect: los datos del reloj y la báscula sin intervals.icu (solo lectura, en el propio móvil). */
 @Composable
-private fun IntervalsCard(app: TrainSyncApp, act: Act) {
+private fun HealthCard(app: TrainSyncApp, act: Act, @Suppress("UNUSED_PARAMETER") version: Int) {  // version: redibuja tras cada acción
+    val context = LocalContext.current
+    val reader = remember { HealthConnectReader(context) }
+    val request = rememberLauncherForActivityResult(PermissionController.createRequestPermissionResultContract()) { granted ->
+        if (granted.isNotEmpty()) act.suspend("Datos de Health Connect leídos") { reader.sync(app) }
+    }
+    Module {
+        SectionTitle("Datos de salud del móvil (Health Connect)")
+        val health = app.data.health
+        if (health != null) {
+            Text("Conectado: ${health.days.size} días y ${health.workouts.size} entrenamientos", fontWeight = FontWeight.Bold)
+            Secondary("Datos al día del ${health.syncedAt}. Los permisos se cambian en Ajustes → Health Connect.")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = { act.suspend("Datos actualizados") { reader.sync(app) } }) { Text("Actualizar ahora") }
+                OutlinedButton(onClick = { act.run { app.clearHealth() } }) { Text("Olvidar") }
+            }
+        } else if (reader.available) {
+            Secondary("Lee de Health Connect tu sueño, tu VFC, tu pulso en reposo, tu peso, tus pasos y tus entrenamientos " +
+                "de cualquier reloj o app que escriba allí. Solo lectura y solo en este móvil.")
+            Button(onClick = { request.launch(reader.permissions) }) { Text("Conectar Health Connect") }
+        } else {
+            Secondary("Health Connect no está en este móvil. Viene con Android 14 o posterior; en versiones anteriores " +
+                "se instala desde Google Play.")
+        }
+    }
+}
+
+@Composable
+private fun IntervalsCard(app: TrainSyncApp, act: Act, @Suppress("UNUSED_PARAMETER") version: Int) {
     var athlete by remember { mutableStateOf(app.data.intervalsAthlete ?: "") }
     var key by remember { mutableStateOf("") }
     Module {

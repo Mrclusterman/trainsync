@@ -22,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
 import io.github.mrclusterman.trainsync.app.TrainSyncApp
 import io.github.mrclusterman.trainsync.app.systemToday
@@ -77,10 +78,13 @@ fun Root(app: TrainSyncApp) {
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val act = remember { Act(app, scope, snackbar) { version += 1 } }
+    val context = LocalContext.current
 
     // Al abrir, datos frescos de intervals.icu si está vinculado; sin red, la copia guardada
     LaunchedEffect(Unit) {
         if (app.linkedAthlete != null) runCatching { app.sync() }
+        // Health Connect, si ya dio permiso: datos frescos sin pulsar nada
+        if (app.data.health != null) runCatching { HealthConnectReader(context).sync(app) }
         version += 1
     }
 
