@@ -47,6 +47,7 @@ class TrainSyncApp(
     fun saveProfile(profile: UserProfile) = save(data.copy(profile = profile))
 
     /** Nuevo objetivo: los planes sin fecha empiezan un bloque nuevo este lunes. */
+    @Throws(Exception::class)  // Swift recibe el error en vez de cerrarse la app
     fun setGoal(kind: GoalKind, race: RaceInfo? = null) {
         require(kind != GoalKind.RACE || race != null) { "Una carrera necesita nombre, deporte y fecha" }
         val now = today()
@@ -61,10 +62,12 @@ class TrainSyncApp(
     fun todayScreen(): TodayScreen = buildToday(data, today())
     fun month(year: Int, month: Int): MonthScreen = buildMonth(data, today(), year, month)
     fun progress(): ProgressScreen = buildProgress(data, today())
+    @Throws(Exception::class)  // Swift recibe el error en vez de cerrarse la app
     fun day(date: String): DayView = Planner(data, today()).day(LocalDate.parse(date))
 
     // ------------------------------------------------------------ acciones del día
 
+    @Throws(Exception::class)  // Swift recibe el error en vez de cerrarse la app
     fun markDone(date: String, sport: String) {
         require(date <= today().toString()) { "No se puede marcar como hecha una sesión futura" }
         if (data.manualDone.none { it.date == date && it.sport == sport }) {
@@ -76,6 +79,7 @@ class TrainSyncApp(
         save(data.copy(manualDone = data.manualDone.filterNot { it.date == date && it.sport == sport }))
 
     /** La alternativa elegida pasa a ser la sesión del día (en la app y, al enviarla, en el reloj). */
+    @Throws(Exception::class)  // Swift recibe el error en vez de cerrarse la app
     fun chooseAlternative(date: String, plannedSport: String, chosenSport: String) {
         val day = (data.choices[date] ?: emptyMap()) + (plannedSport to chosenSport)
         save(data.copy(choices = data.choices + (date to day)))
@@ -84,6 +88,7 @@ class TrainSyncApp(
     fun clearChoice(date: String) = save(data.copy(choices = data.choices - date))
 
     /** "Hoy no puedo" (0) o "puedo entrenar este día" (minutos): la semana se recalcula desde hoy. */
+    @Throws(Exception::class)  // Swift recibe el error en vez de cerrarse la app
     fun changeDay(date: String, minutes: Int) {
         val now = today()
         val target = LocalDate.parse(date)
@@ -98,6 +103,7 @@ class TrainSyncApp(
     fun resetWeek() = save(data.copy(weekChanges = data.weekChanges - mondayOf(today()).toString()))
 
     /** Sin reloj: sueño, energía y agujetas de 1 (mal) a 5 (bien) ajustan la sesión de hoy. */
+    @Throws(Exception::class)  // Swift recibe el error en vez de cerrarse la app
     fun answerReadiness(sleep: Int, energy: Int, soreness: Int) {
         require(listOf(sleep, energy, soreness).all { it in 1..5 })
         save(data.copy(readiness = data.readiness + (today().toString() to Readiness(sleep, energy, soreness))))
@@ -114,6 +120,7 @@ class TrainSyncApp(
     }
 
     /** Vincula la cuenta una vez: comprueba la clave contra intervals.icu antes de guardarla. */
+    @Throws(Exception::class)  // Swift recibe el error en vez de cerrarse la app
     suspend fun linkIntervals(athleteId: String, apiKey: String) {
         val id = athleteId.trim()
         val key = apiKey.trim()
@@ -137,6 +144,7 @@ class TrainSyncApp(
     }
 
     /** Descarga lo necesario y lo guarda en el móvil; renombra las actividades recientes si el usuario lo quiere. */
+    @Throws(Exception::class)  // Swift recibe el error en vez de cerrarse la app
     suspend fun sync() {
         val c = client() ?: return
         try {
@@ -166,6 +174,7 @@ class TrainSyncApp(
     }
 
     /** Envía al reloj (vía intervals.icu) las sesiones de hoy o solo la del deporte indicado. */
+    @Throws(Exception::class)  // Swift recibe el error en vez de cerrarse la app
     suspend fun sendToday(sport: String? = null): List<String> {
         val c = client() ?: throw IllegalStateException("Vincula primero tu cuenta de intervals.icu")
         try {

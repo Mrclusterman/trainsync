@@ -1,0 +1,152 @@
+import SwiftUI
+import Shared
+
+private let cardioOptions = [("walking", "Caminar"), ("running", "Correr"), ("cycling", "Bici"), ("swimming_pool", "Nadar")]
+private let strengthOptions = [("gym", "Gimnasio"), ("bodyweight", "Con tu peso"), ("none", "Sin fuerza")]
+private let levelOptions = [("beginner", "Empiezo"), ("intermediate", "Entreno a veces"), ("advanced", "Entreno a menudo")]
+private let weekdays = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
+
+/// Borrador editable del perfil en tipos de Swift; se convierte al del núcleo al guardar.
+struct ProfileDraft {
+    var birthYear: Int?
+    var level = "beginner"
+    var strength = "bodyweight"
+    var cardio: [String] = ["walking"]
+    var days: [String: Int] = ["MON": 45, "WED": 45, "SAT": 60]
+    var renameActivities = true
+
+    init(_ p: UserProfile?) {
+        guard let p else { return }
+        birthYear = p.birthYear?.intValue
+        level = p.level
+        strength = p.strength
+        cardio = p.cardio
+        days = p.days.mapValues { $0.intValue }
+        renameActivities = p.renameActivities
+    }
+
+    var core: UserProfile {
+        UserProfile(birthYear: birthYear.map { KotlinInt(int: Int32($0)) }, level: level, strength: strength, cardio: cardio,
+                    days: days.mapValues { KotlinInt(int: Int32($0)) }, renameActivities: renameActivities)
+    }
+}
+
+/// Datos para el plan: actividades, días y minutos, material y nivel. El objetivo no vive aquí (VISION §5).
+struct ProfileForm: View {
+    @Binding var draft: ProfileDraft
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Secondary("Qué actividades haces")
+            FlowChips(options: cardioOptions, isSelected: { draft.cardio.contains($0) }) { key in
+                if draft.cardio.contains(key) { if draft.cardio.count > 1 { draft.cardio.removeAll { $0 == key } } } else { draft.cardio.append(key) }
+            }
+            Secondary("Fuerza")
+            FlowChips(options: strengthOptions, isSelected: { draft.strength == $0 }) { draft.strength = $0 }
+            Secondary("Tu nivel")
+            FlowChips(options: levelOptions, isSelected: { draft.level == $0 }) { draft.level = $0 }
+            Secondary("Qué días puedes entrenar y cuánto tiempo")
+            ForEach(weekdays, id: \.self) { d in
+                let minutes = draft.days[d] ?? 0
+                HStack {
+                    Chip(label: TextsKt.WEEKDAY_LABEL[d] ?? d, selected: minutes > 0) { draft.days[d] = minutes > 0 ? 0 : 45 }
+                        .frame(width: 130, alignment: .leading)
+                    if minutes > 0 {
+                        Stepper("\(minutes) min", value: Binding(get: { draft.days[d] ?? 45 }, set: { draft.days[d] = $0 }), in: 15...240, step: 15)
+                            .font(.system(.body, design: .monospaced))
+                    }
+                }
+            }
+            Secondary("Año de nacimiento")
+            TextField("1990", text: Binding(get: { draft.birthYear.map(String.init) ?? "" },
+                                            set: { draft.birthYear = Int($0.filter(\.isNumber).prefix(4)) }))
+                .keyboardType(.numberPad).textFieldStyle(.roundedBorder)
+        }
+    }
+}
+
+struct FlowChips: View {
+    let options: [(String, String)]
+    let isSelected: (String) -> Bool
+    let toggle: (String) -> Void
+
+    var body: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), alignment: .leading)], alignment: .leading, spacing: 8) {
+            ForEach(options, id: \.0) { key, label in Chip(label: label, selected: isSelected(key)) { toggle(key) } }
+        }
+    }
+}
+
+struct ProfileView: View {
+    @EnvironmentObject var model: AppModel
+    @State private var draft = ProfileDraft(nil)
+    @State private var loaded = false
+    @State private var athlete = ""
+    @State private var apiKey = ""
+    @State private var confirmDelete = false
+
+    var body: some View {
+        let _ = model.version
+        let core = model.core
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Perfil").font(.title2).bold()
+                Module {
+                    Secondary("Tu objetivo")
+                    Text(core.data.goal.map { TextsKt.goalLabel(goal: $0) } ?? "Sin objetivo").font(.title3).bold()
+                    Secondary("Puedes cambiarlo o abandonarlo cuando quieras; el plan se rehace al momento.")
+                    Button("Cambiar objetivo") { model.run { core.abandonGoal() } }.buttonStyle(.bordered)
+                }
+                Module {
+                    ProfileForm(draft: $draft)
+                    Button("Guardar") { model.run("Perfil guardado") { core.saveProfile(profile: draft.core) } }.buttonStyle(.borderedProminent)
+                }
+                Module {
+                    Secondary("Reloj (intervals.icu)")
+                    if let linked = core.linkedAthlete {
+                        Text("Vinculado: \(linked)").font(.headline)
+                        if let cache = core.data.cache { Secondary("Datos al día del \(cache.syncedAt)") }
+                        HStack {
+                            Button("Actualizar ahora") { model.runAsync("Datos actualizados") { try await core.sync() } }.buttonStyle(.borderedProminent)
+                            Button("Desvincular") { model.run { core.unlinkIntervals() } }.buttonStyle(.bordered)
+                        }
+                    } else {
+                        Secondary("intervals.icu es gratis y recoge los datos de tu reloj (Garmin, Polar, Coros, Suunto, Wahoo…). En intervals.icu: Settings → Developer Settings, copia tu Athlete ID y crea una API key.")
+                        TextField("Athlete ID (p. ej. i123456)", text: $athlete).textFieldStyle(.roundedBorder)
+                            .textInputAutocapitalization(.never).autocorrectionDisabled()
+                        SecureField("API key", text: $apiKey).textFieldStyle(.roundedBorder)
+                        Button("Vincular") {
+                            let id = athlete, key = apiKey
+                            model.runAsync("Cuenta vinculada") { try await core.linkIntervals(athleteId: id, apiKey: key) }
+                            apiKey = ""
+                        }.buttonStyle(.borderedProminent).disabled(athlete.isEmpty || apiKey.isEmpty)
+                    }
+                }
+                Module {
+                    Secondary("Tus datos")
+                    Secondary(TextsKt.PRIVACY_NOTE)
+                    Toggle("Poner a tus actividades de intervals.icu un título que diga lo que fueron", isOn: Binding(
+                        get: { draft.renameActivities },
+                        set: { draft.renameActivities = $0; let p = draft.core; model.run { core.saveProfile(profile: p) } }))
+                        .font(.subheadline)
+                    ShareLink("Exportar todos mis datos (JSON)", item: core.exportJson())
+                    Button("Borrar todo de este móvil", role: .destructive) { confirmDelete = true }
+                }
+                Module {
+                    Secondary("Aviso de salud")
+                    Secondary(TextsKt.HEALTH_NOTICE)
+                }
+                Secondary("TrainSync es gratis y de código abierto (AGPL-3.0). Sin niveles de pago, sin anuncios y sin notificaciones comerciales.")
+            }.padding(16)
+        }
+        .background(Palette.bg)
+        .onAppear {
+            if !loaded { draft = ProfileDraft(core.data.profile); athlete = core.data.intervalsAthlete ?? ""; loaded = true }
+        }
+        .confirmationDialog("¿Borrar todo?", isPresented: $confirmDelete, titleVisibility: .visible) {
+            Button("Borrar", role: .destructive) { model.run { core.deleteAll() } }
+        } message: {
+            Text("Se borran tu perfil, tu objetivo, tu historial y la clave de intervals.icu de este móvil. No se puede deshacer. Tus datos en intervals.icu no se tocan.")
+        }
+    }
+}
