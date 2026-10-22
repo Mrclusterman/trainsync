@@ -157,7 +157,7 @@ memoria, sin comprobar) y un dominio.
 | Longevidad | Solo lo que miden relojes y básculas; sin analíticas |
 | Entrenadores | Más adelante (Fase 4) |
 | Financiación | Sin servidor: solo cuentas de desarrollador y dominio |
-| Nombre | Abierto. Candidato: **Biotos** (sección 12) |
+| Nombre | Abierto, no es prioritario. Se sigue con TrainSync como nombre de trabajo; Biotos no convence (sección 12) |
 
 ## 12. Nombre
 
