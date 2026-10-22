@@ -31,8 +31,23 @@ jobs:
       - working-directory: iosApp
         run: |
           xcodegen
-          xcodebuild -project iosApp.xcodeproj -scheme iosApp -sdk iphonesimulator \
+          xcodebuild -project iosApp.xcodeproj -scheme iosApp -sdk iphonesimulator -derivedDataPath build \
             -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO
+      # Capturas en el simulador para revisar la interfaz de iOS sin un Mac
+      - working-directory: iosApp
+        run: |
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for k in sorted(d, reverse=True) if 'iOS' in k for x in d[k] if x['name'].startswith('iPhone')))")
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcrun simctl install "$DEVICE" build/Build/Products/Debug-iphonesimulator/TrainSync.app
+          xcrun simctl launch "$DEVICE" io.github.mrclusterman.trainsync
+          sleep 8
+          mkdir -p screenshots
+          xcrun simctl io "$DEVICE" screenshot screenshots/inicio.png
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ios-screenshots
+          path: iosApp/screenshots/
 
   prototype:
     runs-on: ubuntu-latest
