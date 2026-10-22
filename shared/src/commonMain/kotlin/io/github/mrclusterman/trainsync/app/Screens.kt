@@ -14,6 +14,12 @@ import kotlinx.datetime.daysUntil
 import kotlinx.datetime.number
 import kotlin.math.sqrt
 
+/** "Viernes 23 de octubre". */
+fun dateLabel(date: String): String {
+    val d = LocalDate.parse(date)
+    return "${WEEKDAY_LABEL[d.weekday()]} ${d.day} de ${MONTH_LABEL[d.month.number - 1]}"
+}
+
 // ---------------------------------------------------------------- Hoy
 
 data class TodayScreen(
@@ -55,7 +61,7 @@ fun buildToday(data: AppData, today: LocalDate): TodayScreen {
     val (headline, detail) = headline(day, planner)
     val strength = week.strengthDays
     return TodayScreen(
-        dateLabel = "${WEEKDAY_LABEL[today.weekday()]} ${today.day} de ${MONTH_LABEL[today.month.number - 1]}",
+        dateLabel = dateLabel(today.toString()),
         goalLine = goalLine, headline = headline, headlineDetail = detail, day = day,
         weekLine = "Esta semana: ${week.activeMinutes} min de actividad y fuerza $strength ${if (strength == 1) "día" else "días"}",
         meetsWho = week.activeMinutes >= 150 && strength >= 2,
@@ -118,7 +124,8 @@ fun buildMonth(data: AppData, today: LocalDate, year: Int, month: Int): MonthScr
             val date = LocalDate.parse(d.date)
             CalendarDay(
                 date = d.date, dayOfMonth = date.day, inMonth = date.month.number == month, isToday = d.isToday,
-                planned = d.items, doneSports = d.doneSports,
+                // Antes de elegir el objetivo no había plan: solo se muestra lo que hiciste
+                planned = if (d.date < (data.goal?.since ?: "")) emptyList() else d.items, doneSports = d.doneSports,
                 done = activities.filter { it.date() == d.date && HEALTH_ACTIVITY_SPORTS[it["type"].str()] != null }
                     .map { a ->
                         DoneActivity(title = activityTitle(a) ?: a["name"].str() ?: "Actividad",

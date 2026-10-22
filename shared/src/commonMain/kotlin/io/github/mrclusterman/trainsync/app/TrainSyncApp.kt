@@ -12,6 +12,8 @@ import io.github.mrclusterman.trainsync.intervals.IntervalsException
 import io.github.mrclusterman.trainsync.intervals.str
 import io.ktor.client.engine.HttpClientEngine
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 import kotlinx.serialization.json.Json
 
 private const val DATA_KEY = "trainsync.data"
@@ -202,3 +204,7 @@ class TrainSyncApp(
         data = AppData()
     }
 }
+
+/** La fecha de hoy en la zona horaria del móvil. */
+@OptIn(kotlin.time.ExperimentalTime::class)
+fun systemToday(): LocalDate = kotlin.time.Clock.System.todayIn(TimeZone.currentSystemDefault())

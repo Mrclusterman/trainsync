@@ -88,3 +88,18 @@ fun activityTitle(activity: JsonObject): String? {
     }
     return "$label · $kind"
 }
+
+/** Aviso de salud: sustituye al cuestionario de cribado (decisión del 2026-10-21, docs/CUMPLIMIENTO.md). */
+const val HEALTH_NOTICE = "TrainSync no es un servicio médico ni sustituye el consejo de un profesional sanitario. " +
+    "Consulta a tu médico antes de empezar o de subir la intensidad si tienes una enfermedad del corazón, metabólica " +
+    "(como la diabetes) o del riñón, si estás embarazada o tienes una lesión. Si al entrenar notas dolor en el pecho, " +
+    "falta de aire con poco esfuerzo, mareos o palpitaciones, para y consulta. Al continuar confirmas que entrenas bajo " +
+    "tu responsabilidad."
+
+const val MIN_AGE = 14  // LOPDGDD art. 7: edad mínima para consentir en España (CUMPLIMIENTO #17)
+
+fun ageAllowed(birthYear: Int, currentYear: Int): Boolean = currentYear - birthYear >= MIN_AGE
+
+const val PRIVACY_NOTE = "Tus datos se guardan solo en este móvil. TrainSync no tiene servidor: no hay cuentas ni " +
+    "copias en la nube. Si vinculas intervals.icu, la app habla directamente con intervals.icu con tu clave, que se " +
+    "guarda cifrada en el almacén seguro del sistema."
