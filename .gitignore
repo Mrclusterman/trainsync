@@ -10,4 +10,4 @@ replica/*-hn.csv
 replica/reviews-*.csv
 
 # Base de datos local (SQLite)
-backend/data/
+prototype/backend/data/

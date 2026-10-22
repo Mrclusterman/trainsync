@@ -1,6 +1,6 @@
 # Validación del motor de planes de salud — TrainSync (Fase D)
 
-> **Fecha:** 2026-10-21 · Reproducible: `cd backend && python -m validation.run` (con `--real` y las credenciales de
+> **Fecha:** 2026-10-21 · Reproducible: `cd prototype/backend && python -m validation.run` (con `--real` y las credenciales de
 > intervals.icu en el entorno, añade el caso real). Resultados completos: `validacion/resultados.md` y `resultados.csv`.
 
 ## 1. Método

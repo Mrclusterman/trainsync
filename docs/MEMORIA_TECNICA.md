@@ -1015,7 +1015,7 @@ trainsync/
 │       │   └── plan_tasks.py
 │       └── tests/
 │
-├── frontend-web/
+├── prototype/web/
 │   ├── Dockerfile
 │   ├── package.json
 │   ├── next.config.ts

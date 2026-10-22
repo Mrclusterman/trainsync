@@ -11,5 +11,5 @@ TrainSync (AGPL-3.0-only) incluye o usa los siguientes componentes con licencias
 | Tailwind CSS | Estilos | MIT |
 | FastAPI, Pydantic, httpx, Uvicorn | Backend | MIT / BSD-3-Clause |
 
-Las dependencias completas y sus licencias están en `frontend-web/package-lock.json` y `backend/pyproject.toml`.
+Las dependencias completas y sus licencias están en `prototype/web/package-lock.json` y `prototype/backend/pyproject.toml`.
 Los iconos de deporte son propios del proyecto.

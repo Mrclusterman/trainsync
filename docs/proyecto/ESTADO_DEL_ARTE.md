@@ -95,7 +95,7 @@ RPE ≥ 14. Resultados: sin consulta; consulta recomendada (a veces solo para lo
 alrededor de un 41 % menos de personas al médico que el procedimiento anterior [Secundaria: ACSM]. Al ser un procedimiento
 de decisión y no un formulario, se implementa con preguntas redactadas con palabras propias.
 
-**Consecuencia:** cribado al empezar (`backend/app/services/screening.py`) que fija el tope de intensidad del plan.
+**Consecuencia:** cribado al empezar (`prototype/backend/app/services/screening.py`) que fija el tope de intensidad del plan.
 
 ## 6. Adherencia
 

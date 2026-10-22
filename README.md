@@ -21,10 +21,10 @@ Backend FastAPI monousuario con el motor de entrenamiento (sección 8 de la memo
   la calidad del día cubre el tipo de carga que te falta (aeróbico bajo, alto o anaeróbico, 28 días), sesiones tempo y
   anaeróbicas, vuelta a la base tras 7 días sin entrenar y ritmos de carrera calculados desde tu FC con tus propias carreras.
 
-Lo marcado `[Inferencia]` en `backend/app/services/training_engine.py` no tiene evidencia publicada
+Lo marcado `[Inferencia]` en `prototype/backend/app/services/training_engine.py` no tiene evidencia publicada
 (ver `docs/MOTOR_ENTRENAMIENTO.md` §11.2).
 
-- Catálogo de 57 sesiones (`backend/app/services/session_catalog.py`) con rotación semanal: running por distancia
+- Catálogo de 57 sesiones (`prototype/backend/app/services/session_catalog.py`) con rotación semanal: running por distancia
   (5K a ultra), trail, ciclismo, natación en piscina y aguas abiertas, triatlón/duatlón (brick), neuromusculares y tests.
 - Biblioteca de fuerza por fase y TSS semanal según la rampa de CTL, repartido por tipo de sesión.
 - RPE: objetivo por bloque, señal de fatiga (RPE alto con FC baja) y carga semanal sRPE con monotonía/strain.
@@ -36,7 +36,7 @@ cp .env.example .env          # rellena JWT_SECRET y ENCRYPTION_KEY; cada usuari
 # Con Docker (Windows/WSL): backend en :8000 y web en :3000
 docker compose up --build
 # Sin Docker:
-cd backend && python3 -m venv .venv && .venv/bin/pip install -e '.[dev]'
+cd prototype/backend && python3 -m venv .venv && .venv/bin/pip install -e '.[dev]'
 set -a && . ../.env && set +a && .venv/bin/uvicorn app.main:app --reload
 ```
 
@@ -59,14 +59,14 @@ Swagger UI: http://localhost:8000/docs
 | `GET /state`, `GET /plan`, `GET /plan/today` | Plan de carrera con la sesión del usuario y **su** cuenta de intervals.icu vinculada (401 sin sesión; 409 sin vincular). Nunca se usa una cuenta del servidor |
 | `POST /plan/today/send` | Envía la sesión de hoy (o, con `{"sport": …}`, la alternativa que vas a hacer) al calendario de intervals.icu como entrenamiento estructurado; intervals.icu la pasa al reloj si tienes activada la sincronización (Garmin, Wahoo, Zwift). Reenviar la actualiza (`external_id` por día) |
 
-## Frontend web (`frontend-web/`)
+## Frontend web (`prototype/web/`)
 
 Next.js 16 + TypeScript + Tailwind CSS 4 con el sistema de diseño "Athletic Precision": pantallas **Hoy** (estado de
 forma, sesión del día con estructura, RPE y alternativas, próximos días, última actividad con zonas) y **Plan**
 (14 días con bottom sheet). Los datos se piden desde Server Components, así que el navegador no habla con el backend.
 
 ```bash
-cd frontend-web && npm install
+cd prototype/web && npm install
 npm run dev                 # http://localhost:3000 (backend en :8000)
 npm run gen:types           # regenera src/lib/api-types.ts desde el OpenAPI del backend
 ```
@@ -76,7 +76,7 @@ npm run gen:types           # regenera src/lib/api-types.ts desde el OpenAPI del
 ## Tests
 
 ```bash
-cd backend && .venv/bin/pytest
+cd prototype/backend && .venv/bin/pytest
 ```
 
 ## Licencia

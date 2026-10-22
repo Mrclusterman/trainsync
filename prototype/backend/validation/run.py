@@ -13,7 +13,7 @@ from app.services.training_engine import WEEKDAYS
 
 START = date(2026, 1, 5)  # lunes fijo: resultados reproducibles
 WEEKS = 24
-OUT = Path(__file__).resolve().parents[2] / "docs" / "proyecto" / "validacion"
+OUT = Path(__file__).resolve().parents[3] / "docs" / "proyecto" / "validacion"
 MAIN = ("sentadilla", "bisagra", "empuje horizontal", "tracción horizontal")
 VIGOROUS = ("Z4", "Z5", "Z6")
 

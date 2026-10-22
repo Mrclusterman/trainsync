@@ -442,7 +442,7 @@ el usuario y cada afirmación de la memoria reproducible desde el repositorio.
 
 ## 12. Anexos
 
-- **A. Reproducibilidad.** `cd backend && pip install -e '.[dev]' && pytest` (175 pruebas) y `python -m validation.run`
+- **A. Reproducibilidad.** `cd prototype/backend && pip install -e '.[dev]' && pytest` (175 pruebas) y `python -m validation.run`
   (simulación; añade `--real` con las credenciales de intervals.icu en el entorno). Resultados en
   `docs/proyecto/validacion/resultados.md` y `resultados.csv`.
 - **B. Especificaciones.** `docs/proyecto/DISENO.md` (objetivos sin fecha, criterios V1–V11), `docs/MOTOR_ENTRENAMIENTO.md`

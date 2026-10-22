@@ -12,7 +12,7 @@ services:
       interval: 30s
 
   frontend:
-    build: ./frontend-web
+    build: ./web
     environment:
       TRAINSYNC_API_URL: http://backend:8000
     ports:
