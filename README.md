@@ -13,9 +13,9 @@ no salen de él ([`docs/VISION.md`](docs/VISION.md)).
 
 | Carpeta | Qué es |
 |---|---|
-| `shared/` | Núcleo compartido en Kotlin Multiplatform: el motor de planes, portado del prototipo con pruebas de equivalencia |
-| `androidApp/` | App de Android (Jetpack Compose) |
-| `iosApp/` | App de iOS (SwiftUI). El proyecto de Xcode se genera con XcodeGen (`iosApp/project.yml`) |
+| `shared/` | Núcleo compartido en Kotlin Multiplatform: el motor (portado del prototipo con pruebas de equivalencia), la conexión con intervals.icu desde el móvil y el estado de cada pantalla (`app/`) |
+| `androidApp/` | App de Android (Jetpack Compose): inicio con objetivo, Hoy, Calendario, Progreso y Perfil |
+| `iosApp/` | App de iOS (SwiftUI), las mismas pantallas. El proyecto de Xcode se genera con XcodeGen (`iosApp/project.yml`) |
 | `prototype/` | El prototipo web anterior (FastAPI + Next.js): referencia mientras llegan las apps |
 | `tools/` | Generación del catálogo y de los casos de referencia desde el prototipo |
 
@@ -23,6 +23,8 @@ no salen de él ([`docs/VISION.md`](docs/VISION.md)).
 ./gradlew :shared:jvmTest                 # tests del núcleo, incluida la equivalencia con el prototipo
 ./gradlew :androidApp:assembleDebug       # APK de depuración en androidApp/build/outputs/apk/debug/
 ```
+
+La APK de cada push queda como artefacto `trainsync-debug-apk` en GitHub Actions, y las capturas de iOS como `ios-screenshots`.
 
 iOS solo compila en macOS: la CI de GitHub (`.github/workflows/build.yml`) genera el proyecto con XcodeGen, lo compila
 para el simulador y pasa los tests del núcleo en iOS en cada push. Necesita JDK 21 y el SDK de Android (compileSdk 37).
