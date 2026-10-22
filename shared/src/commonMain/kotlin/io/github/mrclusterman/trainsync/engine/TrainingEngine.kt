@@ -445,7 +445,7 @@ fun buildSession(kind: String, sport: String, profile: Profile, volume: Double =
             b.guide = "Guíate por RPE: en series cortas la FC tarda en subir"  // [Práctica]
         }
     }
-    val zones = (blocks.map { it.zone } + blocks.mapNotNull { it.restZone }).toSortedSet()
+    val zones = (blocks.map { it.zone } + blocks.mapNotNull { it.restZone }).distinct().sorted()
     val lthr = profile.lthrFor(sport)
     // Un test se hace al máximo sostenible: un objetivo calculado con la LTHR que se quiere medir lo sesgaría
     var targets: MutableMap<String, String?> =
