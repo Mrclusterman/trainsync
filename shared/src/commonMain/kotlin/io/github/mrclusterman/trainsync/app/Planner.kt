@@ -39,7 +39,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.isoDayNumber
 
 /** Un paso de una sesión, ya listo para mostrar. */
-data class Step(val name: String, val reps: Int, val minutes: Double, val zone: String, val restMinutes: Double?,
+data class Step(val name: String, val reps: Int, val minutes: Double, val intensityZone: String, val restMinutes: Double?,
                 val detail: String?, val target: String?)
 
 /** Una sesión del plan, de fuerza o de resistencia, con nombre llano y su nombre técnico. */
