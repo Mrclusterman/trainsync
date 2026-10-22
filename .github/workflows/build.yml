@@ -46,7 +46,7 @@ jobs:
           xcrun simctl io "$DEVICE" screenshot screenshots/inicio.png
           # Con un perfil y un objetivo de prueba (datos sintéticos): cada pestaña
           xcrun simctl terminate "$DEVICE" io.github.mrclusterman.trainsync
-          xcrun simctl spawn "$DEVICE" defaults write io.github.mrclusterman.trainsync trainsync.data \
+          xcrun simctl spawn "$DEVICE" defaults write io.github.mrclusterman.trainsync trainsync.data -string \
             '{"profile":{"birthYear":1990,"level":"intermediate","strength":"gym","cardio":["walking","running"],"days":{"MON":45,"WED":45,"FRI":45,"SAT":60}},"goal":{"kind":"FITNESS","since":"2026-01-05"},"blockStart":"2026-01-05"}'
           for t in 0 1 2 3; do
             xcrun simctl launch "$DEVICE" io.github.mrclusterman.trainsync -tab $t
