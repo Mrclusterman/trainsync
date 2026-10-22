@@ -6,6 +6,11 @@ private let strengthOptions = [("gym", "Gimnasio"), ("bodyweight", "Con tu peso"
 private let levelOptions = [("beginner", "Empiezo"), ("intermediate", "Entreno a veces"), ("advanced", "Entreno a menudo")]
 private let weekdays = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
 
+enum ReminderError: LocalizedError {
+    case denied
+    var errorDescription: String? { "Sin permiso para avisarte: actívalo en Ajustes → Notificaciones → TrainSync" }
+}
+
 /// Borrador editable del perfil en tipos de Swift; se convierte al del núcleo al guardar.
 struct ProfileDraft {
     var birthYear: Int?
@@ -100,6 +105,31 @@ struct ProfileView: View {
                 Module {
                     ProfileForm(draft: $draft)
                     Button("Guardar") { model.run("Perfil guardado") { core.saveProfile(profile: draft.core) } }.buttonStyle(.borderedProminent)
+                }
+                Module {
+                    Toggle(isOn: Binding(get: { core.data.reminderHour != nil }, set: { on in
+                        if on {
+                            model.runAsync {
+                                guard try await Reminders.requestAccess() else {
+                                    throw ReminderError.denied
+                                }
+                                try core.setReminder(hour: KotlinInt(int: 8))
+                            }
+                        } else {
+                            model.run { try core.setReminder(hour: nil) }
+                        }
+                    })) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Secondary("Recordatorio diario")
+                            Secondary("Un aviso con la sesión del día. Los días de descanso o con todo hecho no avisa.")
+                        }
+                    }
+                    if let hour = core.data.reminderHour?.intValue {
+                        Stepper(String(format: "A las %02d:00", hour), value: Binding(get: { hour }, set: { h in
+                            model.run { try core.setReminder(hour: KotlinInt(int: Int32((h + 24) % 24))) }
+                        }), in: -1...24)
+                        .font(.system(.body, design: .monospaced))
+                    }
                 }
                 Module {
                     Secondary("Datos de salud del iPhone (Apple Salud)")

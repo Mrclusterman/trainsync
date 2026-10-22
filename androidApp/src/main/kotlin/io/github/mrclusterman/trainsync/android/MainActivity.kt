@@ -82,6 +82,7 @@ fun Root(app: TrainSyncApp) {
 
     // Al abrir, datos frescos de intervals.icu si está vinculado; sin red, la copia guardada
     LaunchedEffect(Unit) {
+        scheduleReminder(context, app.data.reminderHour)  // por si el sistema quitó la alarma (actualización, forzar cierre)
         if (app.linkedAthlete != null) runCatching { app.sync() }
         // Health Connect, si ya dio permiso: datos frescos sin pulsar nada
         if (app.data.health != null) runCatching { HealthConnectReader(context).sync(app) }

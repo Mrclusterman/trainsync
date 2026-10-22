@@ -78,6 +78,7 @@ data class AppData(
     val intervalsAthlete: String? = null,  // ID del atleta (no es secreto); la clave va en el almacén seguro
     val health: HealthSnapshot? = null,  // Health Connect o Apple Salud, leídos en el propio móvil
     val lifts: List<LiftLog> = emptyList(),  // registro de fuerza (punto 8 del roast)
+    val reminderHour: Int? = null,  // recordatorio diario a esa hora; null = apagado (se activa a propósito)
 )
 
 /** Adapta datos guardados con un formato anterior. v1 → v2: añade los datos de salud del móvil (vacíos). */

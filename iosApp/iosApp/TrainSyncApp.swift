@@ -13,7 +13,10 @@ final class AppModel: ObservableObject {
                                    today: { TrainSyncAppKt.systemToday() }, httpEngine: nil)
     }
 
-    func refresh() { version += 1 }
+    func refresh() {
+        version += 1
+        Reminders.reschedule(core)  // el texto de cada aviso depende del plan: se rehace tras cada cambio
+    }
 
     /// Ejecuta una acción del núcleo y enseña el error si lo hay.
     func run(_ success: String? = nil, _ block: () throws -> Void) {

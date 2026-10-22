@@ -226,6 +226,29 @@ class TrainSyncApp(
     /** Límites de las zonas de FC para repartir los pulsos de cada entrenamiento al leerlos del móvil. */
     fun zoneBounds(measuredMaxHr: Double?): List<Double> = heartRateZoneBounds(data.profile, today(), measuredMaxHr)
 
+    // ------------------------------------------------------------ recordatorio diario
+
+    /** Recordatorio opcional a esa hora (0–23); null lo apaga. Cada plataforma lo programa. */
+    @Throws(Exception::class)  // Swift recibe el error en vez de cerrarse la app
+    fun setReminder(hour: Int?) {
+        require(hour == null || hour in 0..23) { "La hora va de 0 a 23" }
+        save(data.copy(reminderHour = hour))
+    }
+
+    /**
+     * Qué dice el recordatorio de ese día: solo lo que toca, sin mensajes comerciales ni reproches.
+     * null si no hay nada que recordar (sin objetivo, descanso o ya hecho): ese día no se avisa.
+     */
+    @Throws(Exception::class)  // Swift recibe el error en vez de cerrarse la app
+    fun reminderText(date: String): String? {
+        if (needsOnboarding) return null
+        val day = Planner(data, today()).day(LocalDate.parse(date))
+        val pending = day.items.filter { it.slot !in day.doneSports && it.sport !in day.doneSports }.takeIf { it.isNotEmpty() } ?: return null
+        return pending.joinToString(" y ") { item ->
+            (if (item.isStrength) item.title else "${SPORT_LABEL[item.sport]} · ${item.title}") + ", ${item.durationMin} min"
+        }
+    }
+
     // ------------------------------------------------------------ tus datos
 
     /** Todo lo guardado, en JSON (portabilidad, RGPD art. 20). La clave de intervals.icu no se incluye. */

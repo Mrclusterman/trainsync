@@ -57,6 +57,25 @@ class TrainSyncAppTest {
     }
 
     @Test
+    fun reminderIsOptInAndOnlySaysWhatIsPending() {
+        val a = app()
+        assertEquals(null, a.data.reminderHour)  // apagado hasta que el usuario lo active
+        assertEquals(null, a.reminderText(today.toString()))  // sin objetivo no hay nada que recordar
+        a.saveProfile(profile)
+        a.setGoal(GoalKind.FITNESS)
+        a.setReminder(8)
+        assertEquals(8, a.data.reminderHour)
+        assertFailsWith<IllegalArgumentException> { a.setReminder(24) }
+        val text = assertNotNull(a.reminderText(today.toString()))  // el jueves es día de entreno
+        assertTrue("min" in text)
+        assertEquals(null, a.reminderText(today.plusDays(1).toString()))  // viernes: no hay minutos, descanso
+        a.day(today.toString()).items.forEach { a.markDone(today.toString(), it.sport) }
+        assertEquals(null, a.reminderText(today.toString()))  // hecho: ese día ya no se avisa
+        a.setReminder(null)
+        assertEquals(null, a.data.reminderHour)
+    }
+
+    @Test
     fun dataSurvivesARestart() {
         val store = MemoryStore()
         app(store).apply { saveProfile(profile); setGoal(GoalKind.STRENGTH) }

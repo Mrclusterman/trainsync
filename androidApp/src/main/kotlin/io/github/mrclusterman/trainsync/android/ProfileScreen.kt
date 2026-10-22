@@ -1,6 +1,9 @@
 package io.github.mrclusterman.trainsync.android
 
+import android.Manifest
 import android.content.Intent
+import android.os.Build
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.layout.Arrangement
 import androidx.health.connect.client.PermissionController
@@ -114,6 +117,7 @@ fun ProfileTab(app: TrainSyncApp, version: Int, act: Act, changeGoal: () -> Unit
             ProfileForm(draft) { draft = it }
             Button(onClick = { act.run("Perfil guardado") { app.saveProfile(draft) } }) { Text("Guardar") }
         }
+        ReminderCard(app, act, version)
         HealthCard(app, act, version)
         IntervalsCard(app, act, version)
         Module {
@@ -147,6 +151,38 @@ fun ProfileTab(app: TrainSyncApp, version: Int, act: Act, changeGoal: () -> Unit
             text = { Text("Se borran tu perfil, tu objetivo, tu historial y la clave de intervals.icu de este móvil. No se puede deshacer. Tus datos en intervals.icu no se tocan.") },
             confirmButton = { TextButton(onClick = { confirmDelete = false; act.run { app.deleteAll() } }) { Text("Borrar", color = Palette.danger) } },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancelar") } })
+    }
+}
+
+/** Recordatorio diario opcional: apagado por defecto, a la hora que elijas, solo con lo que toca ese día. */
+@Composable
+private fun ReminderCard(app: TrainSyncApp, act: Act, @Suppress("UNUSED_PARAMETER") version: Int) {
+    val context = LocalContext.current
+    fun set(hour: Int?) = act.run { app.setReminder(hour); scheduleReminder(context, hour) }
+    val request = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) set(8) else act.run("Sin permiso para avisarte: actívalo en Ajustes → Notificaciones") {}
+    }
+    val hour = app.data.reminderHour
+    Module {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                SectionTitle("Recordatorio diario")
+                Secondary("Un aviso con la sesión del día. Los días de descanso o con todo hecho no avisa.")
+            }
+            Switch(checked = hour != null, onCheckedChange = { on ->
+                when {
+                    !on -> set(null)
+                    Build.VERSION.SDK_INT >= 33 && !canNotify(context) -> request.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    else -> set(8)
+                }
+            })
+        }
+        if (hour != null) Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("A las", fontSize = 14.sp)
+            TextButton(onClick = { set((hour + 23) % 24) }) { Text("−") }
+            Text("${hour.toString().padStart(2, '0')}:00", fontFamily = Mono)
+            TextButton(onClick = { set((hour + 1) % 24) }) { Text("+") }
+        }
     }
 }
 
