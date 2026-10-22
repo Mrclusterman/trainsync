@@ -19,8 +19,8 @@ Garmin decide pero encierra tus datos en su ecosistema; Apple y Google guardan l
 |---|---|---|
 | Atletas de resistencia | Plan hacia una carrera, ajuste diario, envío al reloj | Hecho en buena parte (modo carrera) |
 | Apasionados del fitness | Plan de fuerza y cardio sin fecha, progreso visible | Hecho en parte (Salud) |
-| Buscadores de longevidad | Tendencias de sueño, HRV, FC en reposo, VO2max, peso; mínimos de la OMS | Falta casi todo (no hay historial) |
-| Entrenadores y preparadores | Ver y planificar a varios atletas | No existe |
+| Buscadores de longevidad | Tendencias de sueño, HRV, FC en reposo, VO2max, peso; mínimos de la OMS. Solo lo que miden relojes y básculas: sin analíticas ni marcadores clínicos (decisión del 2026-10-22) | Falta casi todo (no hay historial) |
+| Entrenadores y preparadores | Ver y planificar a varios atletas | Más adelante (Fase 4, decisión del 2026-10-22) |
 
 Los tres primeros son la misma persona en momentos distintos: alguien prepara una carrera, la termina y sigue entrenando
 por salud. La app no cambia de modo, cambia de objetivo.
@@ -100,7 +100,24 @@ Cuatro apartados y un flujo de objetivo. Todo lo de hoy (Salud, Plan, Hoy) se re
 - Se reutiliza el código que hay: `training_engine.py` (periodización y catálogo de sesiones) y `health_plan.py`
   (dosis OMS, fuerza, semanas). El trabajo es unir sus salidas en un único plan por usuario, no reescribirlos.
 
-## 7. Datos
+## 7. Arquitectura: todo en el móvil (decidido el 2026-10-22)
+
+- **Apps nativas:** SwiftUI en iOS y Jetpack Compose en Android.
+- **Motor en un núcleo compartido** por las dos apps, que corre en el propio móvil. Propuesta: Kotlin Multiplatform
+  [sin decidir]. El motor actual en Python se reescribe una vez; la validación en Python (`backend/validation/`) sirve de
+  referencia: el núcleo nuevo debe dar los mismos planes con las mismas entradas.
+- **Los datos se quedan en el móvil:** Apple Salud / Health Connect se leen en el dispositivo e intervals.icu se llama
+  directamente desde la app con la clave del usuario, guardada en el llavero del sistema.
+- **Sin servidor ni cuentas** en las fases 1–3: no hay contraseñas, emails ni base de datos con datos de salud de nadie.
+  Exportar y borrar siguen existiendo, en el propio móvil.
+- **El servidor solo vuelve si hace falta:** entrenadores (compartir datos entre personas), Garmin directo (envía los
+  datos a un servidor) y quizá Strava (su autorización) [Inferencia: sin comprobar].
+- **La web actual** (Next.js + FastAPI) queda como prototipo de referencia mientras llegan las apps.
+
+**Coste:** sin servidor, lo fijo son las cuentas de desarrollador (Apple ~99 $/año, Google ~25 $ una vez; cifras de
+memoria, sin comprobar) y un dominio.
+
+## 8. Datos
 
 | Fuente | Qué aporta | Estado |
 |---|---|---|
@@ -109,17 +126,17 @@ Cuatro apartados y un flujo de objetivo. Todo lo de hoy (Salud, Plan, Hoy) se re
 | Apple Salud / Health Connect | Lo mismo desde el móvil, sin intervals.icu | Exige app móvil nativa (Fase 3) |
 | Strava, Garmin directos | Actividades sin pasar por intervals.icu | Fase 5; Garmin exige aprobación de su programa de desarrolladores [Práctica: sin comprobar] |
 
-## 8. Hoja de ruta
+## 9. Hoja de ruta
 
 | Fase | Qué | Resultado |
 |---|---|---|
 | 1. Cohesión | Estructura de la sección 5, un solo motor, flujo de objetivo, lenguaje llano, errores de la revisión | Una app que se entiende de punta a punta |
 | 2. Progreso | Historial y tendencias con los datos de intervals.icu | Lo básico de Garmin Connect y Apple Health |
-| 3. App móvil | iOS y Android, Apple Salud y Health Connect, notificaciones | Usable sin intervals.icu |
+| 3. Apps nativas | Núcleo compartido, iOS y Android, Apple Salud y Health Connect, notificaciones | Usable sin intervals.icu y sin servidor |
 | 4. Entrenadores | Varios atletas por cuenta | Abre el perfil profesional |
-| 5. Integraciones y longevidad | Strava y Garmin directos; tensión, glucosa, analíticas | Plataforma completa |
+| 5. Integraciones | Strava y Garmin directos (con servidor) | Plataforma completa |
 
-## 9. La revisión del 2026-10-22 en esta estructura
+## 10. La revisión del 2026-10-22 en esta estructura
 
 | Punto | Dónde | Fase |
 |---|---|---|
@@ -132,11 +149,24 @@ Cuatro apartados y un flujo de objetivo. Todo lo de hoy (Salud, Plan, Hoy) se re
 | 7. Objetivo fuera del perfil, como Garmin | Flujo de objetivo | 1 |
 | 8. Historial de sueño, HRV, ritmo, VO2max | Progreso | 2 |
 
-## 10. Preguntas abiertas (decide Gabriel)
+## 11. Decisiones
 
-1. **Nombre:** ¿"TrainSync" encaja con "el sistema operativo de tu cuerpo", o pide otro nombre antes de hacerla pública?
-2. **Entrenadores:** ¿en la primera versión pública o después (Fase 4)?
-3. **Longevidad:** ¿incluir analíticas de sangre y marcadores clínicos, o quedarse en lo que miden relojes y básculas?
-4. **Financiación:** gratis para siempre exige pagar servidores. ¿Donaciones, patrocinio, autoalojado o un servicio
-   para entrenadores?
-5. **Móvil:** ¿la Fase 3 en React Native y Expo (lo previsto en la memoria técnica) o nativa?
+| Pregunta | Decisión (2026-10-22) |
+|---|---|
+| Móvil | Apps nativas, todo en el móvil (sección 7) |
+| Longevidad | Solo lo que miden relojes y básculas; sin analíticas |
+| Entrenadores | Más adelante (Fase 4) |
+| Financiación | Sin servidor: solo cuentas de desarrollador y dominio |
+| Nombre | Abierto. Candidato: **Biotos** (sección 12) |
+
+## 12. Nombre
+
+Comprobado el 2026-10-22 en App Store España (API de búsqueda de Apple), dominios (RDAP) y búsqueda web. **Sin comprobar
+en registros de marcas** (EUIPO, OEPM): hacerlo antes de usar ningún nombre.
+
+| Nombre | Resultado |
+|---|---|
+| Bios | Descartado: BIOS Health (Cambridge, salud) usa bios.health; bios.app y biosapp.com registrados |
+| PhysOS | Arriesgado: ya hay una app "PHYSOS" (Medicina) en App Store |
+| Anabios | Arriesgado: AnaBios Corp. (San Diego, investigación farmacéutica) |
+| **Biotos** | Sin apps ni empresas con ese nombre encontradas; biotos.app y biotos.health libres (biotos.com registrado). Del griego *bíotos*, "vida, sustento", y termina en OS |
