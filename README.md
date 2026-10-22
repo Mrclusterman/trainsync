@@ -6,7 +6,28 @@ Planes de entrenamiento de resistencia gratuitos y open source sobre los datos d
 Ninguna función se bloquea para empujar a pagar. Se revisa en cada versión ([`docs/CUMPLIMIENTO.md`](docs/CUMPLIMIENTO.md), punto 9).
 Especificación: [`docs/MEMORIA_TECNICA.md`](docs/MEMORIA_TECNICA.md) · Motor: [`docs/MOTOR_ENTRENAMIENTO.md`](docs/MOTOR_ENTRENAMIENTO.md) · Diseño: [`docs/DISENO_ATHLETIC_PRECISION.md`](docs/DISENO_ATHLETIC_PRECISION.md)
 
-## Estado (v0.1)
+## Hacia dónde va
+
+TrainSync pasa a ser **apps nativas que funcionan sin servidor**: el motor corre en el propio móvil y tus datos de salud
+no salen de él ([`docs/VISION.md`](docs/VISION.md)).
+
+| Carpeta | Qué es |
+|---|---|
+| `shared/` | Núcleo compartido en Kotlin Multiplatform: el motor de planes, portado del prototipo con pruebas de equivalencia |
+| `androidApp/` | App de Android (Jetpack Compose) |
+| `iosApp/` | App de iOS (SwiftUI). El proyecto de Xcode se genera con XcodeGen (`iosApp/project.yml`) |
+| `prototype/` | El prototipo web anterior (FastAPI + Next.js): referencia mientras llegan las apps |
+| `tools/` | Generación del catálogo y de los casos de referencia desde el prototipo |
+
+```bash
+./gradlew :shared:jvmTest                 # tests del núcleo, incluida la equivalencia con el prototipo
+./gradlew :androidApp:assembleDebug       # APK de depuración en androidApp/build/outputs/apk/debug/
+```
+
+iOS solo compila en macOS: la CI de GitHub (`.github/workflows/build.yml`) genera el proyecto con XcodeGen, lo compila
+para el simulador y pasa los tests del núcleo en iOS en cada push. Necesita JDK 21 y el SDK de Android (compileSdk 37).
+
+## El prototipo (v0.1)
 
 Backend FastAPI monousuario con el motor de entrenamiento (sección 8 de la memoria):
 
@@ -32,11 +53,11 @@ Lo marcado `[Inferencia]` en `prototype/backend/app/services/training_engine.py`
 ## Arrancar
 
 ```bash
-cp .env.example .env          # rellena JWT_SECRET y ENCRYPTION_KEY; cada usuario vincula su intervals.icu en la web
+cd prototype && cp .env.example .env   # rellena JWT_SECRET y ENCRYPTION_KEY; cada usuario vincula su intervals.icu en la web
 # Con Docker (Windows/WSL): backend en :8000 y web en :3000
 docker compose up --build
 # Sin Docker:
-cd prototype/backend && python3 -m venv .venv && .venv/bin/pip install -e '.[dev]'
+cd backend && python3 -m venv .venv && .venv/bin/pip install -e '.[dev]'
 set -a && . ../.env && set +a && .venv/bin/uvicorn app.main:app --reload
 ```
 
