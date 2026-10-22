@@ -529,7 +529,8 @@ fun proposeDay(day: LocalDate, profile: Profile, goal: Goal?, state: DayState? =
         reasons += why
     }
 
-    val out = Day(date = day.toString(), weekday = weekday, phase = phase, recoveryWeek = recoveryWeek, reasons = reasons)
+    val out = Day(date = day.toString(), weekday = weekday, phase = phase, recoveryWeek = recoveryWeek, reasons = reasons,
+        adjustments = why)
     if (kind == "rest") return out
     val preferred = if (kind == "brick") "cycling" else mainSport(weekday, goal, profile)
     val event = if (goal != null && goal.trail) "trail" else null

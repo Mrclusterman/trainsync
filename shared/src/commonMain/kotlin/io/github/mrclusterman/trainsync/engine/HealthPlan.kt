@@ -62,6 +62,13 @@ data class HealthStrength(
     val notes: String,
 ) : Planned
 
+/** Fuerza del modo carrera como sesión planificada (para emparejar lo hecho). */
+data class RaceStrengthItem(val strength: RaceStrength) : Planned {
+    override val sport get() = "strength"
+    override val durationMin get() = strength.durationMin
+    override val tss get() = strength.tss
+}
+
 /** Envoltorio de una sesión de resistencia del catálogo en el plan de salud. */
 data class HealthCardio(val session: Session) : Planned {
     override val sport get() = session.sport
@@ -452,6 +459,7 @@ fun adjustDay(p: HealthProfile, sessions: List<Planned>, status: String, week: I
             }
             is HealthCardio -> cardioSession(p, s.sport, "aerobic", s.equivalentMin * 0.7, week, s.durationMin)
                 ?.let { HealthCardio(it) } ?: s
+            is RaceStrengthItem -> s
         }
     }
     return out to "Hoy en versión suave: has dormido o te notas peor de lo normal."
@@ -504,6 +512,7 @@ fun matchDay(sessions: List<Planned>, done: List<Done>): List<Match> {
     fun nameOf(s: Planned) = when (s) {
         is HealthStrength -> s.name
         is HealthCardio -> s.session.name
+        is RaceStrengthItem -> s.strength.name
     }
     fun take(item: Done, s: Planned) {
         val planned = s.durationMin

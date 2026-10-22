@@ -50,6 +50,7 @@ class HealthGoldenTest {
     private fun enc(s: Planned): JsonElement = when (s) {
         is HealthStrength -> json.encodeToJsonElement(s)
         is HealthCardio -> json.encodeToJsonElement(s.session)
+        is RaceStrengthItem -> json.encodeToJsonElement(s.strength)
     }
 
     private fun enc(w: WeekPlan): JsonElement = buildJsonObject {

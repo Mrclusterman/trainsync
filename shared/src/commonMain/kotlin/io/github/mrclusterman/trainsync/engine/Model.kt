@@ -2,6 +2,7 @@ package io.github.mrclusterman.trainsync.engine
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 /** Bloque del catálogo (MOTOR §4). `minutes = null`: absorbe la diferencia hasta la duración elegida. */
 data class CatalogBlock(
@@ -88,4 +89,6 @@ data class Day(
     var main: Session? = null,
     val alternatives: MutableList<Session> = mutableListOf(),
     var strength: RaceStrength? = null,
+    /** Motivos del ajuste por el estado del día (fatiga, sueño, HRV): la frase de "Hoy" sale de aquí. */
+    @Transient val adjustments: List<String> = emptyList(),
 )
