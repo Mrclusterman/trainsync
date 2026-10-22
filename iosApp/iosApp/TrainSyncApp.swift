@@ -55,7 +55,7 @@ struct TrainSyncMain: App {
 
 struct RootView: View {
     @EnvironmentObject var model: AppModel
-    @State private var tab = 0
+    @State private var tab = UserDefaults.standard.integer(forKey: "tab")  // `-tab N` al lanzar: capturas del CI
 
     var body: some View {
         let _ = model.version
