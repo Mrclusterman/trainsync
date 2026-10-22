@@ -29,6 +29,12 @@ import io.github.mrclusterman.trainsync.app.DayView
 import io.github.mrclusterman.trainsync.app.Reason
 import io.github.mrclusterman.trainsync.app.SPORT_LABEL
 import io.github.mrclusterman.trainsync.app.TrainSyncApp
+import io.github.mrclusterman.trainsync.app.kg
+import io.github.mrclusterman.trainsync.app.repRange
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.input.KeyboardType
 
 @Composable
 fun TodayTab(app: TrainSyncApp, version: Int, act: Act, openGoal: () -> Unit) {
@@ -90,6 +96,7 @@ fun DayContent(app: TrainSyncApp, day: DayView, linked: Boolean, act: Act, today
                     } }) { Text("Enviar al reloj") }
                 }
             }
+            if (item.isStrength && (day.isPast || today)) LiftRows(app, day.date, item.exercises, act)
             if (item.chosen) TextButton(onClick = { act.run { app.clearChoice(day.date) } }) { Text("Volver a la planificada") }
             if (!done && !day.isPast && item.alternatives.isNotEmpty()) {
                 var open by remember { mutableStateOf(false) }
@@ -132,5 +139,37 @@ private fun ReadinessCard(act: Act) {
             }
         }
         Button(onClick = { act.run { act.app.answerReadiness(sleep, energy, soreness) } }) { Text("Ajustar hoy") }
+    }
+}
+
+/** Cada ejercicio de fuerza: lo apuntado la última vez, la sugerencia de hoy y apuntar peso y repeticiones. */
+@Composable
+fun LiftRows(app: TrainSyncApp, date: String, exercises: List<String>, act: Act) {
+    exercises.filter { repRange(it) != null }.forEach { line ->
+        val hint = app.liftHint(line)
+        var open by remember { mutableStateOf(false) }
+        var weight by remember { mutableStateOf(hint.last?.weightKg?.let { kg(it).removeSuffix(" kg") } ?: "") }
+        var reps by remember { mutableStateOf("") }
+        Column(Modifier.padding(top = 6.dp)) {
+            Text(hint.exercise, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            hint.last?.let { l ->
+                Secondary("La última vez: ${l.weightKg?.let { kg(it) } ?: "tu peso"} × ${l.reps} (${l.sets} series)")
+            }
+            hint.suggestion?.let { Text(it, fontSize = 13.sp, color = Palette.accent) }
+            if (!open) TextButton(onClick = { open = true }) { Text("Apuntar", fontSize = 13.sp) }
+            else Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(weight, { weight = it }, label = { Text("kg") }, singleLine = true, modifier = Modifier.width(90.dp),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                OutlinedTextField(reps, { reps = it.filter(Char::isDigit) }, label = { Text("reps") }, singleLine = true,
+                    modifier = Modifier.width(90.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                TextButton(onClick = {
+                    act.run("Apuntado") {
+                        val sets = Regex("""(\d+) ×""").find(line)?.groupValues?.get(1)?.toInt() ?: 1
+                        app.logLift(date, line, weight.replace(',', '.').toDoubleOrNull(), reps.toIntOrNull() ?: 0, sets)
+                    }
+                    open = false
+                }) { Text("Guardar") }
+            }
+        }
     }
 }

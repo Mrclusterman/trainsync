@@ -41,6 +41,10 @@ data class UserProfile(
 @Serializable
 data class ManualDone(val date: String, val sport: String)
 
+/** Lo levantado en un ejercicio un día: peso (null con tu peso corporal), repeticiones por serie y series. */
+@Serializable
+data class LiftLog(val date: String, val exercise: String, val weightKg: Double?, val reps: Int, val sets: Int)
+
 @Serializable
 data class WeekChange(val changes: Map<String, Int>, val since: String)
 
@@ -73,6 +77,7 @@ data class AppData(
     val cache: IntervalsCache? = null,
     val intervalsAthlete: String? = null,  // ID del atleta (no es secreto); la clave va en el almacén seguro
     val health: HealthSnapshot? = null,  // Health Connect o Apple Salud, leídos en el propio móvil
+    val lifts: List<LiftLog> = emptyList(),  // registro de fuerza (punto 8 del roast)
 )
 
 /** Adapta datos guardados con un formato anterior. v1 → v2: añade los datos de salud del móvil (vacíos). */

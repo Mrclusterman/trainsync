@@ -202,6 +202,20 @@ class TrainSyncApp(
         }
     }
 
+    // ------------------------------------------------------------ registro de fuerza
+
+    /** Apunta un ejercicio hecho (sustituye lo apuntado ese día en ese ejercicio). */
+    @Throws(Exception::class)  // Swift recibe el error en vez de cerrarse la app
+    fun logLift(date: String, exercise: String, weightKg: Double?, reps: Int, sets: Int) {
+        require(date <= today().toString()) { "No se puede apuntar una sesión futura" }
+        require(reps in 1..100 && sets in 1..20 && (weightKg == null || weightKg in 0.0..500.0)) { "Revisa el peso y las repeticiones" }
+        val name = exerciseName(exercise)
+        save(data.copy(lifts = data.lifts.filterNot { it.date == date && it.exercise == name } +
+            LiftLog(date, name, weightKg, reps, sets)))
+    }
+
+    fun liftHint(exerciseLine: String): LiftHint = liftHint(data.lifts, exerciseLine)
+
     // ------------------------------------------------------------ datos de salud del móvil
 
     /** Guarda lo leído de Health Connect o Apple Salud (lo lee cada plataforma con su permiso). */
