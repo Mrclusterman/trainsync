@@ -141,6 +141,9 @@ class HealthDataTest {
         val p2 = app.progress()
         assertEquals("22:00", p2.predictions.first().time)
         assertTrue(p2.predictionSource!!.startsWith("tu mejor carrera"))
+        val run = p2.recent.first { it.date == today.plusDays(-3).toString() && it.minutes == 22 }
+        assertEquals("5,0 km · 4:24 /km · 165 ppm · carga ${run.load}", run.detail)
+        assertEquals(listOf("21,0 km · 25,2 km/h"), listOf(activityDetail("cycling", 21000.0, 3000.0, null, null)))
     }
 
     @Test

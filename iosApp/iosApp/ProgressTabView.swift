@@ -47,17 +47,7 @@ struct ProgressTabView: View {
                     if !screen.recent.isEmpty {
                         Module {
                             Secondary("Tus últimos entrenamientos")
-                            ForEach(Array(screen.recent.enumerated()), id: \.offset) { _, r in
-                                HStack {
-                                    SportDot(sport: r.sport)
-                                    VStack(alignment: .leading) {
-                                        Text(r.title).font(.subheadline)
-                                        Secondary(ScreensKt.dateLabel(date: r.date))
-                                    }
-                                    Spacer()
-                                    Text("\(r.minutes)′").font(.system(.body, design: .monospaced))
-                                }
-                            }
+                            ForEach(Array(screen.recent.enumerated()), id: \.offset) { _, r in RecentRow(activity: r) }
                         }
                     }
                 }
@@ -69,6 +59,43 @@ struct ProgressTabView: View {
 private func format(_ v: Double?) -> String {
     guard let v else { return "—" }
     return v >= 100 ? String(Int(v.rounded())) : String(format: "%.1f", v)
+}
+
+/// Un entrenamiento: al tocarlo, lo medido y los minutos en cada zona.
+private struct RecentRow: View {
+    let activity: RecentActivity
+    @State private var open = false
+
+    var body: some View {
+        let zones = activity.zoneMinutes.map { $0.intValue }
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                SportDot(sport: activity.sport)
+                VStack(alignment: .leading) {
+                    Text(activity.title).font(.subheadline)
+                    Secondary(ScreensKt.dateLabel(date: activity.date))
+                }
+                Spacer()
+                Text("\(activity.minutes)′").font(.system(.body, design: .monospaced))
+            }
+            if open {
+                if let detail = activity.detail { Secondary(detail) }
+                if zones.reduce(0, +) > 0 {
+                    GeometryReader { geo in
+                        HStack(spacing: 0) {
+                            ForEach(Array(zones.enumerated()), id: \.offset) { i, m in
+                                Rectangle().fill(Palette.zones["Z\(min(i + 1, 6))"] ?? Palette.accent)
+                                    .frame(width: geo.size.width * CGFloat(m) / CGFloat(zones.reduce(0, +)))
+                            }
+                        }
+                    }.frame(height: 8)
+                    Secondary(zones.enumerated().filter { $0.element > 0 }.map { "Z\($0.offset + 1) \($0.element)′" }.joined(separator: " · "))
+                }
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { open.toggle() }
+    }
 }
 
 private struct MetricCard: View {

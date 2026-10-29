@@ -169,7 +169,31 @@ data class StatusView(val label: String, val text: String)
 /** Tiempo previsto en una distancia, y de dónde sale. */
 data class Prediction(val distance: String, val time: String)
 
-data class RecentActivity(val date: String, val title: String, val sport: String, val minutes: Int, val load: Int?)
+data class RecentActivity(
+    val date: String,
+    val title: String,
+    val sport: String,
+    val minutes: Int,
+    val load: Int?,
+    val detail: String? = null,  // "10,2 km · 5:12 /km · 148 ppm · carga 62"
+    val zoneMinutes: List<Int> = emptyList(),  // minutos en Z1–Z7 (de intervals.icu o del móvil)
+)
+
+/** Una línea con lo medido: distancia, ritmo (a pie, /km) o velocidad (bici, km/h), pulso medio y carga. */
+internal fun activityDetail(sport: String, meters: Double?, seconds: Double?, avgHr: Double?, load: Double?): String? {
+    val parts = mutableListOf<String>()
+    if (meters != null && meters > 0) {
+        parts += "${fmt(meters / 1000, 1).replace('.', ',')} km"
+        if (seconds != null && seconds > 0) {
+            parts += if (sport == "cycling") "${fmt(meters / seconds * 3.6, 1).replace('.', ',')} km/h"
+            else if (sport == "swimming_pool" || sport == "swimming_open") "${raceTime(seconds / 60 / (meters / 100))} /100 m"
+            else "${raceTime(seconds / 60 / (meters / 1000))} /km"
+        }
+    }
+    avgHr?.let { parts += "${pyRound(it)} ppm" }
+    load?.let { parts += "carga ${pyRound(it)}" }
+    return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ")
+}
 
 data class ProgressScreen(
     val linked: Boolean,
@@ -258,7 +282,9 @@ fun buildProgress(data: AppData, today: LocalDate, days: Int = 90): ProgressScre
         .sortedByDescending { it["start_date_local"].str() }.take(10).map { a ->
             val sport = HEALTH_ACTIVITY_SPORTS[a["type"].str()] ?: "other"
             RecentActivity(a.date(), a["name"].str()?.takeIf { it.isNotBlank() } ?: activityTitle(a) ?: (SPORT_LABEL[sport] ?: "Entrenamiento"),
-                sport, pyRound((a["moving_time"].num() ?: 0.0) / 60), a["icu_training_load"].num()?.let { pyRound(it) })
+                sport, pyRound((a["moving_time"].num() ?: 0.0) / 60), a["icu_training_load"].num()?.let { pyRound(it) },
+                activityDetail(sport, a["distance"].num(), a["moving_time"].num(), a["average_heartrate"].num(), a["icu_training_load"].num()),
+                a["icu_hr_zone_times"].nums().takeIf { it.sum() > 0 }?.map { pyRound(it / 60) } ?: emptyList())
         }
     return ProgressScreen(true, metrics, weekly, status, predictions, source, recent)
 }

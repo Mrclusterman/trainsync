@@ -1,6 +1,9 @@
 package io.github.mrclusterman.trainsync.android
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -32,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.mrclusterman.trainsync.app.Metric
 import io.github.mrclusterman.trainsync.app.Point
+import io.github.mrclusterman.trainsync.app.RecentActivity
 import io.github.mrclusterman.trainsync.app.TrainSyncApp
 import io.github.mrclusterman.trainsync.app.dateLabel
 import kotlin.math.roundToInt
@@ -75,19 +79,37 @@ fun ProgressTab(app: TrainSyncApp, version: Int, openProfile: () -> Unit) {
         screen.metrics.forEach { MetricCard(it) }
         if (screen.recent.isNotEmpty()) Module {
             SectionTitle("Tus últimos entrenamientos")
-            screen.recent.forEach { r ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    SportDot(r.sport)
-                    Spacer(Modifier.width(8.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(r.title, fontSize = 14.sp)
-                        Secondary(dateLabel(r.date))
-                    }
-                    Text("${r.minutes}′", fontFamily = Mono)
-                }
-            }
+            screen.recent.forEach { r -> RecentRow(r) }
         }
         Spacer(Modifier.height(24.dp))
+    }
+}
+
+/** Un entrenamiento: al tocarlo, lo medido y los minutos en cada zona. */
+@Composable
+private fun RecentRow(r: RecentActivity) {
+    var open by remember { mutableStateOf(false) }
+    Column(Modifier.clickable { open = !open }) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SportDot(r.sport)
+            Spacer(Modifier.width(8.dp))
+            Column(Modifier.weight(1f)) {
+                Text(r.title, fontSize = 14.sp)
+                Secondary(dateLabel(r.date))
+            }
+            Text("${r.minutes}′", fontFamily = Mono)
+        }
+        if (open) {
+            r.detail?.let { Secondary(it) }
+            if (r.zoneMinutes.isNotEmpty()) {
+                Row(Modifier.fillMaxWidth().height(10.dp).padding(top = 4.dp)) {
+                    r.zoneMinutes.forEachIndexed { i, m ->
+                        if (m > 0) Box(Modifier.weight(m.toFloat()).fillMaxHeight().background(Palette.zones["Z${minOf(i + 1, 6)}"] ?: Palette.accent))
+                    }
+                }
+                Secondary(r.zoneMinutes.mapIndexedNotNull { i, m -> if (m > 0) "Z${i + 1} $m′" else null }.joinToString(" · "))
+            }
+        }
     }
 }
 
