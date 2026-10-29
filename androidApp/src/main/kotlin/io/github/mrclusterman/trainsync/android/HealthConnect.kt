@@ -3,6 +3,7 @@ package io.github.mrclusterman.trainsync.android
 import android.content.Context
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.permission.HealthPermission
+import androidx.health.connect.client.records.DistanceRecord
 import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.HeartRateVariabilityRmssdRecord
@@ -29,7 +30,7 @@ import kotlin.reflect.KClass
 class HealthConnectReader(private val context: Context) {
     private val types: List<KClass<out Record>> = listOf(SleepSessionRecord::class, HeartRateVariabilityRmssdRecord::class,
         RestingHeartRateRecord::class, WeightRecord::class, StepsRecord::class, Vo2MaxRecord::class,
-        ExerciseSessionRecord::class, HeartRateRecord::class)
+        ExerciseSessionRecord::class, HeartRateRecord::class, DistanceRecord::class)
 
     val permissions: Set<String> = types.map { HealthPermission.getReadPermission(it) }.toSet() +
         HealthPermission.PERMISSION_READ_HEALTH_DATA_HISTORY
@@ -84,6 +85,7 @@ class HealthConnectReader(private val context: Context) {
         val measuredMax = heart.maxOfOrNull { it.second }
         val bounds = app.zoneBounds(measuredMax)
         val local = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+        val distances = maybe(DistanceRecord::class)
         val workouts = maybe(ExerciseSessionRecord::class).mapNotNull { s ->
             val sport = SPORTS[s.exerciseType] ?: return@mapNotNull null
             val samples = heart.filter { it.first >= s.startTime && it.first <= s.endTime }
@@ -97,7 +99,9 @@ class HealthConnectReader(private val context: Context) {
                 minutes = Duration.between(s.startTime, s.endTime).seconds / 60.0,
                 avgHr = samples.map { it.second }.takeIf { it.isNotEmpty() }?.average(),
                 maxHr = samples.maxOfOrNull { it.second },
-                zoneSeconds = if (zones.sum() > 0) zones.toList() else null)
+                zoneSeconds = if (zones.sum() > 0) zones.toList() else null,
+                distanceMeters = distances.filter { it.startTime >= s.startTime && it.endTime <= s.endTime }
+                    .sumOf { it.distance.inMeters }.takeIf { it > 0 })
         }
         app.importHealth(HealthSnapshot("Health Connect", dailies, workouts, LocalDate.now().toString()))
     }

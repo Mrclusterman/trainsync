@@ -135,6 +135,12 @@ class HealthDataTest {
         // Sin VO2max ni carreras con distancia, no se inventa una previsión
         app.importHealth(s)
         assertTrue(app.progress().predictions.isEmpty())
+        // Con la distancia de una carrera del móvil (5 km en 22 min), la previsión sale de ella
+        app.importHealth(s.copy(workouts = s.workouts + Workout("run5k", "running", "${today.plusDays(-3)}T08:00:00", 22.0,
+            avgHr = 165.0, distanceMeters = 5000.0)))
+        val p2 = app.progress()
+        assertEquals("22:00", p2.predictions.first().time)
+        assertTrue(p2.predictionSource!!.startsWith("tu mejor carrera"))
     }
 
     @Test

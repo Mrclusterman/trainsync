@@ -41,6 +41,7 @@ data class Workout(
     val avgHr: Double? = null,
     val maxHr: Double? = null,
     val zoneSeconds: List<Double>? = null,
+    val distanceMeters: Double? = null,  // para los tiempos previstos de Progreso
 )
 
 @Serializable
@@ -127,6 +128,7 @@ fun healthCache(snapshot: HealthSnapshot, profile: UserProfile?, today: LocalDat
             put("moving_time", w.minutes * 60)
             put("icu_training_load", load(w))
             w.avgHr?.let { put("average_heartrate", it) }
+            w.distanceMeters?.takeIf { it > 0 }?.let { put("distance", it) }
             w.zoneSeconds?.let { z -> put("icu_hr_zone_times", JsonArray(z.map { JsonPrimitive(it) })) }
         }
     }
