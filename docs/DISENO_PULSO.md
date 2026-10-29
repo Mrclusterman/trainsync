@@ -55,5 +55,9 @@ WeekDots (semana en círculos) · RangeBar (valor frente a tu rango) · Progress
   reloj) → semana (minutos OMS y círculos).
 - **Progreso:** Tu cuerpo (barras de rango) → Forma (estado y curva) → Actividad semanal (OMS) → tiempos previstos →
   últimos entrenamientos.
-- **Calendario, Perfil y bienvenida:** con los tokens y componentes; su reordenación (día seleccionado bajo el mes,
-  Perfil en secciones, un paso por pantalla) sigue pendiente del plan.
+- **Calendario:** el mes y, debajo, el día elegido (hoy al abrir) con sus sesiones y acciones, sin hoja aparte: tocar
+  días seguidos repasa la semana sin abrir y cerrar nada.
+- **Días de descanso** (Hoy y Calendario, en los días que quedan de la semana): "Prefiero entrenar hoy" recalcula la
+  semana con ese día disponible.
+- **Perfil y bienvenida:** con los tokens y componentes; su reordenación (Perfil en secciones, un paso por pantalla)
+  sigue pendiente del plan.

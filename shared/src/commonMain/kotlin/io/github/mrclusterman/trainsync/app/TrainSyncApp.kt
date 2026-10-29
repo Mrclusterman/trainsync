@@ -122,6 +122,17 @@ class TrainSyncApp(
         save(data.copy(weekChanges = data.weekChanges + (key to WeekChange(changes, now.toString(), earlier))))
     }
 
+    /** Se puede cambiar lo propuesto (entrenar o no) en los días que quedan de esta semana. */
+    fun canChangeDay(date: String): Boolean {
+        val now = today()
+        val target = LocalDate.parse(date)
+        return target >= now && target < mondayOf(now).plusDays(7)
+    }
+
+    /** Minutos para un día de descanso que quieres entrenar: lo que te deja el motor o tu día típico. */
+    fun minutesToTrain(day: DayView): Int =
+        day.availableMin ?: data.profile?.days?.values?.filter { it > 0 }?.sorted()?.let { it[it.size / 2] } ?: 45
+
     fun resetWeek() = save(data.copy(weekChanges = data.weekChanges - mondayOf(today()).toString()))
 
     /** Sin reloj: sueño, energía y agujetas de 1 (mal) a 5 (bien) ajustan la sesión de hoy. */

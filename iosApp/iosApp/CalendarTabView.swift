@@ -1,12 +1,19 @@
 import SwiftUI
 import Shared
 
-/// Calendario mensual: el pasado muestra lo que hiciste de verdad y el futuro, el plan (punto 4 de la revisión).
+/// Calendario mensual: el pasado muestra lo que hiciste de verdad y el futuro, el plan; el día elegido, debajo (punto 4 de la revisión).
 struct CalendarTabView: View {
     @EnvironmentObject var model: AppModel
     @State private var year = Calendar.current.component(.year, from: Date())
     @State private var month = Calendar.current.component(.month, from: Date())
-    @State private var selected: String?
+    // El día elegido se ve debajo del mes; hoy al abrir
+    @State private var selected: String = {
+        let f = DateFormatter()
+        f.calendar = Calendar(identifier: .gregorian)
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd"
+        return f.string(from: Date())
+    }()
 
     var body: some View {
         let _ = model.version
@@ -29,7 +36,7 @@ struct CalendarTabView: View {
                 ForEach(Array(screen.weeks.enumerated()), id: \.offset) { _, week in
                     HStack(spacing: 4) {
                         ForEach(Array(week.enumerated()), id: \.offset) { _, d in
-                            DayCell(day: d).onTapGesture { selected = d.date }
+                            DayCell(day: d, selected: d.date == selected).onTapGesture { selected = d.date }
                         }
                     }
                 }
@@ -37,24 +44,20 @@ struct CalendarTabView: View {
                     Glyph(name: "sport_running", size: 16, color: Palette.muted)
                     Text("planificada").font(.ui(13)).foregroundStyle(Palette.muted)
                     Glyph(name: "check", size: 16, color: Palette.ok).padding(.leading, 8)
-                    Text("hecha · toca un día para ver el detalle").font(.ui(13)).foregroundStyle(Palette.muted)
+                    Text("hecha").font(.ui(13)).foregroundStyle(Palette.muted)
                     Spacer()
                 }
+                DayDetail(date: selected, cell: screen.weeks.flatMap { $0 }.first { $0.date == selected })
+                    .id(selected)  // sin arrastrar lo abierto de otro día
             }.padding(16)
         }
         .background(Palette.bg)
-        .sheet(item: Binding(get: { selected.map { SelectedDay(id: $0) } }, set: { selected = $0?.id })) { sel in
-            DaySheet(date: sel.id, cell: screen.weeks.flatMap { $0 }.first { $0.date == sel.id })
-                .environmentObject(model)
-                .presentationDetents([.medium, .large])
-        }
     }
 }
 
-private struct SelectedDay: Identifiable { let id: String }
-
 private struct DayCell: View {
     let day: CalendarDay
+    let selected: Bool
     var body: some View {
         let done = day.done.count + day.manual.count
         VStack(alignment: .leading, spacing: 3) {
@@ -71,13 +74,13 @@ private struct DayCell: View {
         }
         .padding(4)
         .frame(maxWidth: .infinity, minHeight: 56, alignment: .topLeading)
-        .background(day.inMonth ? Palette.surface : Palette.bg)
+        .background(selected ? Palette.okSoft : day.inMonth ? Palette.surface : Palette.bg)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(day.isToday ? Palette.ok : .clear, lineWidth: 2))
     }
 }
 
-private struct DaySheet: View {
+private struct DayDetail: View {
     @EnvironmentObject var model: AppModel
     let date: String
     let cell: CalendarDay?
@@ -85,17 +88,17 @@ private struct DaySheet: View {
     var body: some View {
         let _ = model.version
         let day = try? model.core.day(date: date)
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(ScreensKt.dateLabel(date: date)).font(.ui(20, .bold, relativeTo: .title3))
-                ForEach(Array((cell?.done ?? []).enumerated()), id: \.offset) { _, a in
-                    Module(background: Palette.okSoft) {
-                        Text(a.title).font(.section)
-                        Secondary("\(a.minutes) min" + (a.start.map { " a las \($0)" } ?? ""))
-                    }
+        VStack(alignment: .leading, spacing: 12) {
+            Text(ScreensKt.dateLabel(date: date)).font(.ui(22, .heavy, relativeTo: .title2))
+            ForEach(Array((cell?.done ?? []).enumerated()), id: \.offset) { _, a in
+                Module(background: Palette.okSoft) {
+                    Text(a.title).font(.section)
+                    Secondary("\(a.minutes) min" + (a.start.map { " a las \($0)" } ?? ""))
                 }
-                if let day { DayContent(day: day, linked: model.core.linkedAthlete != nil, today: day.isToday) }
-            }.padding(16)
-        }.background(Palette.bg)
+            }
+            if let day { DayContent(day: day, linked: model.core.linkedAthlete != nil, today: day.isToday) }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 8)
     }
 }

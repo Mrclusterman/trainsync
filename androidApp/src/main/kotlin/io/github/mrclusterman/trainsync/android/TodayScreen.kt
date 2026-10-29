@@ -79,12 +79,15 @@ fun TodayTab(app: TrainSyncApp, version: Int, act: Act, openGoal: () -> Unit) {
 @Composable
 fun DayContent(app: TrainSyncApp, day: DayView, linked: Boolean, act: Act, today: Boolean) {
     // En Hoy la tarjeta de estado ya dice que descansas: aquí solo lo que se puede hacer
-    if (day.items.isEmpty() && (!today || day.availableMin != null)) {
+    val changeable = app.canChangeDay(day.date)
+    if (day.items.isEmpty() && (!today || changeable)) {
         Module {
             if (!today) SectionTitle("Descanso")
             if (!today) day.note?.let { Secondary(it) }
-            if (!day.isPast && day.availableMin != null) {
-                SecondaryButton("Prefiero entrenar este día") { act.run { app.changeDay(day.date, day.availableMin!!) } }
+            if (changeable) {
+                SecondaryButton(if (today) "Prefiero entrenar hoy" else "Prefiero entrenar este día") {
+                    act.run { app.changeDay(day.date, app.minutesToTrain(day)) }
+                }
             }
         }
     }
@@ -122,8 +125,8 @@ fun DayContent(app: TrainSyncApp, day: DayView, linked: Boolean, act: Act, today
     }
     day.matches.forEach { ReasonRow(Reason(it.text, null), if (it.counts) Palette.ok else Palette.caution) }
     if (!today || day.adjustments.isNotEmpty()) day.reasons.forEach { ReasonRow(it, Palette.ok) }  // en Hoy, sin ajuste, ya van en la tarjeta de estado
-    if (!day.isPast && day.items.isNotEmpty()) {
-        TextButton(onClick = { act.run { app.changeDay(day.date, 0) } }) { Text("Hoy no puedo entrenar", color = Palette.muted) }
+    if (changeable && day.items.isNotEmpty()) {
+        TextButton(onClick = { act.run { app.changeDay(day.date, 0) } }) { Text(if (today) "Hoy no puedo entrenar" else "Este día no puedo entrenar", color = Palette.muted) }
     }
 }
 

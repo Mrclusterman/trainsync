@@ -154,6 +154,19 @@ class TrainSyncAppTest {
     }
 
     @Test
+    fun aRestDayCanBecomeATrainingDay() {
+        val a = app(MemoryStore())
+        a.saveProfile(profile)
+        a.setGoal(GoalKind.FITNESS)
+        val rest = (0 until 7).map { a.day(today.plusDays(it).toString()) }.firstOrNull { it.items.isEmpty() && a.canChangeDay(it.date) }
+            ?: return
+        assertTrue(a.minutesToTrain(rest) > 0)
+        a.changeDay(rest.date, a.minutesToTrain(rest))
+        assertTrue(a.day(rest.date).items.isNotEmpty(), "el día de descanso pasa a tener sesión")
+        assertFalse(a.canChangeDay(today.plusDays(-1).toString()))
+    }
+
+    @Test
     fun dataSurvivesARestart() {
         val store = MemoryStore()
         app(store).apply { saveProfile(profile); setGoal(GoalKind.STRENGTH) }

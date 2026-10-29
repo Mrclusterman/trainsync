@@ -59,13 +59,14 @@ struct DayContent: View {
         let core = model.core
         VStack(alignment: .leading, spacing: 14) {
             // En Hoy la tarjeta de estado ya dice que descansas: aquí solo lo que se puede hacer
-            if day.items.isEmpty && (!today || day.availableMin != nil) {
+            let changeable = core.canChangeDay(date: day.date)
+            if day.items.isEmpty && (!today || changeable) {
                 Module {
                     if !today { Text("Descanso").font(.section) }
                     if !today, let note = day.note { Secondary(note) }
-                    if !day.isPast, let minutes = day.availableMin {
-                        Button("Prefiero entrenar este día") {
-                            model.run { try core.changeDay(date: day.date, minutes: minutes.int32Value) }
+                    if changeable {
+                        Button(today ? "Prefiero entrenar hoy" : "Prefiero entrenar este día") {
+                            model.run { try core.changeDay(date: day.date, minutes: core.minutesToTrain(day: day)) }
                         }.buttonStyle(SecondaryStyle())
                     }
                 }
@@ -80,8 +81,8 @@ struct DayContent: View {
             if !today || !day.adjustments.isEmpty {
                 ForEach(Array(day.reasons.enumerated()), id: \.offset) { _, r in ReasonRow(reason: r, color: Palette.ok) }
             }
-            if !day.isPast && !day.items.isEmpty {
-                Button("Hoy no puedo entrenar") { model.run { try core.changeDay(date: day.date, minutes: 0) } }
+            if changeable && !day.items.isEmpty {
+                Button(today ? "Hoy no puedo entrenar" : "Este día no puedo entrenar") { model.run { try core.changeDay(date: day.date, minutes: 0) } }
                     .font(.ui(14, .semibold)).foregroundStyle(Palette.muted)
             }
         }

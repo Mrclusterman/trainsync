@@ -15,12 +15,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,15 +37,14 @@ import io.github.mrclusterman.trainsync.app.WEEKDAY_SHORT
 import io.github.mrclusterman.trainsync.app.systemToday
 import kotlinx.datetime.number
 
-/** Calendario mensual: el pasado muestra lo que hiciste de verdad y el futuro, el plan (punto 4 de la revisión). */
-@OptIn(ExperimentalMaterial3Api::class)
+/** Calendario mensual: el pasado muestra lo que hiciste de verdad y el futuro, el plan; el día elegido, debajo (punto 4 de la revisión). */
 @Composable
 fun CalendarTab(app: TrainSyncApp, version: Int, act: Act) {
     val now = remember { systemToday() }
     var year by remember { mutableIntStateOf(now.year) }
     var month by remember { mutableIntStateOf(now.month.number) }
     val screen = remember(version, year, month) { app.month(year, month) }
-    var selected by remember { mutableStateOf<String?>(null) }
+    var selected by remember { mutableStateOf(now.toString()) }  // el día elegido se ve debajo del mes; hoy al abrir
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -61,7 +59,7 @@ fun CalendarTab(app: TrainSyncApp, version: Int, act: Act) {
         }
         for (week in screen.weeks) {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                week.forEach { d -> DayCell(d, Modifier.weight(1f)) { selected = d.date } }
+                week.forEach { d -> DayCell(d, d.date == selected, Modifier.weight(1f)) { selected = d.date } }
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -69,36 +67,27 @@ fun CalendarTab(app: TrainSyncApp, version: Int, act: Act) {
             Text("planificada", fontSize = 13.sp, color = Palette.muted)
             Spacer(Modifier.width(8.dp))
             Glyph(R.drawable.ic_check, 16.dp, Palette.ok)
-            Text("hecha · toca un día para ver el detalle", fontSize = 13.sp, color = Palette.muted)
+            Text("hecha", fontSize = 13.sp, color = Palette.muted)
         }
-        Spacer(Modifier.height(24.dp))
-    }
-
-    selected?.let { date ->
-        ModalBottomSheet(onDismissRequest = { selected = null }, containerColor = Palette.surface) {
-            val day = remember(version, date) { app.day(date) }
-            val cell = screen.weeks.flatten().firstOrNull { it.date == date }
-            Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(dateLabel(date), fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
-                cell?.done?.forEach { a ->
-                    Module(background = Palette.okSoft) {
-                        SectionTitle(a.title)
-                        Secondary(listOfNotNull("${a.minutes} min", a.start?.let { "a las $it" }).joinToString(" "))
-                    }
-                }
-                DayContent(app, day, app.linkedAthlete != null, act, today = day.isToday)
-                Spacer(Modifier.height(32.dp))
+        val day = remember(version, selected) { app.day(selected) }
+        Text(dateLabel(selected), fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(top = 8.dp))
+        screen.weeks.flatten().firstOrNull { it.date == selected }?.done?.forEach { a ->
+            Module(background = Palette.okSoft) {
+                SectionTitle(a.title)
+                Secondary(listOfNotNull("${a.minutes} min", a.start?.let { "a las $it" }).joinToString(" "))
             }
         }
+        key(selected) { DayContent(app, day, app.linkedAthlete != null, act, today = day.isToday) }  // sin arrastrar lo abierto de otro día
+        Spacer(Modifier.height(24.dp))
     }
 }
 
 @Composable
-private fun DayCell(d: CalendarDay, modifier: Modifier, onClick: () -> Unit) {
+private fun DayCell(d: CalendarDay, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val shape = RoundedCornerShape(12.dp)
     Column(
         modifier.aspectRatio(0.8f).clip(shape)
-            .background(if (d.inMonth) Palette.surface else Palette.bg)
+            .background(if (selected) Palette.okSoft else if (d.inMonth) Palette.surface else Palette.bg)
             .then(if (d.isToday) Modifier.border(2.dp, Palette.ok, shape) else Modifier)
             .clickable(onClick = onClick).padding(4.dp),
         verticalArrangement = Arrangement.spacedBy(3.dp),
