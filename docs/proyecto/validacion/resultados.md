@@ -251,7 +251,7 @@
 | 300 carreras desde un punto cualquiera | generadas | F7 | sí | cada día cabe en sus minutos y nada en los días sin entreno |
 | 300 carreras desde un punto cualquiera | generadas | F8 | sí | un día de descanso por semana |
 | 300 carreras desde un punto cualquiera | generadas | F9 | sí | fases en orden |
-| 300 carreras desde un punto cualquiera | generadas | F10 | sí | carga semanal +10 % como mucho; 2 semanas suben más con todo ya al mínimo (sesiones en su parte fija) |
+| 300 carreras desde un punto cualquiera | generadas | F10 | sí | carga semanal +10 % como mucho; 3 semanas suben más con todo ya al mínimo (sesiones en su parte fija) |
 | 300 carreras desde un punto cualquiera | generadas | F11 | sí | determinista |
 | 300 carreras desde un punto cualquiera | generadas | F12 | sí | cada descarga baja la carga |
 | 300 carreras desde un punto cualquiera | generadas | F13 | sí | con tope del cribado, ni series ni Z4+ |

@@ -222,8 +222,17 @@ class Planner(private val data: AppData, private val today: LocalDate) {
         return cache?.let { fillPhysiology(base, it.athlete) } ?: base
     }
 
+    /** El perfil de carrera de ese día con los cambios de su semana ("hoy no puedo", "este día tengo X min"). */
+    private fun raceProfileFor(base: Profile, date: LocalDate): Profile {
+        val changes = data.weekChanges[mondayOf(date).toString()]?.steps()
+            ?.lastOrNull { (_, since) -> date >= since }?.first ?: return base
+        val minutes = (profile.days + changes).filterValues { it > 0 }
+        return base.copy(restDays = WEEKDAYS.filter { (minutes[it] ?: 0) == 0 }, dayMinutes = minutes)
+    }
+
     private fun raceWeek(monday: LocalDate, raceGoal: Goal): WeekView {
-        val rp = raceProfile()
+        val base = raceProfile()
+        val rp = raceProfileFor(base, if (today > monday) today else monday)
         val sunday = monday.plusDays(6)
         val fromToday = if (sunday >= today) {
             val start = if (today > monday) today else monday
@@ -236,7 +245,7 @@ class Planner(private val data: AppData, private val today: LocalDate) {
                 // Tus respuestas de hoy ajustan el día igual que el reloj (sin reloj, con un estado neutro)
                 date == today && feltToday != null ->
                     proposeDay(date, rp, raceGoal, (state ?: DayState(ctl = 0.0, atl = 0.0)).copy(feltStatus = feltToday))
-                else -> fromToday.firstOrNull { it.date == date.toString() } ?: proposeDay(date, rp, raceGoal)
+                else -> fromToday.firstOrNull { it.date == date.toString() } ?: proposeDay(date, raceProfileFor(base, date), raceGoal)
             }
         }
         val days = engineDays.map { d ->

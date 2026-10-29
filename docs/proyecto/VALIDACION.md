@@ -23,9 +23,12 @@ Se distinguen tres niveles, de menor a mayor alcance:
    - **Ajuste del día (E1–E11):** estados sintéticos del reloj o del móvil (fatiga, variabilidad cardíaca, sueño en
      puntuación o en horas, días sin entrenar, esfuerzo raro), respuestas a las tres preguntas y el plan de 14 días.
    - **Natación (N1–N3):** sesiones en metros con el CSS y por esfuerzo sin él.
-   - **Combinaciones generadas (F1–F12):** con una semilla fija, 300 perfiles sin fecha (objetivo, nivel, material,
+   - **Uso de la app (AppFuzzTest):** 60 usuarios al azar durante 5 semanas con acciones reales (marcar hecho, cambiar
+     días, responder, elegir alternativa, apuntar fuerza, cambiar de objetivo): todas las pantallas se calculan y lo de
+     hoy cabe en los minutos de ese día. Encontró que en modo carrera los cambios de la semana no se aplicaban.
+   - **Combinaciones generadas (F1–F13):** con una semilla fija, 300 perfiles sin fecha (objetivo, nivel, material,
      deportes, de 1 a 7 días de 20 a 240 min, edades de 15 a 82, tope del cribado, con y sin fisiología) durante 8
-     semanas, y 300 carreras de los 6 tipos (distancias, prioridades A/B/C, de 2 a 30 semanas vista, desde cualquier
+     semanas, y 300 carreras de los 6 tipos (distancias, prioridades A/B/C, de 0 a 30 semanas vista, desde cualquier
      punto de la preparación). Reglas que valen para todos: sin errores, cada día cabe, descanso semanal, tope del
      cribado, fases en orden, +10 % semanal como mucho, cada descarga baja y determinismo.
 3. **Caso real** (`ValidationTest.realAccount`): los mismos criterios con la fisiología y el estado de hoy de una cuenta
@@ -129,6 +132,7 @@ La primera ejecución de F1–F12 encontró cuatro defectos del motor y dos erro
 | Subidas de hasta +18 % con 1–2 días a la semana | El ajuste del 10 % no convergía cuando la fuerza entraba y salía según el volumen | Bisección del volumen entre 0,15 y 1 |
 | Semanas de descarga con más carga que la anterior (116 frente a 74) | La descarga coincidía con el paso a construcción (sesiones nuevas) y no se limitaba | La descarga también se limita: como mucho el 80 % de la última semana de carga |
 | Con tope del cribado, la carrera seguía con series y tramos en Z4+ | El modo carrera no tenía tope | El cribado del ACSM pasa al núcleo (Screening.kt) y su tope llega también a las carreras: las sesiones de calidad pasan a su versión continua y ningún tramo sube de Z3 (moderado) o Z2 (ligero-moderado); con síntomas y actividad, no se propone ejercicio. Las apps no hacen el cuestionario (decisión del 2026-10-21, `CUMPLIMIENTO.md`): el tope se aplica solo si hay respuestas guardadas |
+| En modo carrera, "hoy no puedo" y los minutos cambiados de un día no se aplicaban (sesiones de 105 min en un día marcado a 0) | Los cambios de la semana solo existían en los planes sin fecha | El perfil de carrera de cada día lleva los cambios vigentes de su semana (mismo historial que los planes sin fecha) |
 | *Criterio:* el tope moderado daba fallo con RIR 2 | El motor permite RIR 2 con tope moderado a propósito | El criterio usa el mismo tope que el motor |
 | *Criterio:* "fases desordenadas" a más de 20 semanas vista | Antes de la preparación toca base de mantenimiento, que es correcto | Se comprueba desde el inicio de la preparación |
 

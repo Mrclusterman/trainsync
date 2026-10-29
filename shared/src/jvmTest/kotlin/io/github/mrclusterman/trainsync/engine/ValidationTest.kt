@@ -484,7 +484,7 @@ class ValidationTest {
             val minutes = days()
             val sports = (listOf("running", "cycling", "swimming_pool").shuffled(rnd).take(rnd.nextInt(1, 4)))
             val today = start.plusDays(rnd.nextInt(0, 7))
-            val goal = Goal("carrera", sport, today.plusDays(7 * rnd.nextInt(2, 31) + rnd.nextInt(0, 7)), listOf("A", "B", "C").random(rnd),
+            val goal = Goal("carrera", sport, today.plusDays(7 * rnd.nextInt(0, 31) + rnd.nextInt(0, 7)), listOf("A", "B", "C").random(rnd),
                 distances[sport]!!.random(rnd), trail = sport == "running" && rnd.nextBoolean())
             val profile = Profile(activeSports = sports, strength = listOf("gym", "bodyweight", "none").random(rnd),
                 restDays = all.filter { it !in minutes }, dayMinutes = minutes, lthr = listOf(null, 165.0).random(rnd),
@@ -525,7 +525,7 @@ class ValidationTest {
             }
             if (profile.intensityCap != "vigorous" && days.any { d -> d.main?.type in QUALITY || d.main?.type == "neuromuscular" ||
                     d.main?.blocks?.any { it.zone in vigorous } == true }) raceFails["F13"]!! += "$tag: intensidad por encima del tope ${profile.intensityCap}"
-            if (n % 10 == 0 && (0..6).map { proposeDay(today.plusDays(it), profile, goal) } != days.take(7)) raceFails["F11"]!! += "$tag: no determinista"
+            if (n % 10 == 0 && days.indices.take(7).map { proposeDay(today.plusDays(it), profile, goal) } != days.take(7)) raceFails["F11"]!! += "$tag: no determinista"
         }
         val raceText = mapOf("F6" to "sin errores", "F7" to "cada día cabe en sus minutos y nada en los días sin entreno",
             "F8" to "un día de descanso por semana", "F9" to "fases en orden", "F10" to "carga semanal +10 % como mucho",
