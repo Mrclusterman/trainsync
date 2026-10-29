@@ -41,10 +41,6 @@ import io.github.mrclusterman.trainsync.app.TrainSyncApp
 import io.github.mrclusterman.trainsync.app.UserProfile
 import io.github.mrclusterman.trainsync.app.ageAllowed
 import io.github.mrclusterman.trainsync.app.systemToday
-import io.github.mrclusterman.trainsync.engine.DISEASES
-import io.github.mrclusterman.trainsync.engine.SYMPTOMS
-import io.github.mrclusterman.trainsync.engine.Screening
-import io.github.mrclusterman.trainsync.engine.screen
 import kotlinx.datetime.LocalDate
 
 private val GOALS = listOf(
@@ -65,7 +61,6 @@ fun Onboarding(app: TrainSyncApp, act: Act) {
     var race by remember { mutableStateOf(RaceInfo("", "running", "")) }
     var profile by remember { mutableStateOf(app.data.profile ?: UserProfile()) }
     var accepted by remember { mutableStateOf(false) }
-    var screening by remember { mutableStateOf(app.data.profile?.screening ?: Screening(false, false, false)) }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Spacer(Modifier.height(24.dp))
@@ -107,49 +102,19 @@ fun Onboarding(app: TrainSyncApp, act: Act) {
             else -> {
                 Text("Antes de empezar", fontSize = 24.sp, fontWeight = FontWeight.Bold)
                 Module(accent = Palette.alert) { Secondary(HEALTH_NOTICE, Palette.text) }
-                ScreeningForm(screening) { screening = it }
                 Row(Modifier.toggleable(accepted, role = Role.Checkbox) { accepted = it }, verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(accepted, null)
                     Text("Lo he leído y entreno bajo mi responsabilidad", fontSize = 14.sp)
                 }
                 Button(enabled = accepted, modifier = Modifier.fillMaxWidth(), onClick = {
                     act.run {
-                        app.saveProfile(profile.copy(screening = screening))
+                        app.saveProfile(profile)
                         app.setGoal(goal!!, race.takeIf { goal == GoalKind.RACE })
                     }
                 }) { Text("Ver mi plan") }
                 TextButton(onClick = { step = 2 }) { Text("Atrás") }
             }
         }
-    }
-}
-
-/** Cuestionario de salud del ACSM: cuatro preguntas con palabras propias y lo que significa la respuesta. */
-@Composable
-fun ScreeningForm(value: Screening, onChange: (Screening) -> Unit) {
-    Module {
-        SectionTitle("Cuatro preguntas de salud")
-        Secondary("Sirven para que el plan no te proponga más intensidad de la recomendable. Se quedan en este móvil.")
-        CheckRow("En los últimos 3 meses he hecho ejercicio planificado al menos 3 días a la semana, 30 min o más a " +
-            "intensidad moderada", value.active) { onChange(value.copy(active = it)) }
-        CheckRow("Tengo diagnosticada alguna de estas: ${DISEASES.joinToString(", ") { it.lowercase() }}", value.knownDisease) {
-            onChange(value.copy(knownDisease = it))
-        }
-        CheckRow("Noto alguno de estos síntomas: ${SYMPTOMS.joinToString("; ") { it.lowercase() }}", value.symptoms) {
-            onChange(value.copy(symptoms = it))
-        }
-        CheckRow("Tengo una lesión, un problema de huesos o articulaciones, o estoy embarazada", value.otherConditions) {
-            onChange(value.copy(otherConditions = it))
-        }
-        Secondary(screen(value).message, if (screen(value).clearance == "none") Palette.secondary else Palette.alert)
-    }
-}
-
-@Composable
-private fun CheckRow(text: String, checked: Boolean, onChange: (Boolean) -> Unit) {
-    Row(Modifier.toggleable(checked, role = Role.Checkbox, onValueChange = onChange), verticalAlignment = Alignment.CenterVertically) {
-        Checkbox(checked, null)
-        Text(text, fontSize = 14.sp)
     }
 }
 

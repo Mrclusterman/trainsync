@@ -96,8 +96,6 @@ const val HEALTH_NOTICE = "TrainSync no es un servicio médico ni sustituye el c
     "falta de aire con poco esfuerzo, mareos o palpitaciones, para y consulta. Al continuar confirmas que entrenas bajo " +
     "tu responsabilidad."
 
-const val SCREENING_MISSING = "Responde en Perfil las cuatro preguntas de salud: así el plan ajusta la intensidad a tu salud."
-
 const val MIN_AGE = 14  // LOPDGDD art. 7: edad mínima para consentir en España (CUMPLIMIENTO #17)
 
 fun ageAllowed(birthYear: Int, currentYear: Int): Boolean = currentYear - birthYear >= MIN_AGE

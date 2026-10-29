@@ -108,7 +108,10 @@ class Planner(private val data: AppData, private val today: LocalDate) {
     private val profile = data.profile ?: UserProfile()
     private val goal = data.goal
 
-    /** Cuestionario de salud del ACSM; sin responder, el plan no tiene tope (como antes) y Hoy lo pide. */
+    /**
+     * Cuestionario de salud del ACSM, si existe. Decisión 2026-10-21 (docs/CUMPLIMIENTO.md): las apps no lo preguntan,
+     * el aviso de salud lo sustituye; el motor aplica el tope si algún día hay respuestas.
+     */
     val screening: ScreeningResult? = profile.screening?.let { screen(it) }
     private val intensityCap = screening?.intensityCap ?: "vigorous"
     private val cache = data.deviceData(today)
@@ -251,7 +254,7 @@ class Planner(private val data: AppData, private val today: LocalDate) {
     fun week(monday: LocalDate): WeekView {
         val race = raceGoal()
         val week = if (race != null && race.date >= today) raceWeek(monday, race) else healthWeek(monday)
-        val s = screening ?: return week.copy(info = week.info + SCREENING_MISSING)
+        val s = screening ?: return week
         return when (s.clearance) {
             // Síntomas con actividad: nada de ejercicio hasta que lo valore un médico
             "stop" -> week.copy(days = week.days.map { it.copy(items = emptyList(), matches = emptyList(), doneSports = emptySet()) },

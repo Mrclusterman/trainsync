@@ -19,12 +19,7 @@ struct ProfileDraft {
     var cardio: [String] = ["walking"]
     var days: [String: Int] = ["MON": 45, "WED": 45, "SAT": 60]
     var renameActivities = true
-    // Cuestionario de salud del ACSM (Screening.kt)
-    var screened = false
-    var active = false
-    var knownDisease = false
-    var symptoms = false
-    var otherConditions = false
+    var screening: Screening?  // cuestionario del ACSM: las apps no lo preguntan (decisión 2026-10-21); se conserva si existe
 
     init(_ p: UserProfile?) {
         guard let p else { return }
@@ -34,23 +29,13 @@ struct ProfileDraft {
         cardio = p.cardio
         days = p.days.mapValues { $0.intValue }
         renameActivities = p.renameActivities
-        if let s = p.screening {
-            screened = true
-            active = s.active
-            knownDisease = s.knownDisease
-            symptoms = s.symptoms
-            otherConditions = s.otherConditions
-        }
-    }
-
-    var screening: Screening {
-        Screening(active: active, knownDisease: knownDisease, symptoms: symptoms, otherConditions: otherConditions)
+        screening = p.screening
     }
 
     var core: UserProfile {
         UserProfile(birthYear: birthYear.map { KotlinInt(int: Int32($0)) }, level: level, strength: strength, cardio: cardio,
                     days: days.mapValues { KotlinInt(int: Int32($0)) }, renameActivities: renameActivities,
-                    screening: screened ? screening : nil)
+                    screening: screening)
     }
 }
 
@@ -85,33 +70,6 @@ struct ProfileForm: View {
                                             set: { draft.birthYear = Int($0.filter(\.isNumber).prefix(4)) }))
                 .keyboardType(.numberPad).textFieldStyle(.roundedBorder)
         }
-    }
-}
-
-/// Cuestionario de salud del ACSM: cuatro preguntas con palabras propias y lo que significa la respuesta.
-struct ScreeningForm: View {
-    @Binding var draft: ProfileDraft
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Secondary("Cuatro preguntas de salud")
-            Secondary("Sirven para que el plan no te proponga más intensidad de la recomendable. Se quedan en este móvil.")
-            Toggle("En los últimos 3 meses he hecho ejercicio planificado al menos 3 días a la semana, 30 min o más a intensidad moderada",
-                   isOn: answer(\.active))
-            Toggle("Tengo diagnosticada alguna de estas: " + ScreeningKt.DISEASES.map { $0.lowercased() }.joined(separator: ", "),
-                   isOn: answer(\.knownDisease))
-            Toggle("Noto alguno de estos síntomas: " + ScreeningKt.SYMPTOMS.map { $0.lowercased() }.joined(separator: "; "),
-                   isOn: answer(\.symptoms))
-            Toggle("Tengo una lesión, un problema de huesos o articulaciones, o estoy embarazada", isOn: answer(\.otherConditions))
-            let result = ScreeningKt.screen(s: draft.screening)
-            Secondary(result.message, color: result.clearance == "none" ? Palette.secondary : Palette.alert)
-        }
-        .font(.subheadline)
-    }
-
-    /// Cada respuesta cuenta como cuestionario contestado.
-    private func answer(_ key: WritableKeyPath<ProfileDraft, Bool>) -> Binding<Bool> {
-        Binding(get: { draft[keyPath: key] }, set: { draft[keyPath: key] = $0; draft.screened = true })
     }
 }
 
@@ -150,14 +108,6 @@ struct ProfileView: View {
                 Module {
                     ProfileForm(draft: $draft)
                     Button("Guardar") { model.run("Perfil guardado") { core.saveProfile(profile: draft.core) } }.buttonStyle(.borderedProminent)
-                }
-                Module {
-                    ScreeningForm(draft: $draft)
-                    Button("Guardar respuestas") {
-                        draft.screened = true
-                        let p = draft.core
-                        model.run("Respuestas guardadas") { core.saveProfile(profile: p) }
-                    }.buttonStyle(.bordered)
                 }
                 Module {
                     Toggle(isOn: Binding(get: { core.data.reminderHour != nil }, set: { on in

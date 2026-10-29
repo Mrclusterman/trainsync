@@ -116,7 +116,7 @@ class TrainSyncAppTest {
         val a = app()
         a.saveProfile(profile)
         a.setGoal(GoalKind.RACE, RaceInfo("Media", "running", "2027-03-14", distanceKm = 21.1))
-        assertTrue(a.todayScreen().info.contains(SCREENING_MISSING))  // sin responder, se pide
+        assertTrue(a.todayScreen().warnings.none { "intensidad" in it })  // sin respuestas, sin tope ni aviso (decisión 2026-10-21)
         val quality = setOf("vo2max", "threshold", "race_specific", "brick", "tempo", "anaerobic", "neuromuscular")
         // Activo con enfermedad conocida y sin síntomas: tope moderado, sin series en las próximas semanas
         a.saveProfile(profile.copy(screening = io.github.mrclusterman.trainsync.engine.Screening(active = true, knownDisease = true, symptoms = false)))
