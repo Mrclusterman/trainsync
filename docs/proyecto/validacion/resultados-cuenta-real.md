@@ -1,6 +1,6 @@
 # Validación con la cuenta real de pruebas (2026-10-29)
 
-16 de 16 comprobaciones aplicables cumplen. Solo la LTHR y la FC máx. salen de la cuenta; el resto son cifras del plan.
+17 de 17 comprobaciones aplicables cumplen. De la cuenta solo salen la LTHR (configurada y estimada), la FC máx. y el número de sesiones; el resto son cifras del plan.
 
 | Caso | Variante | Criterio | Cumple | Detalle |
 |---|---|---|---|---|
@@ -10,6 +10,7 @@
 | tu cuenta, sin fecha | media | V9 | sí | sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 1.74 (18 semanas) |
 | tu cuenta, sin fecha | media | V10 | sí | dos ejecuciones idénticas |
 | tu cuenta, objetivos de FC | fisiología real | FC | sí | LTHR 174, FC máx. 192 → techo fácil 144 ppm = 75.0 % de la FC máx.; 4 sesiones, objetivos 50.0–75.0 % HR |
+| tu cuenta, umbral estimado | cycling | LTHR | sí | estimado 166 con tus 28 sesiones de 90 días; en intervals.icu 174 |
 | tu cuenta, media maratón | prioridad A | R1 | sí | base_early → base → build → peak → taper |
 | tu cuenta, media maratón | prioridad A | R2 | sí | subida máx. de la carga semanal +9.4 % (18 semanas) |
 | tu cuenta, media maratón | prioridad A | R3 | sí | 3 semanas de descarga, todas con menos carga que la anterior |

@@ -220,6 +220,8 @@ data class DayState(
     val atl: Double,
     val hrvHistory: List<Double?> = emptyList(),  // RMSSD diario hasta hoy
     val sleepScore: Double? = null,
+    val sleepHours: Double? = null,  // anoche, si el reloj o el móvil da los minutos dormidos
+    val usualSleepHours: Double? = null,  // tu mediana de los 28 días anteriores
     val consecutiveDays: Int = 0,
     val effortMismatch: Boolean = false,  // RPE alto con FC baja en los últimos 2 días
     val loadFocus: Map<String, Double>? = null,  // reparto de la carga de 28 días
@@ -249,11 +251,17 @@ fun adjust(sessionType: String, state: DayState): Triple<String, Double, List<St
         reasons += "Esfuerzo percibido alto con FC baja en tu última sesión: posible fatiga, hoy sin intensidad [Verificado]"
     }
     val sleep = state.sleepScore
-    if (sleep != null && sleep < 50) {
+    // Sin puntuación de sueño (Health Connect, Apple Salud), las horas: menos de 6 y una o más por debajo de lo normal en
+    // ti. Los adultos necesitan 7 h o más (Watson 2015, AASM/SRS) [Verificado]; los umbrales de 6 h y 1 h, [Inferencia]
+    val hours = state.sleepHours
+    val usual = state.usualSleepHours
+    val shortNight = sleep == null && hours != null && usual != null && hours < 6 && hours <= usual - 1
+    if ((sleep != null && sleep < 50) || shortNight) {
         // Mal sueño quita la calidad; sumado a HRV fuera de rango, el día pasa a recuperación
         if (type in QUALITY || status == "outside_swc") type = DOWNGRADE[type]!!
         volume = 0.7
-        reasons += "Sueño ${fmt(sleep, 0)}/100: -30 % de carga y sin calidad [Inferencia]"
+        reasons += if (sleep != null) "Sueño ${fmt(sleep, 0)}/100: -30 % de carga y sin calidad [Inferencia]"
+        else "Has dormido ${fmt(hours!!, 1)} h, menos de lo normal en ti (${fmt(usual!!, 1)} h): -30 % de carga y sin intensidad [Inferencia]"
     }
     // Tras una parada se reconstruye la base antes de la intensidad [Práctica: Garmin; 7 días: Inferencia]
     val idle = state.daysSinceActivity

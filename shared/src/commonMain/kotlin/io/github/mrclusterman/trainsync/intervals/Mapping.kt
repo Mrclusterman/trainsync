@@ -12,6 +12,7 @@ import io.github.mrclusterman.trainsync.engine.effortMismatch
 import io.github.mrclusterman.trainsync.engine.fmt
 import io.github.mrclusterman.trainsync.engine.grayZone
 import io.github.mrclusterman.trainsync.engine.loadFocus
+import io.github.mrclusterman.trainsync.engine.median
 import io.github.mrclusterman.trainsync.engine.paceAt
 import io.github.mrclusterman.trainsync.engine.paceText
 import io.github.mrclusterman.trainsync.engine.plusDays
@@ -121,6 +122,9 @@ fun dayState(wellness: List<JsonObject>, activities: List<JsonObject>, today: Lo
     val recent = activities.filter { it.date() >= today.plusDays(-2).toString() }
     val daysAgo = trained.filter { it <= today.toString() }.map { LocalDate.parse(it).daysUntil(today) }
     val month = activities.filter { it.date() > today.plusDays(-28).toString() }
+    // Horas de sueño: la de hoy es la noche pasada (el sueño se apunta el día en que te despiertas)
+    val sleepByDay = wellness.associate { it["id"].str() to it["sleepSecs"].num()?.takeIf { s -> s > 0 } }
+    val usualSleep = (1..28).mapNotNull { sleepByDay[today.plusDays(-it).toString()] }.takeIf { it.size >= 7 }?.let { median(it) / 3600 }
     return DayState(
         ctl = last["ctl"].num()!!, atl = last["atl"].num()!!,
         loadFocus = loadFocus(month.map { ZoneLoad(it["icu_hr_zone_times"].nums(), it["icu_training_load"].num() ?: 0.0) }),
@@ -128,6 +132,8 @@ fun dayState(wellness: List<JsonObject>, activities: List<JsonObject>, today: Lo
         effortMismatch = recent.any { effortMismatch(it["icu_rpe"].num(), it["icu_hr_zone_times"].nums()) },
         hrvHistory = (34 downTo 0).map { byDay[today.plusDays(-it).toString()] },
         sleepScore = if (last["id"].str() == today.toString()) last["sleepScore"].num() else null,
+        sleepHours = sleepByDay[today.toString()]?.div(3600),
+        usualSleepHours = usualSleep,
         consecutiveDays = streak,
     )
 }

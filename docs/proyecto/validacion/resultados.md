@@ -1,6 +1,6 @@
 # Resultados de la validación del motor
 
-179 de 179 comprobaciones aplicables cumplen (10 no aplican). Datos sintéticos; generado con `VALIDATION_REPORT=1 ./gradlew :shared:jvmTest --tests '*ValidationTest*'`. Criterios en `VALIDACION.md`.
+181 de 181 comprobaciones aplicables cumplen (10 no aplican). Datos sintéticos; generado con `VALIDATION_REPORT=1 ./gradlew :shared:jvmTest --tests '*ValidationTest*'`. Criterios en `VALIDACION.md`.
 
 ## Planes sin fecha (V1–V11)
 
@@ -193,7 +193,7 @@
 | 10 km preparatoria (C) | prioridad C | R9 | sí | ninguna |
 | 10 km preparatoria (C) | prioridad C | R10 | sí | dos ejecuciones idénticas |
 
-## Ajuste del día (E1–E8)
+## Ajuste del día (E1–E10)
 
 | Caso | Variante | Criterio | Cumple | Detalle |
 |---|---|---|---|---|
@@ -205,3 +205,5 @@
 | esfuerzo alto con pulso bajo | sintético | E6 | sí | pasa a aerobic |
 | respuestas: dormí y estoy mal | sintético | E7 | sí | 60 → 50 min, sin Z4+ |
 | respuestas: todo a 1 | sintético | E8 | sí | queda: walking |
+| móvil: 5,2 h de sueño (sueles 7,4) | sintético | E9 | sí | pasa a aerobic, ×0.7 |
+| móvil: 5,4 h (sueles 5,6) | sintético | E10 | sí | sin cambios: es tu sueño normal |

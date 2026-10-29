@@ -20,8 +20,8 @@ Se distinguen tres niveles, de menor a mayor alcance:
    - **Hacia una carrera (R1–R10):** 7 carreras (10 km con 3 días, media maratón, maratón, trail de 30 km, gran fondo,
      triatlón olímpico y una 10 km preparatoria de prioridad C), cada una desde el inicio de la preparación (20 semanas)
      hasta el día de la prueba, con los días y minutos de cada perfil.
-   - **Ajuste del día (E1–E8):** estados sintéticos del reloj (fatiga, variabilidad cardíaca, sueño, días sin entrenar,
-     esfuerzo raro) y respuestas a las tres preguntas.
+   - **Ajuste del día (E1–E10):** estados sintéticos del reloj o del móvil (fatiga, variabilidad cardíaca, sueño en
+     puntuación o en horas, días sin entrenar, esfuerzo raro) y respuestas a las tres preguntas.
 3. **Caso real** (`ValidationTest.realAccount`): los mismos criterios con la fisiología y el estado de hoy de una cuenta
    real de intervals.icu (cuenta de pruebas del autor): un plan sin fecha, los objetivos de FC que llegarían al reloj, una
    media maratón de 20 semanas y el plan de 14 días con el estado de hoy. Se ejecuta en local con
@@ -33,7 +33,7 @@ planes): exige un estudio con participantes y aprobación de un comité de étic
 
 ## 2. Resultados
 
-**179 de 179 comprobaciones aplicables cumplen**; 10 no aplican. La prueba admite una lista de fallos conocidos (salen en
+**181 de 181 comprobaciones aplicables cumplen**; 10 no aplican. La prueba admite una lista de fallos conocidos (salen en
 el informe, pero no rompen la compilación, y avisa en cuanto se cumplen); hoy está vacía.
 
 ### 2.1 Planes sin fecha
@@ -51,7 +51,7 @@ el informe, pero no rompen la compilación, y avisa en cuanto se cumplen); hoy e
 | V9 Monotonía de Foster < 2 | Cumple en los 18 casos (máx. 1,99). Hasta el 2026-10-29 fallaba uno, tope de intensidad + adherencia baja (2,26): §4 |
 | V10 Determinismo | Cumple |
 | V11 Adherencia baja → menos volumen que alta | Cumple |
-| Caso real (2026-10-29) | Cumplen las 16 comprobaciones aplicables (V1 no aplica con adherencia media). LTHR 174, FC máx. 192 → techo fácil 144 ppm = 75 % de la FC máx.; objetivos entre el 50 y el 75 %. Media maratón: subida máx. +9,4 %, afinado al 44 %, 93 % del tiempo en Z1–Z2. Detalle en `validacion/resultados-cuenta-real.md` |
+| Caso real (2026-10-29) | Cumplen las 17 comprobaciones aplicables (V1 no aplica con adherencia media). LTHR 174, FC máx. 192 → techo fácil 144 ppm = 75 % de la FC máx.; objetivos entre el 50 y el 75 %. Media maratón: subida máx. +9,4 %, afinado al 44 %, 93 % del tiempo en Z1–Z2. Umbral estimado con sus 28 sesiones de carrera de 90 días: 166 frente a los 174 configurados (dentro de ±8 ppm, pero por debajo: la media de la sesión incluye el calentamiento). Detalle en `validacion/resultados-cuenta-real.md` |
 
 ### 2.2 Hacia una carrera
 
@@ -80,6 +80,8 @@ el informe, pero no rompen la compilación, y avisa en cuanto se cumplen); hoy e
 | E6 Esfuerzo alto con pulso bajo → sin intensidad | Cumple |
 | E7 Respuestas "dormí y estoy mal" → versión suave, sin Z4+ | Cumple |
 | E8 Respuestas todo a 1 → solo un paseo | Cumple |
+| E9 Móvil, sin puntuación de sueño: 5,2 h cuando sueles dormir 7,4 → sin intensidad y −30 % | Cumple |
+| E10 Móvil: 5,4 h cuando sueles dormir 5,6 → sin cambios (se compara con lo normal en ti) | Cumple |
 
 ## 3. Defectos que encontró la validación (y su corrección)
 
@@ -132,6 +134,11 @@ cumpliéndose. [Inferencia: el orden de preferencia entre candidatas]
 ## 5. Limitaciones
 
 - Los perfiles son sintéticos y la adherencia es constante por simulación; la real varía semana a semana.
+- Sin intervals.icu, el umbral se estima con la FC media de tu sesión más dura de 20–70 min. Solo se ha contrastado con
+  una cuenta (166 frente a 174 configurados): tiende a quedarse corto, porque la media incluye el calentamiento. Las
+  zonas salen algo más suaves de lo debido; hace falta contrastarlo con más personas antes de afinarlo.
+- El sueño en horas se compara con la mediana de los 28 días anteriores; los umbrales (menos de 6 h y una o más por debajo
+  de lo normal) son **[Inferencia]**.
 - Varios parámetros son **[Inferencia]** (punto de partida 60/80/100 %, progresión del 10 %, umbrales de adherencia,
   factores de días duros y suaves, partes del día para la fuerza): la validación comprueba que el resultado cumple las
   guías, no que esos valores sean óptimos.

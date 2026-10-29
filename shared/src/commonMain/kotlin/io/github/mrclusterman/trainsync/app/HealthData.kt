@@ -16,6 +16,8 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import kotlin.math.max
+import kotlin.math.min
 
 /** Un día de datos del reloj o la báscula, tal como los guarda el sistema. */
 @Serializable
@@ -55,6 +57,22 @@ private val ACTIVITY_TYPE = mapOf("running" to "Run", "cycling" to "Ride", "swim
 /** FC máxima estimada por la edad (Tanaka 2001: 208 − 0,7 × edad) cuando no hay una medida. [Verificado: Tanaka 2001] */
 fun estimatedMaxHr(age: Int): Double = 208 - 0.7 * age
 
+/** FC máx.: la más alta medida en tus entrenamientos (sin picos imposibles, > 220) o la de tu edad si es mayor. */
+private fun maxHrOf(workouts: List<Workout>, age: Int): Double =
+    max(workouts.mapNotNull { it.maxHr }.filter { it <= 220 }.maxOrNull() ?: 0.0, estimatedMaxHr(age))
+
+/**
+ * Umbral (LTHR) de un deporte con tus entrenamientos: la FC media de tu sesión más dura de 20–70 min. En el test de Friel
+ * la FC media de 20 min a tope ≈ LTHR [Práctica]; un entrenamiento normal queda por debajo, así que solo vale si fue duro
+ * de verdad (≥ 85 % de tu FC máx.) y nunca pasa del 95 % [Inferencia en los dos límites]. null: sin una sesión así, el
+ * plan usa el esfuerzo percibido y propone un test.
+ */
+fun estimatedLthr(workouts: List<Workout>, sport: String, maxHr: Double): Double? =
+    workouts.filter { it.sport == sport && it.minutes in 20.0..70.0 }.mapNotNull { it.avgHr }.maxOrNull()
+        ?.takeIf { it >= 0.85 * maxHr }?.let { min(it, 0.95 * maxHr) }
+
+private val SETTING_TYPE = mapOf("running" to "Run", "cycling" to "Ride")
+
 /**
  * Los datos del móvil en el formato de intervals.icu que usa el motor. La carga de cada entrenamiento se estima con la
  * FC media (hrTSS, umbral ≈ 90 % de la FC máx.) o, sin pulso, a ~50 por hora (esfuerzo moderado); con ella salen la
@@ -62,12 +80,12 @@ fun estimatedMaxHr(age: Int): Double = 208 - 0.7 * age
  */
 fun healthCache(snapshot: HealthSnapshot, profile: UserProfile?, today: LocalDate): IntervalsCache {
     val age = profile?.birthYear?.let { today.year - it } ?: 40
-    val measuredMax = snapshot.workouts.mapNotNull { it.maxHr }.maxOrNull()
-    val maxHr = maxOf(measuredMax ?: 0.0, estimatedMaxHr(age))
-    val lthr = 0.9 * maxHr
+    val maxHr = maxHrOf(snapshot.workouts, age)
+    val lthrs = SETTING_TYPE.keys.associateWith { estimatedLthr(snapshot.workouts, it, maxHr) }
     val rest = snapshot.days.mapNotNull { it.restingHr }.takeIf { it.isNotEmpty() }?.average() ?: 60.0
 
-    fun load(w: Workout): Double = w.avgHr?.takeIf { it > rest }?.let { hrTss(w.minutes * 60, it, rest, lthr) }
+    fun load(w: Workout): Double = w.avgHr?.takeIf { it > rest }
+        ?.let { hrTss(w.minutes * 60, it, rest, lthrs[w.sport] ?: (0.9 * maxHr)) }
         ?: (w.minutes / 60 * 50)
 
     val loadByDay = snapshot.workouts.groupBy { it.start.take(10) }.mapValues { (_, ws) -> ws.sumOf { load(it) } }
@@ -108,14 +126,22 @@ fun healthCache(snapshot: HealthSnapshot, profile: UserProfile?, today: LocalDat
             w.zoneSeconds?.let { z -> put("icu_hr_zone_times", JsonArray(z.map { JsonPrimitive(it) })) }
         }
     }
-    val athlete = buildJsonObject { put("icu_resting_hr", rest) }
+    // Como los ajustes de deporte de intervals.icu: así fillPhysiology da zonas y objetivos de FC con tus datos
+    val athlete = buildJsonObject {
+        put("icu_resting_hr", rest)
+        put("sportSettings", JsonArray(lthrs.mapNotNull { (sport, lthr) ->
+            lthr?.let { buildJsonObject { put("types", JsonArray(listOf(JsonPrimitive(SETTING_TYPE[sport]!!)))); put("lthr", it); put("max_hr", maxHr) } }
+        }))
+    }
     return IntervalsCache(athlete, wellness, activities, snapshot.syncedAt)
 }
 
 /** Los límites de las 7 zonas de FC (ppm) con los que cada plataforma reparte los pulsos de un entrenamiento. */
-fun heartRateZoneBounds(profile: UserProfile?, today: LocalDate, measuredMaxHr: Double?): List<Double> {
+fun heartRateZoneBounds(profile: UserProfile?, today: LocalDate, measuredMaxHr: Double?, workouts: List<Workout> = emptyList()): List<Double> {
     val age = profile?.birthYear?.let { today.year - it } ?: 40
-    val lthr = 0.9 * maxOf(measuredMaxHr ?: 0.0, estimatedMaxHr(age))
+    val maxHr = max(measuredMaxHr ?: 0.0, maxHrOf(workouts, age))
+    // Tu umbral estimado si hay una sesión dura de carrera (o de bici); si no, el 90 % de la FC máx. [Inferencia]
+    val lthr = estimatedLthr(workouts, "running", maxHr) ?: estimatedLthr(workouts, "cycling", maxHr) ?: (0.9 * maxHr)
     // Límites superiores de Z1, Z2, Z3, Z4, Z5a y Z5b en % de la LTHR (como intervals.icu con zonas de Friel)
     return listOf(0.81, 0.89, 0.93, 0.99, 1.02, 1.06).map { it * lthr }
 }

@@ -224,7 +224,8 @@ class TrainSyncApp(
     fun clearHealth() = save(data.copy(health = null))
 
     /** Límites de las zonas de FC para repartir los pulsos de cada entrenamiento al leerlos del móvil. */
-    fun zoneBounds(measuredMaxHr: Double?): List<Double> = heartRateZoneBounds(data.profile, today(), measuredMaxHr)
+    fun zoneBounds(measuredMaxHr: Double?): List<Double> =
+        heartRateZoneBounds(data.profile, today(), measuredMaxHr, data.health?.workouts ?: emptyList())  // los de la lectura anterior
 
     // ------------------------------------------------------------ recordatorio diario
 

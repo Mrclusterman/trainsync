@@ -4,7 +4,7 @@ package io.github.mrclusterman.trainsync.engine
 // la antigua validación en Python del prototipo: el motor de Kotlin es la única fuente. Tres partes, todas con datos sintéticos:
 //   V1–V11  planes sin fecha: 6 perfiles × 3 adherencias durante 24 semanas
 //   R1–R9   planes hacia una carrera: 7 carreras, de la preparación (20 semanas) al día de la prueba
-//   E1–E8   ajuste del día con datos del reloj o con las tres preguntas
+//   E1–E10  ajuste del día con datos del reloj o del móvil, o con las tres preguntas
 // Con VALIDATION_REPORT=1 escribe docs/proyecto/validacion/resultados.md; sin él solo comprueba.
 // Caso real (realAccount): con INTERVALS_ATHLETE_ID e INTERVALS_API_KEY en el entorno, los mismos criterios con la
 // fisiología y el estado de esa cuenta. Sin ellas se omite (así en la nube). El informe solo dice si cumple, más la LTHR y
@@ -14,6 +14,8 @@ import io.github.mrclusterman.trainsync.app.systemToday
 import io.github.mrclusterman.trainsync.intervals.IntervalsClient
 import io.github.mrclusterman.trainsync.intervals.dayState
 import io.github.mrclusterman.trainsync.intervals.fillPhysiology
+import io.github.mrclusterman.trainsync.intervals.num
+import io.github.mrclusterman.trainsync.intervals.str
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.daysUntil
@@ -287,6 +289,14 @@ class ValidationTest {
         row("E7", "respuestas: dormí y estoy mal", softer, "${day.sumOf { it.durationMin }} → ${easy.sumOf { it.durationMin }} min, sin Z4+")
         val (rest, _) = adjustDay(p, day, readiness(1, 1, 1), 2)
         row("E8", "respuestas: todo a 1", rest.size <= 1 && rest.all { it.sport == "walking" }, "queda: ${rest.joinToString { it.sport }}")
+        // Sueño en horas (Health Connect, Apple Salud: sin puntuación), frente a lo normal en cada persona
+        val phone = calm.copy(sleepScore = null)
+        adjust("threshold", phone.copy(sleepHours = 5.2, usualSleepHours = 7.4)).let { (t, v, _) ->
+            row("E9", "móvil: 5,2 h de sueño (sueles 7,4)", t !in QUALITY && v < 1.0, "pasa a $t, ×$v")
+        }
+        adjust("threshold", phone.copy(sleepHours = 5.4, usualSleepHours = 5.6)).let { (t, v, why) ->
+            row("E10", "móvil: 5,4 h (sueles 5,6)", t == "threshold" && v == 1.0 && why.isEmpty(), "sin cambios: es tu sueño normal")
+        }
         return rows
     }
 
@@ -328,6 +338,20 @@ class ValidationTest {
                     "${texts.size} sesiones, objetivos ${fmt(pct.minOrNull() ?: 0.0, 1)}–${fmt(pct.maxOrNull() ?: 0.0, 1)} % HR")
         } else rows += Row("tu cuenta, objetivos de FC", "fisiología real", "FC", null, "no aplica: intervals.icu no tiene LTHR o FC máx.")
 
+        // El umbral estimado con tus actividades (como sin intervals.icu) frente al configurado en intervals.icu: ±8 ppm [Inferencia]
+        val asWorkouts = activities.mapNotNull { a ->
+            val sport = mapOf("Run" to "running", "Ride" to "cycling", "VirtualRide" to "cycling")[a["type"].str()] ?: return@mapNotNull null
+            io.github.mrclusterman.trainsync.app.Workout(a["id"].str() ?: "", sport, a["start_date_local"].str() ?: "",
+                (a["moving_time"].num() ?: 0.0) / 60, avgHr = a["average_heartrate"].num(), maxHr = a["max_heartrate"].num())
+        }
+        for (sport in listOf("running", "cycling")) {
+            val configured = ep.lthrBySport[sport] ?: continue
+            val est = maxHr?.let { io.github.mrclusterman.trainsync.app.estimatedLthr(asWorkouts, sport, it) }
+            rows += Row("tu cuenta, umbral estimado", sport, "LTHR", est?.let { kotlin.math.abs(it - configured) <= 8 },
+                est?.let { "estimado ${fmt(it, 0)} con tus ${asWorkouts.count { w -> w.sport == sport }} sesiones de 90 días; en intervals.icu ${fmt(configured, 0)}" }
+                    ?: "no aplica: ninguna sesión de 20–70 min al 85 % de tu FC máx. o más en 90 días")
+        }
+
         // Una media maratón con tu fisiología
         val goal = Goal("media maratón", "running", today.plusDays(7 * PREP_WEEKS), "A", 21.1)
         val race = Race(goal, ep.copy(activeSports = listOf("running") + sports.filter { it != "running" }, planStart = null))
@@ -345,8 +369,8 @@ class ValidationTest {
             val mark = { ok: Boolean? -> when (ok) { true -> "sí"; false -> "**no**"; null -> "no aplica" } }
             File("../docs/proyecto/validacion/resultados-cuenta-real.md").writeText((listOf(
                 "# Validación con la cuenta real de pruebas ($today)", "",
-                "${rows.count { it.ok == true }} de ${rows.count { it.ok != null }} comprobaciones aplicables cumplen. Solo la LTHR y la FC máx. " +
-                    "salen de la cuenta; el resto son cifras del plan.", "",
+                "${rows.count { it.ok == true }} de ${rows.count { it.ok != null }} comprobaciones aplicables cumplen. De la cuenta solo salen la " +
+                    "LTHR (configurada y estimada), la FC máx. y el número de sesiones; el resto son cifras del plan.", "",
                 "| Caso | Variante | Criterio | Cumple | Detalle |", "|---|---|---|---|---|") +
                 rows.map { "| ${it.case} | ${it.variant} | ${it.id} | ${mark(it.ok)} | ${it.detail} |" }).joinToString("\n") + "\n")
         }
@@ -359,7 +383,7 @@ class ValidationTest {
     @Test
     fun theEngineMeetsEveryCriterion() {
         val parts = listOf("Planes sin fecha (V1–V11)" to healthRows(), "Hacia una carrera (R1–R10)" to raceRows(),
-            "Ajuste del día (E1–E8)" to stateRows())
+            "Ajuste del día (E1–E10)" to stateRows())
         val rows = parts.flatMap { it.second }
         if (System.getenv("VALIDATION_REPORT") == "1") report(parts)
         val failed = rows.filter { it.ok == false && "${it.id} ${it.case} (${it.variant})" !in KNOWN }

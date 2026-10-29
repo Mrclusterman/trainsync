@@ -77,6 +77,34 @@ class HealthDataTest {
     }
 
     @Test
+    fun shortNightAgainstYourUsualSleepAdjustsToday() {
+        val app = TrainSyncApp(MemoryStore(), MemoryStore(), { today })
+        app.saveProfile(profile.copy(days = profile.days + ("THU" to 60)))
+        app.setGoal(GoalKind.FITNESS)
+        val s = snapshot()
+        app.importHealth(s.copy(days = s.days.map { if (it.date == today.toString()) it.copy(sleepMinutes = 290.0) else it }))
+        assertTrue(app.todayScreen().day.adjustments.any { "Has dormido 4.8 h" in it.text }, app.todayScreen().day.adjustments.toString())
+    }
+
+    @Test
+    fun thresholdComesFromYourHardestSessions() {
+        val s = snapshot()
+        assertEquals(null, healthCache(s, profile, today).athlete["sportSettings"]?.let { (it as kotlinx.serialization.json.JsonArray).firstOrNull() })
+        // Un 10 km de 42 min a 168 de media con FC máx. medida de 186: esa media es tu umbral
+        val hard = s.copy(workouts = s.workouts + Workout("race", "running", "${today.plusDays(-5)}T09:00:00", 42.0, avgHr = 168.0, maxHr = 186.0))
+        assertEquals(168.0, estimatedLthr(hard.workouts, "running", 186.0))
+        val app = TrainSyncApp(MemoryStore(), MemoryStore(), { today })
+        app.saveProfile(profile)
+        app.setGoal(GoalKind.FITNESS)
+        app.importHealth(hard)
+        assertEquals(168.0, Planner(app.data, today).physiology?.lthrFor("running"))
+        assertEquals(186.0, Planner(app.data, today).physiology?.maxHr)
+        // Un rodaje suave no sirve: queda por debajo del 85 % de la FC máx.
+        assertEquals(null, estimatedLthr(listOf(Workout("easy", "running", "${today}T07:00:00", 45.0, avgHr = 140.0)), "running", 186.0))
+        assertEquals(0.95 * 186, estimatedLthr(listOf(Workout("x", "running", "${today}T07:00:00", 30.0, avgHr = 184.0)), "running", 186.0))
+    }
+
+    @Test
     fun oldDataIsMigrated() {
         val old = AppData(schema = 1, profile = profile)
         assertEquals(SCHEMA, migrate(old).schema)
