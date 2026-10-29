@@ -58,6 +58,21 @@ jobs:
         with:
           name: ios-screenshots
           path: iosApp/screenshots/
+      # .ipa para iPhone real sin cuenta de desarrollador: lo firma SideStore, AltStore o similar. La firma ad hoc solo
+      # lleva los permisos (HealthKit) para que el firmador los pida; sin ella la app llegaría sin Apple Salud.
+      - working-directory: iosApp
+        run: |
+          xcodebuild -project iosApp.xcodeproj -scheme iosApp -sdk iphoneos -configuration Release -derivedDataPath build \
+            -destination 'generic/platform=iOS' build CODE_SIGNING_ALLOWED=NO
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/TrainSync.app Payload/
+          codesign -f -s - --entitlements iosApp/iosApp.entitlements Payload/TrainSync.app
+          codesign -d --entitlements - Payload/TrainSync.app
+          zip -qry TrainSync.ipa Payload
+      - uses: actions/upload-artifact@v7
+        with:
+          name: trainsync-ipa
+          path: iosApp/TrainSync.ipa
 
   prototype:
     runs-on: ubuntu-latest
