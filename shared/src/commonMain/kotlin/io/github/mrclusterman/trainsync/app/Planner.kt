@@ -31,6 +31,7 @@ import io.github.mrclusterman.trainsync.engine.proposeDay
 import io.github.mrclusterman.trainsync.engine.watchReadiness
 import io.github.mrclusterman.trainsync.engine.pyRound
 import io.github.mrclusterman.trainsync.engine.readiness
+import io.github.mrclusterman.trainsync.engine.hrvStatus
 import io.github.mrclusterman.trainsync.engine.weekWithHistory
 import io.github.mrclusterman.trainsync.engine.weekday
 import io.github.mrclusterman.trainsync.intervals.dayState
@@ -113,6 +114,14 @@ class Planner(private val data: AppData, private val today: LocalDate) {
 
     /** Estado de hoy (carga, HRV, sueño) si hay datos de intervals.icu. */
     val state: DayState? = cache?.let { runCatching { dayState(it.wellness, it.activities, today) }.getOrNull() }
+
+    /** Hay señales de recuperación de hoy (VFC o sueño): si no, se preguntan las tres cosas aunque haya datos del móvil. */
+    val hasRecoverySignals: Boolean = state?.let { s ->
+        hrvStatus(s.hrvHistory) != null || s.sleepScore != null || (s.sleepHours != null && s.usualSleepHours != null)
+    } == true
+
+    private val feltToday: String? = data.readiness[today.toString()]?.let { readiness(it.sleep, it.energy, it.soreness) }
+        ?.takeIf { it != "normal" }
 
     private val done: Map<String, List<Done>> = run {
         val all = (cache?.let { watchSessions(it.activities) } ?: emptyMap()).mapValues { it.value.toMutableList() }
@@ -212,7 +221,12 @@ class Planner(private val data: AppData, private val today: LocalDate) {
         } else emptyList()
         val engineDays: List<Day> = (0 until 7).map { d ->
             val date = monday.plusDays(d)
-            fromToday.firstOrNull { it.date == date.toString() } ?: proposeDay(date, rp, raceGoal)
+            when {
+                // Tus respuestas de hoy ajustan el día igual que el reloj (sin reloj, con un estado neutro)
+                date == today && feltToday != null ->
+                    proposeDay(date, rp, raceGoal, (state ?: DayState(ctl = 0.0, atl = 0.0)).copy(feltStatus = feltToday))
+                else -> fromToday.firstOrNull { it.date == date.toString() } ?: proposeDay(date, rp, raceGoal)
+            }
         }
         val days = engineDays.map { d ->
             val items = listOfNotNull(d.main?.let { cardioItem(it, d.alternatives) }, d.strength?.let { raceStrengthItem(it) })

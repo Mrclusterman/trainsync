@@ -66,7 +66,7 @@ fun buildToday(data: AppData, today: LocalDate): TodayScreen {
         weekLine = "Esta semana: ${week.activeMinutes} min de actividad y fuerza $strength ${if (strength == 1) "día" else "días"}",
         meetsWho = week.activeMinutes >= 150 && strength >= 2,
         warnings = week.warnings, info = week.info,
-        askReadiness = data.deviceData(today) == null && data.readiness[today.toString()] == null && day.items.isNotEmpty(),
+        askReadiness = !planner.hasRecoverySignals && data.readiness[today.toString()] == null && day.items.isNotEmpty(),
         linked = data.cache != null, goalFinished = goalFinished,
     )
 }

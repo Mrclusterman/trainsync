@@ -73,10 +73,14 @@ fun estimatedLthr(workouts: List<Workout>, sport: String, maxHr: Double): Double
 
 private val SETTING_TYPE = mapOf("running" to "Run", "cycling" to "Ride")
 
+/** Carga por hora sin pulso, a esfuerzo moderado de cada deporte (un paseo no carga como un rodaje). [Inferencia] */
+private val LOAD_PER_HOUR = mapOf("walking" to 25.0, "running" to 60.0, "cycling" to 45.0, "swimming_pool" to 50.0,
+    "strength" to 35.0)
+
 /**
  * Los datos del móvil en el formato de intervals.icu que usa el motor. La carga de cada entrenamiento se estima con la
- * FC media (hrTSS, umbral ≈ 90 % de la FC máx.) o, sin pulso, a ~50 por hora (esfuerzo moderado); con ella salen la
- * forma física (CTL) y la fatiga (ATL) de cada día. [Inferencia: el 90 % y los 50/h son aproximaciones]
+ * FC media (hrTSS, con tu umbral estimado o el 90 % de la FC máx.) o, sin pulso, por hora según el deporte
+ * (`LOAD_PER_HOUR`); con ella salen la forma física (CTL) y la fatiga (ATL) de cada día. [Inferencia: aproximaciones]
  */
 fun healthCache(snapshot: HealthSnapshot, profile: UserProfile?, today: LocalDate): IntervalsCache {
     val age = profile?.birthYear?.let { today.year - it } ?: 40
@@ -86,7 +90,7 @@ fun healthCache(snapshot: HealthSnapshot, profile: UserProfile?, today: LocalDat
 
     fun load(w: Workout): Double = w.avgHr?.takeIf { it > rest }
         ?.let { hrTss(w.minutes * 60, it, rest, lthrs[w.sport] ?: (0.9 * maxHr)) }
-        ?: (w.minutes / 60 * 50)
+        ?: (w.minutes / 60 * (LOAD_PER_HOUR[w.sport] ?: 40.0))
 
     val loadByDay = snapshot.workouts.groupBy { it.start.take(10) }.mapValues { (_, ws) -> ws.sumOf { load(it) } }
     val byDay = snapshot.days.associateBy { it.date }

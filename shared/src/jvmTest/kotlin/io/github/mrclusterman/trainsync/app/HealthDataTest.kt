@@ -50,8 +50,8 @@ class HealthDataTest {
         val cache = healthCache(snapshot(), profile, today)
         val withHr = cache.activities.first { it["id"].toString() == "\"w1\"" }
         val noHr = cache.activities.first { it["id"].toString() == "\"w3\"" }
-        assertEquals("37.5", noHr["icu_training_load"].toString())  // 45 min sin pulso → 50/h
-        assertTrue(withHr["icu_training_load"].toString().toDouble() > 37.5)
+        assertEquals("18.75", noHr["icu_training_load"].toString())  // 45 min caminando sin pulso → 25/h
+        assertTrue(withHr["icu_training_load"].toString().toDouble() > 18.75)
         assertTrue(cache.wellness.last()["ctl"].toString().toDouble() > 0)
         assertEquals(today.toString(), cache.wellness.last()["id"].toString().trim('"'))
     }
@@ -102,6 +102,19 @@ class HealthDataTest {
         // Un rodaje suave no sirve: queda por debajo del 85 % de la FC máx.
         assertEquals(null, estimatedLthr(listOf(Workout("easy", "running", "${today}T07:00:00", 45.0, avgHr = 140.0)), "running", 186.0))
         assertEquals(0.95 * 186, estimatedLthr(listOf(Workout("x", "running", "${today}T07:00:00", 30.0, avgHr = 184.0)), "running", 186.0))
+    }
+
+    @Test
+    fun withoutSleepOrHrvTheQuestionsStay() {
+        val app = TrainSyncApp(MemoryStore(), MemoryStore(), { today })
+        app.saveProfile(profile.copy(days = profile.days + ("THU" to 60)))
+        app.setGoal(GoalKind.FITNESS)
+        val s = snapshot()
+        app.importHealth(s.copy(days = s.days.map { it.copy(sleepMinutes = null, hrv = null) }))  // solo pasos y peso
+        assertTrue(app.todayScreen().askReadiness)
+        app.answerReadiness(2, 2, 3)
+        assertFalse(app.todayScreen().askReadiness)
+        assertTrue(app.todayScreen().day.adjustments.isNotEmpty())
     }
 
     @Test

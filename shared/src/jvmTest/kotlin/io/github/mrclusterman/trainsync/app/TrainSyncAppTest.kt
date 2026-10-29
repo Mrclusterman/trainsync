@@ -97,6 +97,21 @@ class TrainSyncAppTest {
     }
 
     @Test
+    fun answersAdjustARaceDayWithoutAWatch() {
+        val a = app()
+        a.saveProfile(profile)
+        a.setGoal(GoalKind.RACE, RaceInfo("Media", "running", "2027-01-31", distanceKm = 21.1))
+        val before = a.todayScreen()
+        if (before.day.items.isEmpty()) return  // hoy descanso: nada que ajustar
+        assertTrue(before.askReadiness)
+        a.answerReadiness(1, 2, 2)
+        val after = a.todayScreen()
+        assertTrue(after.day.adjustments.any { "tus respuestas" in it.text }, after.day.adjustments.toString())
+        assertTrue(after.headline.startsWith("Hoy toca bajar el ritmo"), after.headline)
+        assertTrue(after.day.items.none { it.kind in setOf("vo2max", "threshold", "race_specific") })
+    }
+
+    @Test
     fun dataSurvivesARestart() {
         val store = MemoryStore()
         app(store).apply { saveProfile(profile); setGoal(GoalKind.STRENGTH) }

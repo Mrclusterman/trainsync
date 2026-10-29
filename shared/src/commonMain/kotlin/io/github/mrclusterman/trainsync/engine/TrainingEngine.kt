@@ -236,6 +236,7 @@ data class DayState(
     val sleepScore: Double? = null,
     val sleepHours: Double? = null,  // anoche, si el reloj o el móvil da los minutos dormidos
     val usualSleepHours: Double? = null,  // tu mediana de los 28 días anteriores
+    val feltStatus: String? = null,  // sin reloj, tus tres respuestas de hoy: "easy" (suave) o "rest" (recuperar)
     val consecutiveDays: Int = 0,
     val effortMismatch: Boolean = false,  // RPE alto con FC baja en los últimos 2 días
     val loadFocus: Map<String, Double>? = null,  // reparto de la carga de 28 días
@@ -255,6 +256,16 @@ fun adjust(sessionType: String, state: DayState): Triple<String, Double, List<St
     if (tsb < -30) {
         return Triple(if (type != "rest") "recovery" else "rest", 1.0,
             listOf("Fatiga muy por encima de tu forma física (forma ${fmt(tsb, 1)}, por debajo de −30): hoy solo recuperación [Práctica]"))
+    }
+    // Sin reloj, tus respuestas (sueño, energía, agujetas) hacen lo mismo que las señales del reloj [Inferencia]
+    if (state.feltStatus == "rest") {
+        return Triple(if (type != "rest") "recovery" else "rest", 1.0,
+            listOf("Por tus respuestas de hoy (sueño, energía y agujetas, todo mal): solo recuperación [Inferencia]"))
+    }
+    if (state.feltStatus == "easy") {
+        if (type in QUALITY) type = DOWNGRADE[type]!!
+        volume *= 0.7
+        reasons += "Por tus respuestas de hoy (has dormido o te notas peor de lo normal): versión suave, −30 % y sin intensidad [Inferencia]"
     }
     if (status == "outside_swc" && type in QUALITY) {
         type = "aerobic"
