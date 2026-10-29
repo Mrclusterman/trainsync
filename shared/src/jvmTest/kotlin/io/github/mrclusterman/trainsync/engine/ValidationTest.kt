@@ -4,7 +4,7 @@ package io.github.mrclusterman.trainsync.engine
 // la antigua validación en Python del prototipo: el motor de Kotlin es la única fuente. Tres partes, todas con datos sintéticos:
 //   V1–V11  planes sin fecha: 6 perfiles × 3 adherencias durante 24 semanas
 //   R1–R9   planes hacia una carrera: 7 carreras, de la preparación (20 semanas) al día de la prueba
-//   E1–E10  ajuste del día con datos del reloj o del móvil, o con las tres preguntas
+//   E1–E11  ajuste del día con datos del reloj o del móvil, o con las tres preguntas; plan de 14 días
 //   N1–N3   natación: en metros con tu CSS, por esfuerzo sin él
 // Con VALIDATION_REPORT=1 escribe docs/proyecto/validacion/resultados.md; sin él solo comprueba.
 // Caso real (realAccount): con INTERVALS_ATHLETE_ID e INTERVALS_API_KEY en el entorno, los mismos criterios con la
@@ -298,6 +298,16 @@ class ValidationTest {
         adjust("threshold", phone.copy(sleepHours = 5.4, usualSleepHours = 5.6)).let { (t, v, why) ->
             row("E10", "móvil: 5,4 h (sueles 5,6)", t == "threshold" && v == 1.0 && why.isEmpty(), "sin cambios: es tu sueño normal")
         }
+        // E11 plan de 14 días con el estado de hoy: la 2.ª semana parte del CTL proyectado y no sube más del 10 %
+        val r = races["maratón, 5 días"]!!
+        for (offset in listOf(28, 63, 91)) {  // en base, en construcción y en pico
+            val from = r.goal.date.plusDays(-7 * PREP_WEEKS + offset)
+            val two = plan(from, 14, r.profile, r.goal, calm.copy(ctl = 45.0, atl = 50.0))
+            val (w1, w2) = two.take(7).sumOf { it.load() } to two.drop(7).sumOf { it.load() }
+            val recovery = two.take(7).any { it.recoveryWeek }
+            row("E11", "14 días desde el día $offset de la maratón", recovery || w2 <= w1 * 1.105,
+                "semana 1: ${fmt(w1, 0)}, semana 2: ${fmt(w2, 0)}" + if (recovery) " (la 1.ª es de descarga)" else "")
+        }
         return rows
     }
 
@@ -411,7 +421,7 @@ class ValidationTest {
     @Test
     fun theEngineMeetsEveryCriterion() {
         val parts = listOf("Planes sin fecha (V1–V11)" to healthRows(), "Hacia una carrera (R1–R10)" to raceRows(),
-            "Ajuste del día (E1–E10)" to stateRows(), "Natación (N1–N3)" to swimRows())
+            "Ajuste del día (E1–E11)" to stateRows(), "Natación (N1–N3)" to swimRows())
         val rows = parts.flatMap { it.second }
         if (System.getenv("VALIDATION_REPORT") == "1") report(parts)
         val failed = rows.filter { it.ok == false && "${it.id} ${it.case} (${it.variant})" !in KNOWN }

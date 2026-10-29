@@ -674,25 +674,37 @@ fun dayTss(day: Day): Double = (day.main?.tss ?: 0).toDouble() + (day.strength?.
 val WEIGHTS = mapOf("long" to 25, "vo2max" to 15, "threshold" to 15, "race_specific" to 15, "brick" to 15, "test" to 15,
     "aerobic" to 11, "neuromuscular" to 11, "recovery" to 5, "tempo" to 15, "anaerobic" to 11)
 
-/** Plan de N días: TSS semanal según la rampa de CTL, repartido por tipo de sesión. Solo el día 1 usa el estado real. */
+/**
+ * Plan de N días: TSS semanal según la rampa de CTL, repartido por tipo de sesión. Solo el día 1 usa el estado real; cada
+ * bloque de 7 días parte del CTL proyectado con la carga planificada de los anteriores (antes, los días 8–14 repetían la
+ * escala de hoy). [Inferencia: la proyección supone que se hace lo planificado]
+ */
 fun plan(start: LocalDate, days: Int, profile: Profile, goal: Goal?, todayState: DayState? = null): List<Day> {
-    val (phase, recoveryWeek) = phaseFor(start, goal, profile.planStart)
-    val scales = mutableMapOf<String, Double>()
-    if (todayState != null && phase != "taper") {  // el taper ya fija su propio volumen
-        val week = (0 until 7).map { proposeDay(start.plusDays(it), profile, goal) }
-        val mains = week.filter { it.main != null && it.main!!.tss != 0 }
-        val target = weeklyTssTarget(todayState.ctl, recoveryWeek) - week.sumOf { it.strength?.tss ?: 0 }
-        val totalWeight = mains.sumOf { WEIGHTS[it.main!!.type]!! }
-        for (d in mains) {
-            val dayTarget = target * WEIGHTS[d.main!!.type]!! / totalWeight
-            // [Inferencia] límites 0,5-1,5 para no deformar las sesiones del catálogo
-            scales[d.weekday] = min(max(dayTarget / d.main!!.tss, 0.5), 1.5)
+    val scales = mutableMapOf<LocalDate, Double>()
+    var ctl = todayState?.ctl
+    for (chunk in 0 until (days + 6) / 7) {
+        val from = start.plusDays(7 * chunk)
+        val (phase, recoveryWeek) = phaseFor(from, goal, profile.planStart)
+        val week = (0 until 7).map { proposeDay(from.plusDays(it), profile, goal) }
+        if (ctl == null) break
+        if (phase != "taper") {  // el taper ya fija su propio volumen
+            val mains = week.filter { it.main != null && it.main!!.tss != 0 }
+            val target = weeklyTssTarget(ctl, recoveryWeek) - week.sumOf { it.strength?.tss ?: 0 }
+            val totalWeight = mains.sumOf { WEIGHTS[it.main!!.type]!! }
+            for (d in mains) {
+                val dayTarget = target * WEIGHTS[d.main!!.type]!! / totalWeight
+                // [Inferencia] límites 0,5-1,5 para no deformar las sesiones del catálogo
+                scales[LocalDate.parse(d.date)] = min(max(dayTarget / d.main!!.tss, 0.5), 1.5)
+            }
+        }
+        for (d in week) {  // CTL al final de esta semana si se hace lo planificado (la escala, aproximada sobre la principal)
+            val scale = scales[LocalDate.parse(d.date)] ?: 1.0
+            ctl = nextLoad(ctl!!, (d.main?.tss ?: 0) * scale + (d.strength?.tss ?: 0), K_CTL)
         }
     }
-    // shortcut: días 8-14 usan la escala del CTL de hoy; proyectar CTL por semana cuando se muestre el TSB proyectado
     val out = (0 until days).map { d ->
         val day = start.plusDays(d)
-        proposeDay(day, profile, goal, if (d == 0) todayState else null, scales[day.weekday()] ?: 1.0)
+        proposeDay(day, profile, goal, if (d == 0) todayState else null, scales[day] ?: 1.0)
     }
     scheduleTests(out, profile)
     return out

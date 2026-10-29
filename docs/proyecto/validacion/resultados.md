@@ -1,6 +1,6 @@
 # Resultados de la validación del motor
 
-184 de 184 comprobaciones aplicables cumplen (10 no aplican). Datos sintéticos; generado con `VALIDATION_REPORT=1 ./gradlew :shared:jvmTest --tests '*ValidationTest*'`. Criterios en `VALIDACION.md`.
+187 de 187 comprobaciones aplicables cumplen (10 no aplican). Datos sintéticos; generado con `VALIDATION_REPORT=1 ./gradlew :shared:jvmTest --tests '*ValidationTest*'`. Criterios en `VALIDACION.md`.
 
 ## Planes sin fecha (V1–V11)
 
@@ -193,7 +193,7 @@
 | 10 km preparatoria (C) | prioridad C | R9 | sí | ninguna |
 | 10 km preparatoria (C) | prioridad C | R10 | sí | dos ejecuciones idénticas |
 
-## Ajuste del día (E1–E10)
+## Ajuste del día (E1–E11)
 
 | Caso | Variante | Criterio | Cumple | Detalle |
 |---|---|---|---|---|
@@ -207,6 +207,9 @@
 | respuestas: todo a 1 | sintético | E8 | sí | queda: walking |
 | móvil: 5,2 h de sueño (sueles 7,4) | sintético | E9 | sí | pasa a aerobic, ×0.7 |
 | móvil: 5,4 h (sueles 5,6) | sintético | E10 | sí | sin cambios: es tu sueño normal |
+| 14 días desde el día 28 de la maratón | sintético | E11 | sí | semana 1: 355, semana 2: 352 |
+| 14 días desde el día 63 de la maratón | sintético | E11 | sí | semana 1: 374, semana 2: 337 |
+| 14 días desde el día 91 de la maratón | sintético | E11 | sí | semana 1: 363, semana 2: 374 |
 
 ## Natación (N1–N3)
 
