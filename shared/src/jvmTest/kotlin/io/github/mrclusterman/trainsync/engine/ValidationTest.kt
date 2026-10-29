@@ -386,6 +386,13 @@ class ValidationTest {
         rows += Row("tu cuenta, estado de hoy", "datos reales", "E-real", over == 0,
             "plan de 14 días con tu estado de hoy; días que no caben: $over")
 
+        // Progreso con tus datos: hay estado y, si hay previsión, el 5 km sale entre 12 y 60 min (sin mostrar tus tiempos)
+        val cache = io.github.mrclusterman.trainsync.app.IntervalsCache(athlete, wellness, activities, today.toString())
+        val progress = io.github.mrclusterman.trainsync.app.buildProgress(io.github.mrclusterman.trainsync.app.AppData(cache = cache), today)
+        val fiveK = progress.predictions.firstOrNull()?.time?.split(":")?.let { p -> if (p.size == 2) p[0].toDouble() + p[1].toDouble() / 60 else 60.0 * p[0].toDouble() + p[1].toDouble() }
+        rows += Row("tu cuenta, Progreso", "datos reales", "P", progress.status != null && (fiveK == null || fiveK in 12.0..60.0) && progress.recent.isNotEmpty(),
+            "estado: ${if (progress.status != null) "sí" else "no"}; previsiones: ${progress.predictions.size} (${if (fiveK == null) "sin datos" else "verosímiles"}); últimos entrenamientos: ${progress.recent.size}")
+
         println(rows.joinToString("\n") { "${it.id} ${it.case}: ${when (it.ok) { true -> "cumple"; false -> "NO cumple"; null -> "no aplica" }} · ${it.detail}" })
         if (System.getenv("VALIDATION_REPORT") == "1") {
             val mark = { ok: Boolean? -> when (ok) { true -> "sí"; false -> "**no**"; null -> "no aplica" } }

@@ -636,6 +636,7 @@ Python del prototipo queda congelado. Cada regla está cubierta por `ValidationT
 | Menores de 18: meta de 60 min al día de media (420/semana) y fuerza 3 días | `HealthPlan.kt` | [Verificado: Bull 2020, OMS] |
 | Monotonía (V9): también semanas con aeróbico solo en algunos días de fuerza o en ninguno | `weekPlan`, `weekCardio` | [Foster 1998; orden: Inferencia] |
 | Varios cambios de días en una semana: historial de cambios; cada día pasado queda como estaba (también en carrera) | `weekWithHistory`, `Planner` | — |
+| Progreso: estado de entrenamiento con la relación carga aguda:crónica (ATL/CTL > 1,5 sobrecarga; < 0,8 recuperando) y la forma de hoy frente a la de hace 4 semanas (±5 % / −15 %); tiempos previstos con las ecuaciones de Daniels y Gilbert desde el VO2max del reloj (30 días) o el VDOT de tu mejor carrera de 3 km o más (90 días) | `Performance.kt`, `buildProgress` | [Verificado: Daniels y Gilbert 1979; Práctica: Gabbett 2016; umbrales: Inferencia] |
 | Fuerza: lo apuntado cuenta como sesión hecha; por debajo del rango o 3 sesiones sin ganar repeticiones, bajar un 10 % | `Lifts.kt`, `Planner` | [Práctica: ACSM 2009; cifras: Inferencia] |
 
 ## 16. Referencias

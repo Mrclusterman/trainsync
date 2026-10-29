@@ -3,6 +3,12 @@ package io.github.mrclusterman.trainsync.app
 // Lo que muestra cada apartado, calculado una vez para Android e iOS (docs/VISION.md §5): las dos apps solo pintan.
 
 import io.github.mrclusterman.trainsync.engine.plusDays
+import io.github.mrclusterman.trainsync.engine.RACE_DISTANCES
+import io.github.mrclusterman.trainsync.engine.danielsTime
+import io.github.mrclusterman.trainsync.engine.fmt
+import io.github.mrclusterman.trainsync.engine.pyRound
+import io.github.mrclusterman.trainsync.engine.trainingStatus
+import io.github.mrclusterman.trainsync.engine.vdot
 import io.github.mrclusterman.trainsync.engine.weekday
 import io.github.mrclusterman.trainsync.intervals.HEALTH_ACTIVITY_SPORTS
 import io.github.mrclusterman.trainsync.intervals.date
@@ -157,7 +163,31 @@ data class Metric(
     val higherIsBetter: Boolean?,
 )
 
-data class ProgressScreen(val linked: Boolean, val metrics: List<Metric>, val weeklyMinutes: List<Point>)
+/** Estado de entrenamiento: una palabra y qué significa. */
+data class StatusView(val label: String, val text: String)
+
+/** Tiempo previsto en una distancia, y de dónde sale. */
+data class Prediction(val distance: String, val time: String)
+
+data class RecentActivity(val date: String, val title: String, val sport: String, val minutes: Int, val load: Int?)
+
+data class ProgressScreen(
+    val linked: Boolean,
+    val metrics: List<Metric>,
+    val weeklyMinutes: List<Point>,
+    val status: StatusView? = null,
+    val predictions: List<Prediction> = emptyList(),
+    val predictionSource: String? = null,  // "tu VO2max (52)" o "tu mejor carrera de entrenamiento"
+    val recent: List<RecentActivity> = emptyList(),
+)
+
+/** h:mm:ss o mm:ss. */
+fun raceTime(minutes: Double): String {
+    val total = pyRound(minutes * 60)
+    val (h, m, s) = Triple(total / 3600, total % 3600 / 60, total % 60)
+    fun two(n: Int) = n.toString().padStart(2, '0')
+    return if (h > 0) "$h:${two(m)}:${two(s)}" else "$m:${two(s)}"
+}
 
 fun buildProgress(data: AppData, today: LocalDate, days: Int = 90): ProgressScreen {
     val cache = data.deviceData(today) ?: return ProgressScreen(false, emptyList(), emptyList())
@@ -187,15 +217,48 @@ fun buildProgress(data: AppData, today: LocalDate, days: Int = 90): ProgressScre
             if (ctl != null && atl != null) ctl - atl else null
         },
     )
-    // Minutos moderados equivalentes por semana (OMS): Z1 no cuenta, Z2–Z3 ×1, Z4 o más ×2 (zonas de intervals.icu)
+    // Minutos moderados equivalentes por semana (OMS): Z1 no cuenta, Z2–Z3 ×1, Z4 o más ×2 (zonas de intervals.icu); sin
+    // zonas (entrenamientos del móvil sin pulso), el tiempo entero cuenta como moderado [Inferencia]
     val weekly = (0 until days / 7).reversed().map { w ->
         val monday = mondayOf(today).plusDays(-7 * w)
         val end = monday.plusDays(7).toString()
         val minutes = cache.activities.filter { it.date() >= monday.toString() && it.date() < end }.sumOf { a ->
             val z = a["icu_hr_zone_times"].nums()
-            if (z.size < 7) 0.0 else (z[1] + z[2] + 2 * (z[3] + z[4] + z[5] + z[6])) / 60
+            if (z.size < 7) (a["moving_time"].num() ?: 0.0) / 60 else (z[1] + z[2] + 2 * (z[3] + z[4] + z[5] + z[6])) / 60
         }
         Point(monday.toString(), minutes)
     }
-    return ProgressScreen(true, metrics, weekly)
+
+    // Estado de entrenamiento: carga de esta semana frente a la habitual y forma de hoy frente a la de hace 4 semanas
+    val withLoad = cache.wellness.filter { it["ctl"].num() != null }.sortedBy { it["id"].str() }
+    val status = withLoad.lastOrNull()?.let { last ->
+        val ago = today.plusDays(-28).toString()
+        val ctl28 = withLoad.lastOrNull { (it["id"].str() ?: "") <= ago }?.get("ctl").num()
+        val vo2 = wellness.mapNotNull { w -> w["vo2max"].num()?.takeIf { it > 0 }?.let { w["id"].str()!! to it } }
+        val vo2Trend = vo2.lastOrNull()?.let { (_, now) -> vo2.lastOrNull { it.first <= ago }?.second?.let { now - it } }
+        val (label, text) = trainingStatus(last["ctl"].num()!!, ctl28, last["atl"].num() ?: 0.0, vo2Trend)
+        StatusView(label, text)
+    }
+
+    // Tiempos previstos (Daniels y Gilbert 1979): con el VO2max del reloj de los últimos 30 días; si no, con el VDOT de tu
+    // mejor carrera de 3 km o más en 90 días (un entrenamiento no es a tope: la previsión queda por lo alto)
+    val recentVo2 = wellness.lastOrNull { (it["id"].str() ?: "") >= today.plusDays(-30).toString() && (it["vo2max"].num() ?: 0.0) > 0 }
+        ?.get("vo2max").num()
+    val bestRun = cache.activities.filter { it["type"].str() == "Run" && (it["distance"].num() ?: 0.0) >= 3000 &&
+        (it["moving_time"].num() ?: 0.0) >= 12 * 60 && it.date() >= since }
+        .maxOfOrNull { vdot(it["distance"].num()!!, it["moving_time"].num()!! / 60) }?.takeIf { it in 20.0..85.0 }
+    val (vo2, source) = when {
+        recentVo2 != null -> recentVo2 to "tu VO2max (${fmt(recentVo2, 0)}), estimado por tu reloj"
+        bestRun != null -> bestRun to "tu mejor carrera de entrenamiento de los últimos 90 días; con una carrera a tope sale más preciso"
+        else -> null to null
+    }
+    val predictions = vo2?.let { v -> RACE_DISTANCES.map { (name, m) -> Prediction(name, raceTime(danielsTime(v, m))) } } ?: emptyList()
+
+    val recent = cache.activities.filter { !it["start_date_local"].str().isNullOrEmpty() }
+        .sortedByDescending { it["start_date_local"].str() }.take(10).map { a ->
+            val sport = HEALTH_ACTIVITY_SPORTS[a["type"].str()] ?: "other"
+            RecentActivity(a.date(), a["name"].str()?.takeIf { it.isNotBlank() } ?: activityTitle(a) ?: (SPORT_LABEL[sport] ?: "Entrenamiento"),
+                sport, pyRound((a["moving_time"].num() ?: 0.0) / 60), a["icu_training_load"].num()?.let { pyRound(it) })
+        }
+    return ProgressScreen(true, metrics, weekly, status, predictions, source, recent)
 }

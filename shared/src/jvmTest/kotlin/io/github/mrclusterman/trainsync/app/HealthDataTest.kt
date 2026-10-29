@@ -118,6 +118,26 @@ class HealthDataTest {
     }
 
     @Test
+    fun progressShowsStatusPredictionsAndRecentWorkouts() {
+        val app = TrainSyncApp(MemoryStore(), MemoryStore(), { today })
+        app.saveProfile(profile)
+        app.setGoal(GoalKind.FITNESS)
+        val s = snapshot()
+        app.importHealth(s.copy(days = s.days.map { it.copy(vo2max = 50.0) }))
+        val p = app.progress()
+        kotlin.test.assertNotNull(p.status)
+        assertEquals(listOf("5 km", "10 km", "Media maratón", "Maratón"), p.predictions.map { it.distance })
+        assertTrue(p.predictions.first().time.startsWith("19:5"), p.predictions.first().time)  // VDOT 50: 19:57 (Daniels)
+        assertTrue(p.predictionSource!!.startsWith("tu VO2max (50)"))
+        assertEquals(10, p.recent.size)
+        assertTrue(p.recent.zipWithNext().all { (a, b) -> a.date >= b.date })
+        assertTrue(p.weeklyMinutes.takeLast(4).all { it.value > 0 })  // los paseos sin pulso también cuentan
+        // Sin VO2max ni carreras con distancia, no se inventa una previsión
+        app.importHealth(s)
+        assertTrue(app.progress().predictions.isEmpty())
+    }
+
+    @Test
     fun oldDataIsMigrated() {
         val old = AppData(schema = 1, profile = profile)
         assertEquals(SCHEMA, migrate(old).schema)

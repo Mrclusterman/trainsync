@@ -14,16 +14,52 @@ struct ProgressTabView: View {
                 Text("Tu evolución").font(.title2).bold()
                 if !screen.linked {
                     Module {
-                        Secondary("Para ver tu sueño, tu VFC, tu pulso en reposo o tu VO2max hace falta un reloj. Vincula tu cuenta de intervals.icu (gratis), que recoge los datos de Garmin, Polar, Coros, Suunto, Wahoo y otros.")
-                        Button("Vincular intervals.icu", action: openProfile).buttonStyle(.borderedProminent)
+                        Secondary("Para ver tu sueño, tu VFC, tu pulso en reposo o tu VO2max, conecta en Perfil Apple Salud (los datos de tu reloj o tu báscula en este iPhone) o tu cuenta de intervals.icu (gratis).")
+                        Button("Ir a Perfil", action: openProfile).buttonStyle(.borderedProminent)
                     }
                 } else {
+                    if let st = screen.status {
+                        Module(accent: st.label == "Sobrecarga" || st.label == "Perdiendo forma" ? Palette.alert : Palette.bio) {
+                            Secondary("Estado de entrenamiento")
+                            Text(st.label).font(.title3).bold()
+                            Secondary(st.text)
+                        }
+                    }
+                    if !screen.predictions.isEmpty {
+                        Module {
+                            Secondary("Tiempos previstos")
+                            ForEach(screen.predictions, id: \.distance) { p in
+                                HStack {
+                                    Text(p.distance)
+                                    Spacer()
+                                    Text(p.time).font(.system(.body, design: .monospaced))
+                                }
+                            }
+                            if let source = screen.predictionSource { Secondary("Calculado con \(source) (fórmula de Daniels).") }
+                        }
+                    }
                     Module {
                         Text("Minutos de actividad por semana").font(.headline)
                         Secondary("La OMS recomienda al menos 150 minutos moderados (o 75 intensos) a la semana.")
                         Bars(points: screen.weeklyMinutes, target: 150)
                     }
                     ForEach(Array(screen.metrics.enumerated()), id: \.offset) { _, m in MetricCard(metric: m) }
+                    if !screen.recent.isEmpty {
+                        Module {
+                            Secondary("Tus últimos entrenamientos")
+                            ForEach(Array(screen.recent.enumerated()), id: \.offset) { _, r in
+                                HStack {
+                                    SportDot(sport: r.sport)
+                                    VStack(alignment: .leading) {
+                                        Text(r.title).font(.subheadline)
+                                        Secondary(ScreensKt.dateLabel(date: r.date))
+                                    }
+                                    Spacer()
+                                    Text("\(r.minutes)′").font(.system(.body, design: .monospaced))
+                                }
+                            }
+                        }
+                    }
                 }
             }.padding(16)
         }.background(Palette.bg)

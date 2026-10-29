@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -32,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import io.github.mrclusterman.trainsync.app.Metric
 import io.github.mrclusterman.trainsync.app.Point
 import io.github.mrclusterman.trainsync.app.TrainSyncApp
+import io.github.mrclusterman.trainsync.app.dateLabel
 import kotlin.math.roundToInt
 
 /** Tu evolución: sueño, VFC, FC en reposo, VO2max, peso, pasos y forma, con tu rango normal (punto 8 de la revisión). */
@@ -42,11 +44,28 @@ fun ProgressTab(app: TrainSyncApp, version: Int, openProfile: () -> Unit) {
         Text("Tu evolución", fontSize = 22.sp, fontWeight = FontWeight.Bold)
         if (!screen.linked) {
             Module {
-                Secondary("Para ver tu sueño, tu VFC, tu pulso en reposo o tu VO2max hace falta un reloj. Vincula tu cuenta " +
-                    "de intervals.icu (gratis), que recoge los datos de Garmin, Polar, Coros, Suunto, Wahoo y otros.")
-                Button(onClick = openProfile) { Text("Vincular intervals.icu") }
+                Secondary("Para ver tu sueño, tu VFC, tu pulso en reposo o tu VO2max, conecta en Perfil Health Connect " +
+                    "(los datos de tu reloj o tu báscula en este móvil) o tu cuenta de intervals.icu (gratis).")
+                Button(onClick = openProfile) { Text("Ir a Perfil") }
             }
             return@Column
+        }
+        screen.status?.let { st ->
+            Module(accent = if (st.label == "Sobrecarga" || st.label == "Perdiendo forma") Palette.alert else Palette.bio) {
+                SectionTitle("Estado de entrenamiento")
+                Text(st.label, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Secondary(st.text)
+            }
+        }
+        if (screen.predictions.isNotEmpty()) Module {
+            SectionTitle("Tiempos previstos")
+            screen.predictions.forEach { p ->
+                Row {
+                    Text(p.distance, modifier = Modifier.weight(1f))
+                    Text(p.time, fontFamily = Mono)
+                }
+            }
+            screen.predictionSource?.let { Secondary("Calculado con $it (fórmula de Daniels).") }
         }
         Module {
             Text("Minutos de actividad por semana", fontWeight = FontWeight.Bold)
@@ -54,6 +73,20 @@ fun ProgressTab(app: TrainSyncApp, version: Int, openProfile: () -> Unit) {
             Bars(screen.weeklyMinutes, target = 150.0)
         }
         screen.metrics.forEach { MetricCard(it) }
+        if (screen.recent.isNotEmpty()) Module {
+            SectionTitle("Tus últimos entrenamientos")
+            screen.recent.forEach { r ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    SportDot(r.sport)
+                    Spacer(Modifier.width(8.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(r.title, fontSize = 14.sp)
+                        Secondary(dateLabel(r.date))
+                    }
+                    Text("${r.minutes}′", fontFamily = Mono)
+                }
+            }
+        }
         Spacer(Modifier.height(24.dp))
     }
 }

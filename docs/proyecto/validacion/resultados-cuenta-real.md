@@ -1,6 +1,6 @@
 # Validación con la cuenta real de pruebas (2026-10-29)
 
-17 de 17 comprobaciones aplicables cumplen. De la cuenta solo salen la LTHR (configurada y estimada), la FC máx. y el número de sesiones; el resto son cifras del plan.
+18 de 18 comprobaciones aplicables cumplen. De la cuenta solo salen la LTHR (configurada y estimada), la FC máx. y el número de sesiones; el resto son cifras del plan.
 
 | Caso | Variante | Criterio | Cumple | Detalle |
 |---|---|---|---|---|
@@ -22,3 +22,4 @@
 | tu cuenta, media maratón | prioridad A | R9 | sí | ninguna |
 | tu cuenta, media maratón | prioridad A | R10 | sí | dos ejecuciones idénticas |
 | tu cuenta, estado de hoy | datos reales | E-real | sí | plan de 14 días con tu estado de hoy; días que no caben: 0 |
+| tu cuenta, Progreso | datos reales | P | sí | estado: sí; previsiones: 4 (verosímiles); últimos entrenamientos: 10 |
