@@ -38,7 +38,9 @@ struct OnboardingView: View {
 
     private func save() {
         guard let goal else { return }
-        let profile = draft.core
+        var answered = draft
+        answered.screened = true  // al empezar, las respuestas en blanco también son respuestas
+        let profile = answered.core
         let race = self.race
         let firstTime = !hasProfile
         model.run {
@@ -92,6 +94,7 @@ struct OnboardingView: View {
                 default:
                     Text("Antes de empezar").font(.title2).bold().padding(.top, 24)
                     Module(accent: Palette.alert) { Secondary(TextsKt.HEALTH_NOTICE, color: .primary) }
+                    Module { ScreeningForm(draft: $draft) }
                     Toggle("Lo he leído y entreno bajo mi responsabilidad", isOn: $accepted).font(.subheadline)
                     Button("Ver mi plan", action: save).buttonStyle(.borderedProminent).disabled(!accepted)
                     Button("Atrás") { step = 2 }

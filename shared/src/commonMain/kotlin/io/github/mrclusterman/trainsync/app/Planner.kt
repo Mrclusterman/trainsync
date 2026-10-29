@@ -17,6 +17,8 @@ import io.github.mrclusterman.trainsync.engine.RaceStrength
 import io.github.mrclusterman.trainsync.engine.RaceStrengthItem
 import io.github.mrclusterman.trainsync.engine.Session
 import io.github.mrclusterman.trainsync.engine.WEEKDAYS
+import io.github.mrclusterman.trainsync.engine.ScreeningResult
+import io.github.mrclusterman.trainsync.engine.screen
 import io.github.mrclusterman.trainsync.engine.adherenceHistory
 import io.github.mrclusterman.trainsync.engine.adjustDay
 import io.github.mrclusterman.trainsync.engine.alternatives
@@ -105,6 +107,10 @@ fun mondayOf(date: LocalDate): LocalDate = date.plusDays(-(date.dayOfWeek.isoDay
 class Planner(private val data: AppData, private val today: LocalDate) {
     private val profile = data.profile ?: UserProfile()
     private val goal = data.goal
+
+    /** Cuestionario de salud del ACSM; sin responder, el plan no tiene tope (como antes) y Hoy lo pide. */
+    val screening: ScreeningResult? = profile.screening?.let { screen(it) }
+    private val intensityCap = screening?.intensityCap ?: "vigorous"
     private val cache = data.deviceData(today)
 
     /** Fisiología de intervals.icu (LTHR, FC máx., CSS…) si está vinculado. */
@@ -150,6 +156,7 @@ class Planner(private val data: AppData, private val today: LocalDate) {
             cardio = profile.cardio.filter { it in CARDIO }.ifEmpty { listOf("walking") },
             level = profile.level,
             age = profile.birthYear?.let { today.year - it },
+            intensityCap = intensityCap,
             lthr = ph?.lthr, maxHr = ph?.maxHr, css = ph?.css,
         )
     }
@@ -207,7 +214,8 @@ class Planner(private val data: AppData, private val today: LocalDate) {
             listOf(goal?.race?.sport?.takeIf { it in RACE_SPORTS } ?: "running")
         }
         val base = Profile(activeSports = sports, strength = profile.strength,
-            restDays = WEEKDAYS.filter { (profile.days[it] ?: 0) == 0 }, dayMinutes = profile.days.filterValues { it > 0 })
+            restDays = WEEKDAYS.filter { (profile.days[it] ?: 0) == 0 }, dayMinutes = profile.days.filterValues { it > 0 },
+            intensityCap = intensityCap)
         return cache?.let { fillPhysiology(base, it.athlete) } ?: base
     }
 
@@ -242,7 +250,15 @@ class Planner(private val data: AppData, private val today: LocalDate) {
 
     fun week(monday: LocalDate): WeekView {
         val race = raceGoal()
-        return if (race != null && race.date >= today) raceWeek(monday, race) else healthWeek(monday)
+        val week = if (race != null && race.date >= today) raceWeek(monday, race) else healthWeek(monday)
+        val s = screening ?: return week.copy(info = week.info + SCREENING_MISSING)
+        return when (s.clearance) {
+            // Síntomas con actividad: nada de ejercicio hasta que lo valore un médico
+            "stop" -> week.copy(days = week.days.map { it.copy(items = emptyList(), matches = emptyList(), doneSports = emptySet()) },
+                activeMinutes = 0, strengthDays = 0, warnings = listOf(s.message) + week.warnings)
+            "none" -> week
+            else -> week.copy(warnings = listOf(s.message) + week.warnings)
+        }
     }
 
     fun day(date: LocalDate): DayView = week(mondayOf(date)).days.first { it.date == date.toString() }

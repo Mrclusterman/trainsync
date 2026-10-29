@@ -117,6 +117,10 @@ fun ProfileTab(app: TrainSyncApp, version: Int, act: Act, changeGoal: () -> Unit
             ProfileForm(draft) { draft = it }
             Button(onClick = { act.run("Perfil guardado") { app.saveProfile(draft) } }) { Text("Guardar") }
         }
+        ScreeningForm(draft.screening ?: io.github.mrclusterman.trainsync.engine.Screening(false, false, false)) {
+            draft = draft.copy(screening = it)
+            act.run { app.saveProfile(draft) }
+        }
         ReminderCard(app, act, version)
         HealthCard(app, act, version)
         IntervalsCard(app, act, version)

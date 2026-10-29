@@ -39,7 +39,7 @@ planes): exige un estudio con participantes y aprobación de un comité de étic
 
 ## 2. Resultados
 
-**215 de 215 comprobaciones aplicables cumplen**; 10 no aplican. La prueba admite una lista de fallos conocidos (salen en
+**216 de 216 comprobaciones aplicables cumplen**; 10 no aplican. La prueba admite una lista de fallos conocidos (salen en
 el informe, pero no rompen la compilación, y avisa en cuanto se cumplen); hoy está vacía.
 
 ### 2.1 Planes sin fecha
@@ -104,7 +104,7 @@ el informe, pero no rompen la compilación, y avisa en cuanto se cumplen); hoy e
 | Criterio | Resultado |
 |---|---|
 | F1–F5 Sin fecha: sin errores, cada día cabe, descanso semanal, tope del cribado (sin Z4+; RIR ≥ 3 ligero-moderado, ≥ 2 moderado), determinismo | Cumple en los 300 perfiles |
-| F6–F12 Carreras: sin errores, cada día cabe, descanso semanal, fases en orden, +10 % semanal, determinismo, cada descarga baja | Cumple en las 300. Una semana sube más del 10 % con el volumen ya al mínimo (las sesiones no bajan de su parte fija): se cuenta aparte en el informe |
+| F6–F13 Carreras: sin errores, cada día cabe, descanso semanal, fases en orden, +10 % semanal, determinismo, cada descarga baja y, con tope del cribado, ni series ni Z4+ | Cumple en las 300. Una semana sube más del 10 % con el volumen ya al mínimo (las sesiones no bajan de su parte fija): se cuenta aparte en el informe |
 
 ## 3. Defectos que encontró la validación (y su corrección)
 
@@ -128,6 +128,7 @@ La primera ejecución de F1–F12 encontró cuatro defectos del motor y dos erro
 | Con un solo día a la semana, la fuerza se comía el día (tirada larga de 20 min) | La fuerza solo cedía si no quedaban 20 min | Hacia una carrera, la fuerza solo si deja al menos la mitad del día a la sesión principal |
 | Subidas de hasta +18 % con 1–2 días a la semana | El ajuste del 10 % no convergía cuando la fuerza entraba y salía según el volumen | Bisección del volumen entre 0,15 y 1 |
 | Semanas de descarga con más carga que la anterior (116 frente a 74) | La descarga coincidía con el paso a construcción (sesiones nuevas) y no se limitaba | La descarga también se limita: como mucho el 80 % de la última semana de carga |
+| Con tope del cribado, la carrera seguía con series y tramos en Z4+ | El cuestionario del ACSM no estaba en las apps y el modo carrera no tenía tope | Cuestionario en la bienvenida y en Perfil (Screening.kt); con tope, las sesiones de calidad pasan a su versión continua y ningún tramo sube de Z3 (moderado) o Z2 (ligero-moderado); con síntomas y actividad, no se propone ejercicio |
 | *Criterio:* el tope moderado daba fallo con RIR 2 | El motor permite RIR 2 con tope moderado a propósito | El criterio usa el mismo tope que el motor |
 | *Criterio:* "fases desordenadas" a más de 20 semanas vista | Antes de la preparación toca base de mantenimiento, que es correcto | Se comprueba desde el inicio de la preparación |
 

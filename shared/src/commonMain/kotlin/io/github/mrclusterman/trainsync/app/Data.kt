@@ -36,6 +36,7 @@ data class UserProfile(
     val cardio: List<String> = listOf("walking"),  // walking / running / cycling / swimming_pool
     val days: Map<String, Int> = mapOf("MON" to 45, "WED" to 45, "SAT" to 60),  // día → minutos disponibles
     val renameActivities: Boolean = true,  // poner a las actividades de intervals.icu un título que diga lo que fueron
+    val screening: io.github.mrclusterman.trainsync.engine.Screening? = null,  // cuestionario de salud del ACSM
 )
 
 @Serializable

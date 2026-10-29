@@ -410,6 +410,7 @@ data class Profile(
     val planStart: LocalDate? = null,
     val warnings: MutableList<String> = mutableListOf(),
     val needsTest: Set<String> = emptySet(),  // deportes sin LTHR o CSS fiable (onboarding RF-03)
+    val intensityCap: String = "vigorous",  // tope del cribado del ACSM (Screening.kt)
 ) {
     fun lthrFor(sport: String): Double? = lthrBySport[sport]?.takeIf { it != 0.0 } ?: lthr
 }
@@ -468,8 +469,11 @@ fun buildSession(kind: String, sport: String, profile: Profile, volume: Double =
         }
     }
     val fixed = draft.indices.filter { draft[it].second != null }.sumOf { span(it) }
+    // Con tope del cribado, ningún tramo por encima: Z3 como mucho (moderado) o Z2 (ligero-moderado) [Verificado: ACSM]
+    val top = mapOf("moderate" to "Z3", "light_moderate" to "Z2")[profile.intensityCap]
+    fun capped(zone: String) = if (top != null && zone > top) top else zone
     val blocks = draft.mapIndexed { i, (c, minutes) ->
-        Block(block = c.block, reps = reps[i], minutes = minutes ?: max(total - fixed, 5.0), zone = c.zone,
+        Block(block = c.block, reps = reps[i], minutes = minutes ?: max(total - fixed, 5.0), zone = capped(c.zone),
             restMinutes = c.rest, restZone = if (c.rest != null) "Z1" else null, detail = c.detail, duty = c.duty)
     }
     val css = profile.css?.takeIf { it != 0.0 }
@@ -599,6 +603,11 @@ fun proposeDay(day: LocalDate, profile: Profile, goal: Goal?, state: DayState? =
         val rise = rampScales(profile, goal)[prepStart.daysUntil(day) / 7]
         volume *= rise
         if (rise < 0.95 && kind != "rest") reasons += "Carga de la semana limitada a +10 % sobre la anterior: subir más de golpe aumenta el riesgo de lesión [Práctica]"
+    }
+    // Con tope del cribado, nada de series ni sesiones de calidad hasta que lo valore el médico [Verificado: ACSM 2015]
+    if (profile.intensityCap != "vigorous" && (kind in QUALITY || kind == "neuromuscular")) {
+        kind = DOWNGRADE[kind]!!
+        reasons += "Sin intensidad alta: por tu cuestionario de salud, el plan se queda en esfuerzo moderado [Verificado]"
     }
     if (recoveryWeek) {
         volume *= 0.7

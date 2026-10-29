@@ -6,7 +6,7 @@ package io.github.mrclusterman.trainsync.engine
 //   R1–R9   planes hacia una carrera: 7 carreras, de la preparación (20 semanas) al día de la prueba
 //   E1–E11  ajuste del día con datos del reloj o del móvil, o con las tres preguntas; plan de 14 días
 //   N1–N3   natación: en metros con tu CSS, por esfuerzo sin él
-//   F1–F12  combinaciones generadas (semilla fija): 300 perfiles sin fecha y 300 carreras con reglas que valen para todos
+//   F1–F13  combinaciones generadas (semilla fija): 300 perfiles sin fecha y 300 carreras con reglas que valen para todos
 // Con VALIDATION_REPORT=1 escribe docs/proyecto/validacion/resultados.md; sin él solo comprueba.
 // Caso real (realAccount): con INTERVALS_ATHLETE_ID e INTERVALS_API_KEY en el entorno, los mismos criterios con la
 // fisiología y el estado de esa cuenta. Sin ellas se omite (así en la nube). El informe solo dice si cumple, más la LTHR y
@@ -474,7 +474,7 @@ class ValidationTest {
 
         // Carreras: desde hoy (cualquier punto de la preparación) hasta el día de la prueba
         val raceFails = linkedMapOf("F6" to mutableListOf<String>(), "F7" to mutableListOf(), "F8" to mutableListOf(),
-            "F9" to mutableListOf(), "F10" to mutableListOf(), "F11" to mutableListOf(), "F12" to mutableListOf())
+            "F9" to mutableListOf(), "F10" to mutableListOf(), "F11" to mutableListOf(), "F12" to mutableListOf(), "F13" to mutableListOf())
         val raceN = 300
         var floorWeeks = 0
         val distances = mapOf("running" to listOf(5.0, 10.0, 21.1, 42.2, 60.0, null), "cycling" to listOf(40.0, 100.0, 160.0, null),
@@ -488,7 +488,8 @@ class ValidationTest {
                 distances[sport]!!.random(rnd), trail = sport == "running" && rnd.nextBoolean())
             val profile = Profile(activeSports = sports, strength = listOf("gym", "bodyweight", "none").random(rnd),
                 restDays = all.filter { it !in minutes }, dayMinutes = minutes, lthr = listOf(null, 165.0).random(rnd),
-                maxHr = 190.0, css = listOf(null, 100.0).random(rnd))
+                maxHr = 190.0, css = listOf(null, 100.0).random(rnd),
+                intensityCap = listOf("vigorous", "vigorous", "moderate", "light_moderate").random(rnd))
             val tag = "#$n $sport ${goal.distanceKm} ${goal.priority} ${today.daysUntil(goal.date)} días ${minutes} $sports"
             val days = try {
                 (0..today.daysUntil(goal.date)).map { proposeDay(today.plusDays(it), profile, goal) }
@@ -522,11 +523,13 @@ class ValidationTest {
                 else if (last != null && last!! > 0 && load > last!! * 1.105) raceFails["F10"]!! += "$tag: semana $k sube ${pct(load / last!! - 1)}"
                 last = load
             }
+            if (profile.intensityCap != "vigorous" && days.any { d -> d.main?.type in QUALITY || d.main?.type == "neuromuscular" ||
+                    d.main?.blocks?.any { it.zone in vigorous } == true }) raceFails["F13"]!! += "$tag: intensidad por encima del tope ${profile.intensityCap}"
             if (n % 10 == 0 && (0..6).map { proposeDay(today.plusDays(it), profile, goal) } != days.take(7)) raceFails["F11"]!! += "$tag: no determinista"
         }
         val raceText = mapOf("F6" to "sin errores", "F7" to "cada día cabe en sus minutos y nada en los días sin entreno",
             "F8" to "un día de descanso por semana", "F9" to "fases en orden", "F10" to "carga semanal +10 % como mucho",
-            "F11" to "determinista", "F12" to "cada descarga baja la carga")
+            "F11" to "determinista", "F12" to "cada descarga baja la carga", "F13" to "con tope del cribado, ni series ni Z4+")
         raceFails.forEach { (id, f) -> rows += Row("$raceN carreras desde un punto cualquiera", "generadas", id, f.isEmpty(),
             (if (f.isEmpty()) raceText[id]!! else "${f.size} fallos; p. ej. ${f.first()}") +
                 if (id == "F10" && floorWeeks > 0) "; $floorWeeks semanas suben más con todo ya al mínimo (sesiones en su parte fija)" else "") }
@@ -539,7 +542,7 @@ class ValidationTest {
     fun theEngineMeetsEveryCriterion() {
         val parts = listOf("Planes sin fecha (V1–V11)" to healthRows(), "Hacia una carrera (R1–R10)" to raceRows(),
             "Ajuste del día (E1–E11)" to stateRows(), "Natación (N1–N3)" to swimRows(),
-            "Combinaciones generadas (F1–F12)" to fuzzRows())
+            "Combinaciones generadas (F1–F13)" to fuzzRows())
         val rows = parts.flatMap { it.second }
         if (System.getenv("VALIDATION_REPORT") == "1") report(parts)
         val failed = rows.filter { it.ok == false && "${it.id} ${it.case} (${it.variant})" !in KNOWN }

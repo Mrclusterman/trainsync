@@ -112,6 +112,26 @@ class TrainSyncAppTest {
     }
 
     @Test
+    fun healthScreeningSetsTheCeilingOrStopsThePlan() {
+        val a = app()
+        a.saveProfile(profile)
+        a.setGoal(GoalKind.RACE, RaceInfo("Media", "running", "2027-03-14", distanceKm = 21.1))
+        assertTrue(a.todayScreen().info.contains(SCREENING_MISSING))  // sin responder, se pide
+        val quality = setOf("vo2max", "threshold", "race_specific", "brick", "tempo", "anaerobic", "neuromuscular")
+        // Activo con enfermedad conocida y sin síntomas: tope moderado, sin series en las próximas semanas
+        a.saveProfile(profile.copy(screening = io.github.mrclusterman.trainsync.engine.Screening(active = true, knownDisease = true, symptoms = false)))
+        val weeks = (0 until 4).map { w -> (0 until 7).map { a.day(today.plusDays(7 * w + it).toString()) } }.flatten()
+        assertTrue(weeks.flatMap { it.items }.none { it.kind in quality })
+        assertTrue(a.todayScreen().warnings.first().startsWith("Puedes seguir con intensidad moderada"))
+        // Activo con síntomas: nada de ejercicio y a consultar
+        a.saveProfile(profile.copy(screening = io.github.mrclusterman.trainsync.engine.Screening(active = true, knownDisease = false, symptoms = true)))
+        assertTrue((0 until 7).all { a.day(today.plusDays(it).toString()).items.isEmpty() })
+        assertTrue(a.todayScreen().warnings.first().startsWith("Deja de hacer ejercicio"))
+        a.setGoal(GoalKind.FITNESS)
+        assertTrue((0 until 7).all { a.day(today.plusDays(it).toString()).items.isEmpty() })
+    }
+
+    @Test
     fun dataSurvivesARestart() {
         val store = MemoryStore()
         app(store).apply { saveProfile(profile); setGoal(GoalKind.STRENGTH) }

@@ -1,6 +1,6 @@
 # Resultados de la validación del motor
 
-215 de 215 comprobaciones aplicables cumplen (13 no aplican). Datos sintéticos; generado con `VALIDATION_REPORT=1 ./gradlew :shared:jvmTest --tests '*ValidationTest*'`. Criterios en `VALIDACION.md`.
+216 de 216 comprobaciones aplicables cumplen (13 no aplican). Datos sintéticos; generado con `VALIDATION_REPORT=1 ./gradlew :shared:jvmTest --tests '*ValidationTest*'`. Criterios en `VALIDACION.md`.
 
 ## Planes sin fecha (V1–V11)
 
@@ -238,7 +238,7 @@
 | natación con CSS 1:45 | 174 series | N2 | sí | metros coherentes con el tiempo y el ritmo de cada zona |
 | natación con CSS 1:45 | texto para el reloj | N3 | sí | en el reloj, distancia y ritmo /100 m; sin CSS, por tiempo y esfuerzo |
 
-## Combinaciones generadas (F1–F12)
+## Combinaciones generadas (F1–F13)
 
 | Caso | Variante | Criterio | Cumple | Detalle |
 |---|---|---|---|---|
@@ -251,6 +251,7 @@
 | 300 carreras desde un punto cualquiera | generadas | F7 | sí | cada día cabe en sus minutos y nada en los días sin entreno |
 | 300 carreras desde un punto cualquiera | generadas | F8 | sí | un día de descanso por semana |
 | 300 carreras desde un punto cualquiera | generadas | F9 | sí | fases en orden |
-| 300 carreras desde un punto cualquiera | generadas | F10 | sí | carga semanal +10 % como mucho; 1 semanas suben más con todo ya al mínimo (sesiones en su parte fija) |
+| 300 carreras desde un punto cualquiera | generadas | F10 | sí | carga semanal +10 % como mucho; 2 semanas suben más con todo ya al mínimo (sesiones en su parte fija) |
 | 300 carreras desde un punto cualquiera | generadas | F11 | sí | determinista |
 | 300 carreras desde un punto cualquiera | generadas | F12 | sí | cada descarga baja la carga |
+| 300 carreras desde un punto cualquiera | generadas | F13 | sí | con tope del cribado, ni series ni Z4+ |
