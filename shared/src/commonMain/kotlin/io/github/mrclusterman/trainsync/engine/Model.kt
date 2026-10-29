@@ -44,6 +44,7 @@ data class Block(
     val duty: Double? = null,
     var rpe: String? = null,
     var guide: String? = null,
+    var meters: Int? = null,  // natación con CSS: la distancia de cada serie (múltiplo de 25 m), que es como se nada
 )
 
 /** Sesión de resistencia. `equivalentMin` y `alternatives` solo en los planes de salud. */

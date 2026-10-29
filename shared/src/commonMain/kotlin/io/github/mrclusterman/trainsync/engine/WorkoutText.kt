@@ -86,16 +86,18 @@ fun describe(session: Session, profile: Profile): String {
     // Las notas van sin guion: así su texto ("6×20″", "15 %") no se interpreta como duración u objetivo
     lines += session.blocks.filter { !it.detail.isNullOrEmpty() }.map { "${capitalize(it.block)}: ${it.detail}" }
 
-    fun step(name: String, minutes: Double, zone: String): String {
+    // Natación con CSS: en metros ("mtr" en intervals.icu, porque "m" son minutos)
+    fun step(name: String, minutes: Double, zone: String, meters: Int? = null): String {
+        val length = meters?.let { "${it}mtr" } ?: stepDuration(minutes)
         val goal = stepTarget(zone, session, profile, mode)
             // intervals.icu descarta "RPE x" detrás de la duración: delante pasa al aviso del paso
-            ?: return "- $name RPE ${RPE_BY_ZONE[zone]} ${stepDuration(minutes)}"
-        return "- $name ${stepDuration(minutes)} $goal"
+            ?: return "- $name RPE ${RPE_BY_ZONE[zone]} $length"
+        return "- $name $length $goal"
     }
 
     for (b in session.blocks) {
         if (b.reps > 1) {
-            lines += listOf("", "${b.reps}x", step(b.block, b.minutes, b.zone))
+            lines += listOf("", "${b.reps}x", step(b.block, b.minutes, b.zone, b.meters))
             val rest = b.restMinutes
             if (rest != null && rest != 0.0 && session.sport in SWIM) {
                 lines += "- descanso ${stepDuration(rest)}"  // en la piscina se descansa parado: sin objetivo
@@ -104,7 +106,7 @@ fun describe(session: Session, profile: Profile): String {
             }
             lines += ""
         } else {
-            lines += step(b.block, b.minutes, b.zone)
+            lines += step(b.block, b.minutes, b.zone, b.meters)
         }
     }
     return lines.joinToString("\n").replace("\n\n\n", "\n\n").trim() + "\n"

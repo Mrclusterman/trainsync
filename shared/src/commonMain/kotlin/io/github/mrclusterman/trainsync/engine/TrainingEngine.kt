@@ -61,6 +61,20 @@ val SWIM_ZONES: Map<String, Pair<Double?, Double?>> = mapOf("Z1" to (1.20 to nul
 
 private fun hrZone(sport: String, zone: String) = HR_ZONES[if (sport == "running") "running" else "cycling"]!![zone]!!
 
+/**
+ * Metros de un bloque de natación al ritmo medio de su zona (CSS × factor), en largos de 25 m: con tu CSS la sesión se
+ * escribe en distancia, como se nada en la piscina, y no en minutos a un ritmo fijo. [Práctica; ritmo medio: Inferencia]
+ */
+fun swimMeters(minutes: Double, zone: String, css: Double): Int {
+    val (fast, slow) = SWIM_ZONES[zone]!!
+    val factor = when {
+        fast == null -> slow!! - 0.03  // Z6 abierta por abajo
+        slow == null -> fast + 0.05  // Z1 abierta por arriba
+        else -> (fast + slow) / 2
+    }
+    return max(25, pyRound(minutes * 60 / (css * factor) * 100 / 25) * 25)
+}
+
 /** Rango legible de una zona: ppm en running y ciclismo, ritmo /100m en natación. */
 fun zoneTarget(zone: String, sport: String, lthr: Double?, css: Double?): String? {
     if (sport in SWIM) {
@@ -447,7 +461,9 @@ fun buildSession(kind: String, sport: String, profile: Profile, volume: Double =
         Block(block = c.block, reps = reps[i], minutes = minutes ?: max(total - fixed, 5.0), zone = c.zone,
             restMinutes = c.rest, restZone = if (c.rest != null) "Z1" else null, detail = c.detail, duty = c.duty)
     }
+    val css = profile.css?.takeIf { it != 0.0 }
     for (b in blocks) {
+        if (sport in SWIM && css != null && kind != "test") b.meters = swimMeters(b.minutes, b.zone, css)
         b.rpe = RPE_BY_ZONE[b.zone]
         if (b.reps > 1 && b.minutes < 3 && b.zone in setOf("Z5", "Z6")) {
             b.guide = "Guíate por RPE: en series cortas la FC tarda en subir"  // [Práctica]

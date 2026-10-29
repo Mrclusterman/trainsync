@@ -5,6 +5,7 @@ package io.github.mrclusterman.trainsync.engine
 //   V1–V11  planes sin fecha: 6 perfiles × 3 adherencias durante 24 semanas
 //   R1–R9   planes hacia una carrera: 7 carreras, de la preparación (20 semanas) al día de la prueba
 //   E1–E10  ajuste del día con datos del reloj o del móvil, o con las tres preguntas
+//   N1–N3   natación: en metros con tu CSS, por esfuerzo sin él
 // Con VALIDATION_REPORT=1 escribe docs/proyecto/validacion/resultados.md; sin él solo comprueba.
 // Caso real (realAccount): con INTERVALS_ATHLETE_ID e INTERVALS_API_KEY en el entorno, los mismos criterios con la
 // fisiología y el estado de esa cuenta. Sin ellas se omite (así en la nube). El informe solo dice si cumple, más la LTHR y
@@ -378,12 +379,39 @@ class ValidationTest {
         if (failed.isNotEmpty()) fail("Con la cuenta real no cumplen:\n" + failed.joinToString("\n") { "  ${it.id} ${it.case}: ${it.detail}" })
     }
 
+    // ------------------------------------------------------------------ N1–N3: natación
+
+    private fun swimRows(): List<Row> {
+        val rows = mutableListOf<Row>()
+        val css = 105.0  // 1:45/100 m
+        val withCss = Profile(activeSports = listOf("swimming_pool"), css = css)
+        val sessions = listOf("recovery", "aerobic", "long", "threshold", "vo2max", "race_specific").flatMap { kind ->
+            listOf("base", "build", "peak").flatMap { phase -> (0 until 4).mapNotNull { w -> buildSession(kind, "swimming_pool", withCss, 1.0, phase, w) } }
+        }
+        val blocks = sessions.flatMap { it.blocks }
+        rows += Row("natación con CSS 1:45", "${sessions.size} sesiones", "N1", blocks.all { b -> b.meters != null && b.meters!! % 25 == 0 },
+            "todas las series en metros y en largos de 25 m")
+        // Los metros cuadran con el tiempo al ritmo de la zona: ±25 m o ±5 %
+        val off = blocks.filter { b ->
+            val (fast, slow) = SWIM_ZONES[b.zone]!!
+            val pace = css * listOfNotNull(fast, slow).average()
+            kotlin.math.abs(b.meters!! - b.minutes * 60 / pace * 100) > maxOf(25.0, 0.05 * b.meters!!) + 25
+        }
+        rows += Row("natación con CSS 1:45", "${blocks.size} series", "N2", off.isEmpty(),
+            if (off.isEmpty()) "metros coherentes con el tiempo y el ritmo de cada zona" else "${off.size} series descuadradas, p. ej. ${off.first().meters} m en ${off.first().minutes} min ${off.first().zone}")
+        val text = sessions.map { describe(it, withCss) }
+        rows += Row("natación con CSS 1:45", "texto para el reloj", "N3",
+            text.all { t -> "mtr" in t && "/100m Pace" in t } && buildSession("aerobic", "swimming_pool", Profile(listOf("swimming_pool")))!!.blocks.all { it.meters == null },
+            "en el reloj, distancia y ritmo /100 m; sin CSS, por tiempo y esfuerzo")
+        return rows
+    }
+
     // ------------------------------------------------------------------ informe
 
     @Test
     fun theEngineMeetsEveryCriterion() {
         val parts = listOf("Planes sin fecha (V1–V11)" to healthRows(), "Hacia una carrera (R1–R10)" to raceRows(),
-            "Ajuste del día (E1–E10)" to stateRows())
+            "Ajuste del día (E1–E10)" to stateRows(), "Natación (N1–N3)" to swimRows())
         val rows = parts.flatMap { it.second }
         if (System.getenv("VALIDATION_REPORT") == "1") report(parts)
         val failed = rows.filter { it.ok == false && "${it.id} ${it.case} (${it.variant})" !in KNOWN }

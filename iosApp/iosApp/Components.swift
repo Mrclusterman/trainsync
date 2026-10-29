@@ -106,7 +106,7 @@ struct SessionCard<Actions: View>: View {
             ForEach(Array(item.steps.enumerated()), id: \.offset) { _, s in
                 HStack {
                     RoundedRectangle(cornerRadius: 3).fill(Palette.zones[s.intensityZone] ?? Palette.accent).frame(width: 8, height: 18)
-                    Text("\(s.reps > 1 ? "\(s.reps) × " : "")\(minutesText(s.minutes)) \(s.name)").font(.subheadline)
+                    Text("\(s.reps > 1 ? "\(s.reps) × " : "")\(s.meters.map { "\($0.intValue) m" } ?? minutesText(s.minutes)) \(s.name)").font(.subheadline)
                     Spacer()
                     if let target = s.target { Text(target).font(.system(.caption, design: .monospaced)).foregroundStyle(Palette.secondary) }
                 }

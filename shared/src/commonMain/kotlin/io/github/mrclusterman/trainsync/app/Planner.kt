@@ -41,7 +41,7 @@ import kotlinx.datetime.isoDayNumber
 
 /** Un paso de una sesión, ya listo para mostrar. */
 data class Step(val name: String, val reps: Int, val minutes: Double, val intensityZone: String, val restMinutes: Double?,
-                val detail: String?, val target: String?)
+                val detail: String?, val target: String?, val meters: Int? = null)  // meters: natación con CSS
 
 /** Una sesión del plan, de fuerza o de resistencia, con nombre llano y su nombre técnico. */
 data class PlanItem(
@@ -262,7 +262,7 @@ class Planner(private val data: AppData, private val today: LocalDate) {
         val (title, hint) = PLAIN_SESSION[s.type] ?: (s.name to s.goal)
         return PlanItem(
             sport = s.sport, kind = s.type, title = title, hint = hint, technicalName = s.name, durationMin = s.durationMin,
-            steps = s.blocks.map { Step(it.block, it.reps, it.minutes, it.zone, it.restMinutes, it.detail, s.targets[it.zone]) },
+            steps = s.blocks.map { Step(it.block, it.reps, it.minutes, it.zone, it.restMinutes, it.detail, s.targets[it.zone], it.meters) },
             exercises = emptyList(), notes = "${s.ifBad} ${s.ifGood}",
             alternatives = alts.map { cardioItem(it, emptyList()) }, chosen = false, slot = s.sport,
             session = s, healthStrength = null, raceStrength = null,

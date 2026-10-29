@@ -112,7 +112,7 @@ fun SessionCard(item: PlanItem, done: Boolean, actions: @Composable ColumnScope.
                         Box(Modifier.size(8.dp, 18.dp).clip(RoundedCornerShape(3.dp)).background(Palette.zones[s.intensityZone] ?: Palette.accent))
                         Spacer(Modifier.width(8.dp))
                         val reps = if (s.reps > 1) "${s.reps} × " else ""
-                        Text("$reps${minutesText(s.minutes)} ${s.name}", fontSize = 14.sp, modifier = Modifier.weight(1f))
+                        Text("$reps${s.meters?.let { "$it m" } ?: minutesText(s.minutes)} ${s.name}", fontSize = 14.sp, modifier = Modifier.weight(1f))
                         s.target?.let { Text(it, fontFamily = Mono, fontSize = 12.sp, color = Palette.secondary) }
                     }
                 }

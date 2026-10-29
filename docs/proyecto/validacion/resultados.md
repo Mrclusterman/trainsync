@@ -1,6 +1,6 @@
 # Resultados de la validación del motor
 
-181 de 181 comprobaciones aplicables cumplen (10 no aplican). Datos sintéticos; generado con `VALIDATION_REPORT=1 ./gradlew :shared:jvmTest --tests '*ValidationTest*'`. Criterios en `VALIDACION.md`.
+184 de 184 comprobaciones aplicables cumplen (10 no aplican). Datos sintéticos; generado con `VALIDATION_REPORT=1 ./gradlew :shared:jvmTest --tests '*ValidationTest*'`. Criterios en `VALIDACION.md`.
 
 ## Planes sin fecha (V1–V11)
 
@@ -207,3 +207,11 @@
 | respuestas: todo a 1 | sintético | E8 | sí | queda: walking |
 | móvil: 5,2 h de sueño (sueles 7,4) | sintético | E9 | sí | pasa a aerobic, ×0.7 |
 | móvil: 5,4 h (sueles 5,6) | sintético | E10 | sí | sin cambios: es tu sueño normal |
+
+## Natación (N1–N3)
+
+| Caso | Variante | Criterio | Cumple | Detalle |
+|---|---|---|---|---|
+| natación con CSS 1:45 | 64 sesiones | N1 | sí | todas las series en metros y en largos de 25 m |
+| natación con CSS 1:45 | 174 series | N2 | sí | metros coherentes con el tiempo y el ritmo de cada zona |
+| natación con CSS 1:45 | texto para el reloj | N3 | sí | en el reloj, distancia y ritmo /100 m; sin CSS, por tiempo y esfuerzo |
