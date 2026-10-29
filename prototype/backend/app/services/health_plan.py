@@ -441,11 +441,14 @@ def match_day(sessions: list[dict], done: list[dict]) -> list[dict]:
     free = list(sessions)
     out: list[dict] = []
 
+    def describe(item: dict) -> str:
+        sport = SPORT_NAMES.get(item["sport"], item["sport"])
+        return (f"{sport} de {item['minutes']} min" + (f" a las {item['start']}" if item.get("start") else "")
+                + " en tu reloj" if item["source"] == "watch" else f"{sport} marcada a mano")
+
     def take(item: dict, s: dict) -> None:
         planned = s.get("duration_min") or 0
-        what = (f"{SPORT_NAMES.get(item['sport'], item['sport'])} de {item['minutes']} min"
-                + (f" a las {item['start']}" if item.get("start") else "") + " en tu reloj"
-                if item["source"] == "watch" else f"{SPORT_NAMES.get(item['sport'], item['sport'])} marcada a mano")
+        what = describe(item)
         if item["minutes"] is not None and item["minutes"] < MIN_SHARE * planned:
             out.append(item | {"matched": None, "why": f"{what}: no cuenta, {item['minutes']} de {planned} min planificados"})
             return
@@ -468,8 +471,7 @@ def match_day(sessions: list[dict], done: list[dict]) -> list[dict]:
             if cardio:
                 take(item, cardio)
             else:
-                name = SPORT_NAMES.get(item["sport"], item["sport"])
-                out.append(item | {"matched": None, "why": f"{name}: extra, hoy no tocaba otra sesión de este tipo"})
+                out.append(item | {"matched": None, "why": f"{describe(item)}: extra, hoy no tocaba otra sesión de este tipo"})
     return out
 
 

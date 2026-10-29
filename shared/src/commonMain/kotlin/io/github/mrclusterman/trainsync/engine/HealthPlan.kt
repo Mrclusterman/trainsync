@@ -514,12 +514,15 @@ fun matchDay(sessions: List<Planned>, done: List<Done>): List<Match> {
         is HealthCardio -> s.session.name
         is RaceStrengthItem -> s.strength.name
     }
-    fun take(item: Done, s: Planned) {
-        val planned = s.durationMin
+    fun describe(item: Done): String {
         val sport = SPORT_NAMES[item.sport] ?: item.sport
-        val what = if (item.source == "watch") {
+        return if (item.source == "watch") {
             "$sport de ${item.minutes} min" + (item.start?.let { " a las $it" } ?: "") + " en tu reloj"
         } else "$sport marcada a mano"
+    }
+    fun take(item: Done, s: Planned) {
+        val planned = s.durationMin
+        val what = describe(item)
         if (item.minutes != null && item.minutes < MIN_SHARE * planned) {
             out += Match(item, null, "$what: no cuenta, ${item.minutes} de $planned min planificados")
             return
@@ -541,7 +544,7 @@ fun matchDay(sessions: List<Planned>, done: List<Done>): List<Match> {
         for (item in pending) {
             val cardio = if (item.sport != "strength") free.firstOrNull { it.sport != "strength" } else null
             if (cardio != null) take(item, cardio)
-            else out += Match(item, null, "${SPORT_NAMES[item.sport] ?: item.sport}: extra, hoy no tocaba otra sesión de este tipo")
+            else out += Match(item, null, "${describe(item)}: extra, hoy no tocaba otra sesión de este tipo")
         }
     }
     return out
