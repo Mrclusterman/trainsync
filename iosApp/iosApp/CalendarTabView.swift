@@ -14,15 +14,16 @@ struct CalendarTabView: View {
         ScrollView {
             VStack(spacing: 10) {
                 HStack {
-                    Button("‹") { if month == 1 { month = 12; year -= 1 } else { month -= 1 } }.font(.title2)
+                    Button { if month == 1 { month = 12; year -= 1 } else { month -= 1 } } label: { Glyph(name: "chevron_left") }
+                        .frame(width: 44, height: 44).accessibilityLabel("Mes anterior")
+                    Text(screen.title).font(.screenTitle)
                     Spacer()
-                    Text(screen.title).font(.title3).bold()
-                    Spacer()
-                    Button("›") { if month == 12 { month = 1; year += 1 } else { month += 1 } }.font(.title2)
+                    Button { if month == 12 { month = 1; year += 1 } else { month += 1 } } label: { Glyph(name: "chevron_right") }
+                        .frame(width: 44, height: 44).accessibilityLabel("Mes siguiente")
                 }
                 HStack {
                     ForEach(["L", "M", "X", "J", "V", "S", "D"], id: \.self) {
-                        Text($0).font(.caption).foregroundStyle(Palette.secondary).frame(maxWidth: .infinity)
+                        Text($0).font(.caption12).foregroundStyle(Palette.muted).frame(maxWidth: .infinity)
                     }
                 }
                 ForEach(Array(screen.weeks.enumerated()), id: \.offset) { _, week in
@@ -32,7 +33,13 @@ struct CalendarTabView: View {
                         }
                     }
                 }
-                Secondary("Punto de color: sesión planificada. ✓: hecha. Toca un día para ver el detalle.")
+                HStack(spacing: 6) {
+                    Glyph(name: "sport_running", size: 16, color: Palette.muted)
+                    Text("planificada").font(.ui(13)).foregroundStyle(Palette.muted)
+                    Glyph(name: "check", size: 16, color: Palette.ok).padding(.leading, 8)
+                    Text("hecha · toca un día para ver el detalle").font(.ui(13)).foregroundStyle(Palette.muted)
+                    Spacer()
+                }
             }.padding(16)
         }
         .background(Palette.bg)
@@ -51,17 +58,22 @@ private struct DayCell: View {
     var body: some View {
         let done = day.done.count + day.manual.count
         VStack(alignment: .leading, spacing: 3) {
-            Text("\(day.dayOfMonth)").font(.system(.caption, design: .monospaced))
-                .foregroundStyle(day.inMonth ? Color.primary : Palette.secondary)
-            HStack(spacing: 3) { ForEach(Array(day.planned.prefix(3).enumerated()), id: \.offset) { _, p in SportDot(sport: p.sport, size: 7) } }
-            if done > 0 { Text(done > 1 ? "✓\(done)" : "✓").font(.caption2).foregroundStyle(Palette.bio) }
+            Text("\(day.dayOfMonth)").font(.mono(12, relativeTo: .caption))
+                .foregroundStyle(day.inMonth ? Color.primary : Palette.muted)
+            HStack(spacing: 1) { ForEach(Array(day.planned.prefix(2).enumerated()), id: \.offset) { _, p in Glyph(name: sportIcon(p.sport), size: 14, color: Palette.muted) } }
+            if done > 0 {
+                HStack(spacing: 1) {
+                    Glyph(name: "check", size: 14, color: Palette.ok).accessibilityLabel("Hecha")
+                    if done > 1 { Text("\(done)").font(.mono(11, relativeTo: .caption2)).foregroundStyle(Palette.ok) }
+                }
+            }
             Spacer(minLength: 0)
         }
         .padding(4)
         .frame(maxWidth: .infinity, minHeight: 56, alignment: .topLeading)
-        .background(day.inMonth ? Palette.surface1 : Palette.bg)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(day.isToday ? Palette.accent : .clear))
+        .background(day.inMonth ? Palette.surface : Palette.bg)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(day.isToday ? Palette.ok : .clear, lineWidth: 2))
     }
 }
 
@@ -75,10 +87,10 @@ private struct DaySheet: View {
         let day = try? model.core.day(date: date)
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                Text(ScreensKt.dateLabel(date: date)).font(.title3).bold()
+                Text(ScreensKt.dateLabel(date: date)).font(.ui(20, .bold, relativeTo: .title3))
                 ForEach(Array((cell?.done ?? []).enumerated()), id: \.offset) { _, a in
-                    Module(accent: Palette.bio) {
-                        Text(a.title).font(.headline)
+                    Module(background: Palette.okSoft) {
+                        Text(a.title).font(.section)
                         Secondary("\(a.minutes) min" + (a.start.map { " a las \($0)" } ?? ""))
                     }
                 }

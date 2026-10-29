@@ -61,7 +61,7 @@ struct ProfileForm: View {
                         .frame(width: 130, alignment: .leading)
                     if minutes > 0 {
                         Stepper("\(minutes) min", value: Binding(get: { draft.days[d] ?? 45 }, set: { draft.days[d] = $0 }), in: 15...240, step: 15)
-                            .font(.system(.body, design: .monospaced))
+                            .font(.mono(16))
                     }
                 }
             }
@@ -89,7 +89,7 @@ struct OtherRacesView: View {
                 ForEach(goal.otherRaces, id: \.date) { r in
                     HStack {
                         VStack(alignment: .leading) {
-                            Text(r.name).font(.subheadline).bold()
+                            Text(r.name).font(.ui(15, .bold, relativeTo: .subheadline))
                             Secondary(ScreensKt.dateLabel(date: r.date) + (r.priority == "B" ? " · importante" : " · de preparación"))
                         }
                         Spacer()
@@ -111,12 +111,12 @@ struct OtherRacesView: View {
                             let race = RaceInfo(name: name.trimmingCharacters(in: .whitespaces), sport: main.sport, date: f.string(from: date),
                                                 priority: priority, distanceKm: nil, trail: false)
                             model.run("Carrera añadida") { try core.addRace(race: race); adding = false; name = "" }
-                        }.buttonStyle(.borderedProminent)
+                        }.buttonStyle(PrimaryStyle())
                         Button("Cancelar") { adding = false }
                     }
                 } else {
                     Secondary("El plan afina unos días antes de cada una y te deja recuperar después.")
-                    Button("Añadir otra carrera") { adding = true }.buttonStyle(.bordered)
+                    Button("Añadir otra carrera") { adding = true }.buttonStyle(SecondaryStyle())
                 }
             }
         }
@@ -148,17 +148,17 @@ struct ProfileView: View {
         let core = model.core
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                Text("Perfil").font(.title2).bold()
+                Text("Perfil").font(.screenTitle)
                 Module {
                     Secondary("Tu objetivo")
-                    Text(core.data.goal.map { TextsKt.goalLabel(goal: $0) } ?? "Sin objetivo").font(.title3).bold()
+                    Text(core.data.goal.map { TextsKt.goalLabel(goal: $0) } ?? "Sin objetivo").font(.ui(20, .bold, relativeTo: .title3))
                     Secondary("Puedes cambiarlo o abandonarlo cuando quieras; el plan se rehace al momento.")
-                    Button("Cambiar objetivo") { model.run { core.abandonGoal() } }.buttonStyle(.bordered)
+                    Button("Cambiar objetivo") { model.run { core.abandonGoal() } }.buttonStyle(SecondaryStyle())
                     OtherRacesView()
                 }
                 Module {
                     ProfileForm(draft: $draft)
-                    Button("Guardar") { model.run("Perfil guardado") { core.saveProfile(profile: draft.core) } }.buttonStyle(.borderedProminent)
+                    Button("Guardar") { model.run("Perfil guardado") { core.saveProfile(profile: draft.core) } }.buttonStyle(PrimaryStyle())
                 }
                 Module {
                     Toggle(isOn: Binding(get: { core.data.reminderHour != nil }, set: { on in
@@ -182,18 +182,18 @@ struct ProfileView: View {
                         Stepper(String(format: "A las %02d:00", hour), value: Binding(get: { hour }, set: { h in
                             model.run { try core.setReminder(hour: KotlinInt(int: Int32((h + 24) % 24))) }
                         }), in: -1...24)
-                        .font(.system(.body, design: .monospaced))
+                        .font(.mono(16))
                     }
                 }
                 Module {
                     Secondary("Datos de salud del iPhone (Apple Salud)")
                     if let health = core.data.health {
-                        Text("Conectado: \(health.days.count) días y \(health.workouts.count) entrenamientos").font(.headline)
+                        Text("Conectado: \(health.days.count) días y \(health.workouts.count) entrenamientos").font(.section)
                         Secondary("Datos al día del \(health.syncedAt). Los permisos se cambian en Ajustes → Salud → Acceso a datos.")
                         HStack {
                             Button("Actualizar ahora") { model.runAsync("Datos actualizados") { try await HealthKitReader.shared.sync(core) } }
-                                .buttonStyle(.borderedProminent)
-                            Button("Olvidar") { model.run { core.clearHealth() } }.buttonStyle(.bordered)
+                                .buttonStyle(PrimaryStyle())
+                            Button("Olvidar") { model.run { core.clearHealth() } }.buttonStyle(SecondaryStyle())
                         }
                     } else if HealthKitReader.shared.available {
                         Secondary("Lee de Apple Salud tu sueño, tu variabilidad cardíaca, tu pulso en reposo, tu peso, tus pasos y tus entrenamientos de cualquier reloj o app. Solo lectura y solo en este iPhone.")
@@ -202,7 +202,7 @@ struct ProfileView: View {
                                 try await HealthKitReader.shared.requestAccess()
                                 try await HealthKitReader.shared.sync(core)
                             }
-                        }.buttonStyle(.borderedProminent)
+                        }.buttonStyle(PrimaryStyle())
                     } else {
                         Secondary("Apple Salud no está disponible en este dispositivo.")
                     }
@@ -210,11 +210,11 @@ struct ProfileView: View {
                 Module {
                     Secondary("Reloj (intervals.icu)")
                     if let linked = core.linkedAthlete {
-                        Text("Vinculado: \(linked)").font(.headline)
+                        Text("Vinculado: \(linked)").font(.section)
                         if let cache = core.data.cache { Secondary("Datos al día del \(cache.syncedAt)") }
                         HStack {
-                            Button("Actualizar ahora") { model.runAsync("Datos actualizados") { try await core.sync() } }.buttonStyle(.borderedProminent)
-                            Button("Desvincular") { model.run { core.unlinkIntervals() } }.buttonStyle(.bordered)
+                            Button("Actualizar ahora") { model.runAsync("Datos actualizados") { try await core.sync() } }.buttonStyle(PrimaryStyle())
+                            Button("Desvincular") { model.run { core.unlinkIntervals() } }.buttonStyle(SecondaryStyle())
                         }
                     } else {
                         Secondary("intervals.icu es gratis y recoge los datos de tu reloj (Garmin, Polar, Coros, Suunto, Wahoo…). En intervals.icu: Settings → Developer Settings, copia tu Athlete ID y crea una API key.")
@@ -225,7 +225,7 @@ struct ProfileView: View {
                             let id = athlete, key = apiKey
                             model.runAsync("Cuenta vinculada") { try await core.linkIntervals(athleteId: id, apiKey: key) }
                             apiKey = ""
-                        }.buttonStyle(.borderedProminent).disabled(athlete.isEmpty || apiKey.isEmpty)
+                        }.buttonStyle(PrimaryStyle()).disabled(athlete.isEmpty || apiKey.isEmpty)
                     }
                 }
                 Module {
@@ -234,7 +234,7 @@ struct ProfileView: View {
                     Toggle("Poner a tus actividades de intervals.icu un título que diga lo que fueron", isOn: Binding(
                         get: { draft.renameActivities },
                         set: { draft.renameActivities = $0; let p = draft.core; model.run { core.saveProfile(profile: p) } }))
-                        .font(.subheadline)
+                        .font(.small)
                     ShareLink("Exportar todos mis datos (JSON)", item: core.exportJson())
                     Button("Borrar todo de este móvil", role: .destructive) { confirmDelete = true }
                 }

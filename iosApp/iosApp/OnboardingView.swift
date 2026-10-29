@@ -52,17 +52,17 @@ struct OnboardingView: View {
             VStack(alignment: .leading, spacing: 14) {
                 switch step == -1 ? (hasProfile ? 1 : 0) : step {
                 case 0:
-                    Text("TrainSync").font(.largeTitle).bold().padding(.top, 40)
-                    Text("El sistema operativo de tu cuerpo").font(.title3).foregroundStyle(Palette.accent)
+                    Text("TrainSync").font(.ui(36, .heavy, relativeTo: .largeTitle)).padding(.top, 40)
+                    Text("El sistema operativo de tu cuerpo").font(.ui(20, .semibold, relativeTo: .title3)).foregroundStyle(Palette.ok)
                     Secondary("Te dice qué hacer hoy y por qué, con tus datos y según la evidencia. Gratis, sin anuncios y de código abierto.")
                     Secondary(TextsKt.PRIVACY_NOTE)
-                    Button("Empezar") { step = 1 }.buttonStyle(.borderedProminent).frame(maxWidth: .infinity)
+                    Button("Empezar") { step = 1 }.buttonStyle(PrimaryStyle()).frame(maxWidth: .infinity)
                 case 1:
-                    Text("¿Qué quieres conseguir?").font(.title2).bold().padding(.top, 24)
+                    Text("¿Qué quieres conseguir?").font(.screenTitle).padding(.top, 24)
                     Secondary("Podrás cambiarlo o abandonarlo cuando quieras.")
                     ForEach(goals, id: \.1) { kind, title, text in
-                        Module(accent: goal == kind ? Palette.accent : nil) {
-                            Text(title).font(.headline)
+                        Module(accent: goal == kind ? Palette.ok : nil, background: goal == kind ? Palette.okSoft : Palette.surface) {
+                            Text(title).font(.section)
                             Secondary(text)
                         }.onTapGesture { goal = kind }
                     }
@@ -78,22 +78,22 @@ struct OnboardingView: View {
                     }
                     let raceOk = goal != .race || !raceName.trimmingCharacters(in: .whitespaces).isEmpty
                     Button(hasProfile ? "Guardar objetivo" : "Siguiente") { if hasProfile { save() } else { step = 2 } }
-                        .buttonStyle(.borderedProminent).disabled(goal == nil || !raceOk)
+                        .buttonStyle(PrimaryStyle()).disabled(goal == nil || !raceOk)
                 case 2:
-                    Text("Tu semana").font(.title2).bold().padding(.top, 24)
+                    Text("Tu semana").font(.screenTitle).padding(.top, 24)
                     Secondary("Con esto el plan cabe en tu vida: solo los días y minutos que tienes.")
                     ProfileForm(draft: $draft)
                     let year = Calendar.current.component(.year, from: Date())
                     let ageOk = draft.birthYear.map { TextsKt.ageAllowed(birthYear: Int32($0), currentYear: Int32(year)) } ?? false
-                    if draft.birthYear != nil && !ageOk { Secondary("Hace falta tener al menos \(TextsKt.MIN_AGE) años.", color: Palette.alert) }
-                    Button("Siguiente") { step = 3 }.buttonStyle(.borderedProminent)
+                    if draft.birthYear != nil && !ageOk { Secondary("Hace falta tener al menos \(TextsKt.MIN_AGE) años.", color: Palette.caution) }
+                    Button("Siguiente") { step = 3 }.buttonStyle(PrimaryStyle())
                         .disabled(!ageOk || !draft.days.values.contains { $0 > 0 })
                     Button("Atrás") { step = 1 }
                 default:
-                    Text("Antes de empezar").font(.title2).bold().padding(.top, 24)
-                    Module(accent: Palette.alert) { Secondary(TextsKt.HEALTH_NOTICE, color: .primary) }
-                    Toggle("Lo he leído y entreno bajo mi responsabilidad", isOn: $accepted).font(.subheadline)
-                    Button("Ver mi plan", action: save).buttonStyle(.borderedProminent).disabled(!accepted)
+                    Text("Antes de empezar").font(.screenTitle).padding(.top, 24)
+                    Module(background: Palette.cautionSoft) { Secondary(TextsKt.HEALTH_NOTICE, color: Palette.text) }
+                    Toggle("Lo he leído y entreno bajo mi responsabilidad", isOn: $accepted).font(.small)
+                    Button("Ver mi plan", action: save).buttonStyle(PrimaryStyle()).disabled(!accepted)
                     Button("Atrás") { step = 2 }
                 }
             }.padding(20)

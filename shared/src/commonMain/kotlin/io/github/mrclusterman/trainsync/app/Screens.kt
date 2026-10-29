@@ -28,14 +28,26 @@ fun dateLabel(date: String): String {
 
 // ---------------------------------------------------------------- Hoy
 
+/** Color de la tarjeta de estado: bien, con cuidado (ajuste o mucha fatiga) o descanso. */
+enum class Tone { OK, CAUTION, REST }
+
+/** Un día de la semana en Hoy: hecho, planificado o libre. */
+data class WeekDot(val letter: String, val date: String, val isToday: Boolean, val planned: Boolean, val done: Boolean)
+
 data class TodayScreen(
     val dateLabel: String,
     val goalLine: String?,  // "Maratón de Valencia · en 6 semanas · Base" o "Bloque 2 · semana 3 de 4"
     val headline: String,  // tu cuerpo hoy en una frase, salida de la misma decisión que la sesión
     val headlineDetail: List<Reason>,
+    val stateTitle: String,  // la tarjeta de estado: cómo estás ("Estás en tu punto normal.") o el ajuste de hoy
+    val stateDetail: List<Reason>,
+    val tone: Tone,
     val day: DayView,
     val weekLine: String,  // "Esta semana: 80 min de actividad y fuerza 2 días"
     val meetsWho: Boolean,
+    val weekMinutes: Int,
+    val strengthDays: Int,
+    val weekDots: List<WeekDot>,
     val warnings: List<String>,
     val info: List<String>,
     val askReadiness: Boolean,  // sin reloj vinculado: tres preguntas para ajustar el día
@@ -65,10 +77,21 @@ fun buildToday(data: AppData, today: LocalDate): TodayScreen {
         else -> goalLabel(data.goal)
     }
     val (headline, detail) = headline(day, planner)
+    val form = detail.firstOrNull()?.takeIf { it.evidence == null && day.adjustments.isEmpty() && day.items.isNotEmpty() }
+    val tone = when {
+        day.adjustments.isNotEmpty() || form?.text == HEAVY_FATIGUE -> Tone.CAUTION
+        day.items.isEmpty() -> Tone.REST
+        else -> Tone.OK
+    }
     val strength = week.strengthDays
     return TodayScreen(
         dateLabel = dateLabel(today.toString()),
         goalLine = goalLine, headline = headline, headlineDetail = detail, day = day,
+        stateTitle = form?.text ?: headline, stateDetail = if (form != null) detail - form else detail, tone = tone,
+        weekMinutes = week.activeMinutes, strengthDays = strength,
+        weekDots = week.days.map { d ->
+            WeekDot(WEEKDAY_SHORT[d.weekday] ?: d.weekday.take(1), d.date, d.isToday, d.items.isNotEmpty(), d.doneSports.isNotEmpty())
+        },
         weekLine = "Esta semana: ${week.activeMinutes} min de actividad y fuerza $strength ${if (strength == 1) "día" else "días"}",
         meetsWho = week.activeMinutes >= 150 && strength >= 2,
         warnings = week.warnings, info = week.info,
@@ -76,6 +99,8 @@ fun buildToday(data: AppData, today: LocalDate): TodayScreen {
         linked = data.cache != null, goalFinished = goalFinished,
     )
 }
+
+private const val HEAVY_FATIGUE = "Llevas mucha fatiga acumulada."
 
 /** La frase de arriba sale de lo mismo que decide la sesión: nunca "recuperación" arriba y "ritmo cómodo" abajo. */
 private fun headline(day: DayView, planner: Planner): Pair<String, List<Reason>> {
@@ -94,7 +119,7 @@ private fun headline(day: DayView, planner: Planner): Pair<String, List<Reason>>
             tsb > 5 -> "Estás descansado."
             tsb >= -10 -> "Estás en tu punto normal."
             tsb >= -30 -> "Llevas carga acumulada: es normal cuando estás construyendo."
-            else -> "Llevas mucha fatiga acumulada."
+            else -> HEAVY_FATIGUE
         }
     }
     val text = "Hoy: ${main.title.lowercase()}, ${main.durationMin} min" + if (day.items.size > 1) " y fuerza" else ""

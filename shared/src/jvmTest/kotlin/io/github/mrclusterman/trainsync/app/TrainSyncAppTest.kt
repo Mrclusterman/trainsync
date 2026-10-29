@@ -175,6 +175,15 @@ class TrainSyncAppTest {
                     screen.day.items.isEmpty() -> assertTrue(screen.headline.startsWith("Hoy descansas"), screen.headline)
                     main != null -> assertTrue(main.title.lowercase() in screen.headline, "${screen.headline} / ${main.title}")
                 }
+                // La tarjeta de estado y su color salen de la misma decisión
+                when (screen.tone) {
+                    Tone.REST -> assertTrue(screen.day.items.isEmpty())
+                    Tone.CAUTION -> assertTrue(screen.day.adjustments.isNotEmpty() || "fatiga" in screen.stateTitle)
+                    Tone.OK -> assertTrue(screen.day.adjustments.isEmpty() && screen.day.items.isNotEmpty())
+                }
+                assertEquals(7, screen.weekDots.size)
+                assertEquals(1, screen.weekDots.count { it.isToday })
+                assertEquals("L", screen.weekDots.first().letter)
             }
         }
     }

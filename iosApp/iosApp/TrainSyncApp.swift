@@ -46,12 +46,15 @@ final class AppModel: ObservableObject {
 struct TrainSyncMain: App {
     @StateObject private var model = AppModel()
 
+    init() { registerFonts() }
+
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environmentObject(model)
-                .preferredColorScheme(.dark)
-                .tint(Palette.accent)
+                .tint(Palette.ok)
+                .font(.ui(17))
+                .foregroundStyle(Palette.text)
         }
     }
 }
@@ -68,13 +71,13 @@ struct RootView: View {
             } else {
                 TabView(selection: $tab) {
                     TodayView(openGoal: { model.run { model.core.abandonGoal() } })
-                        .tabItem { Label("Hoy", systemImage: "sun.max") }.tag(0)
+                        .tabItem { Label { Text("Hoy") } icon: { Image("tab_today").renderingMode(.template) } }.tag(0)
                     CalendarTabView()
-                        .tabItem { Label("Calendario", systemImage: "calendar") }.tag(1)
+                        .tabItem { Label { Text("Calendario") } icon: { Image("tab_calendar").renderingMode(.template) } }.tag(1)
                     ProgressTabView(openProfile: { tab = 3 })
-                        .tabItem { Label("Progreso", systemImage: "chart.line.uptrend.xyaxis") }.tag(2)
+                        .tabItem { Label { Text("Progreso") } icon: { Image("tab_progress").renderingMode(.template) } }.tag(2)
                     ProfileView()
-                        .tabItem { Label("Perfil", systemImage: "person") }.tag(3)
+                        .tabItem { Label { Text("Perfil") } icon: { Image("tab_profile").renderingMode(.template) } }.tag(3)
                 }
             }
         }

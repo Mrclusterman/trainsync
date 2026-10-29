@@ -66,7 +66,7 @@ lenguaje llano, motivos con etiqueta de evidencia.
 
 | Pregunta | Decisión |
 |---|---|
-| Identidad | **Una nueva** (Athletic Precision queda como antecedente). Tres direcciones propuestas en el lienzo "TrainSync · direcciones visuales": A · Señal (instrumento monocromo con señal amarilla), B · Pulso (compañero de salud, tonos de bosque y piel, formas suaves), C · Cuaderno (diario editorial, cifras grandes, filetes y un rojo). Pendiente de elegir |
+| Identidad | **Una nueva** (Athletic Precision queda como antecedente). Tres direcciones propuestas en el lienzo "TrainSync · direcciones visuales": A · Señal (instrumento monocromo con señal amarilla), B · Pulso (compañero de salud, tonos de bosque y piel, formas suaves), C · Cuaderno (diario editorial, cifras grandes, filetes y un rojo), y siete más (D–J). **Elegida: B · Pulso afinado (B+)**, con la lista de pasos con chip de zona de A y las barras de rango de E para Progreso. Sistema en `DISENO_PULSO.md` |
 | Plataformas | **Misma identidad, controles nativos**: colores, fuentes, iconos y componentes comunes; navegación, menús y gestos de cada sistema |
 | Modo claro | **Oscuro y claro desde ya**, según el ajuste del móvil |
-| Tipografía | **Propia, empaquetada** en la app (licencia OFL, sin peticiones a internet); la familia concreta depende de la dirección elegida |
+| Tipografía | **Propia, empaquetada** en la app (licencia OFL, sin peticiones a internet): Figtree e IBM Plex Mono |

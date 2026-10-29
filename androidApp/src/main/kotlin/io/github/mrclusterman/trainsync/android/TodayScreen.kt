@@ -41,28 +41,33 @@ fun TodayTab(app: TrainSyncApp, version: Int, act: Act, openGoal: () -> Unit) {
     val screen = remember(version) { app.todayScreen() }
     val day = screen.day
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Text(screen.dateLabel, color = Palette.secondary, fontSize = 13.sp)
-        screen.goalLine?.let { Text(it, color = Palette.secondary, fontSize = 13.sp) }
+        ScreenTitle("Hoy", subtitle = screen.dateLabel)
+        screen.goalLine?.let { Secondary(it) }
         if (screen.goalFinished) {
-            Module(accent = Palette.bio) {
-                Text("Tu carrera ya pasó", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Module {
+                SectionTitle("Tu carrera ya pasó")
                 Secondary("¿Qué quieres ahora? Otra carrera, mantener la forma o descansar unos días.")
-                Button(onClick = openGoal) { Text("Elegir objetivo") }
+                PrimaryButton("Elegir objetivo", onClick = openGoal)
             }
         }
         // Tu cuerpo hoy en una frase: sale de la misma decisión que la sesión
-        Module(accent = if (day.adjustments.isNotEmpty()) Palette.alert else Palette.accent) {
-            Text(screen.headline, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-            screen.headlineDetail.forEach { ReasonRow(it, if (day.adjustments.isNotEmpty()) Palette.alert else Palette.accent) }
-        }
+        StateCard(screen.tone, screen.stateTitle, screen.stateDetail)
         if (screen.askReadiness) ReadinessCard(act)
         DayContent(app, day, screen.linked, act, today = true)
         Module {
-            Text(screen.weekLine, fontSize = 15.sp)
-            if (screen.meetsWho) Text("✓ Cumple la recomendación de la OMS para tu salud", color = Palette.bio, fontSize = 14.sp)
+            Row {
+                SectionTitle("Esta semana")
+                Spacer(Modifier.weight(1f))
+                Text("${screen.weekMinutes} de 150 min", fontFamily = Mono, fontSize = 14.sp, color = Palette.muted)
+            }
+            WeekDots(screen.weekDots)
+            if (screen.meetsWho) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Glyph(R.drawable.ic_check, 18.dp, Palette.ok)
+                Text("Cumples la recomendación de la OMS para tu salud", color = Palette.ok, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            } else Secondary("Fuerza ${screen.strengthDays} de 2 días")
             screen.warnings.forEach { ReasonRow(Reason(it, null)) }
             screen.info.forEach { Secondary(it) }
         }
@@ -70,50 +75,55 @@ fun TodayTab(app: TrainSyncApp, version: Int, act: Act, openGoal: () -> Unit) {
     }
 }
 
-/** Las sesiones de un día con sus acciones: hecha, enviar al reloj, alternativas, hoy no puedo. */
+/** Las sesiones de un día con sus acciones: hecha, cambiar de deporte, enviar al reloj, hoy no puedo. */
 @Composable
 fun DayContent(app: TrainSyncApp, day: DayView, linked: Boolean, act: Act, today: Boolean) {
-    // En Hoy la frase de arriba ya dice que descansas: aquí solo lo que se puede hacer
+    // En Hoy la tarjeta de estado ya dice que descansas: aquí solo lo que se puede hacer
     if (day.items.isEmpty() && (!today || day.availableMin != null)) {
         Module {
-            if (!today) Text("Descanso", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            if (!today) SectionTitle("Descanso")
             if (!today) day.note?.let { Secondary(it) }
             if (!day.isPast && day.availableMin != null) {
-                Button(onClick = { act.run { app.changeDay(day.date, day.availableMin!!) } }) { Text("Prefiero entrenar este día") }
+                SecondaryButton("Prefiero entrenar este día") { act.run { app.changeDay(day.date, day.availableMin!!) } }
             }
         }
     }
     for (item in day.items) {
         val done = item.slot in day.doneSports || item.sport in day.doneSports
         SessionCard(item, done) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            var open by remember { mutableStateOf(false) }
+            val canChange = !done && !day.isPast && item.alternatives.isNotEmpty()
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (!done && (day.isPast || today)) {
-                    OutlinedButton(onClick = { act.run { app.markDone(day.date, item.sport) } }) { Text("Marcar como hecha") }
+                    PrimaryButton("La he hecho", Modifier.weight(1f)) { act.run { app.markDone(day.date, item.sport) } }
                 }
-                if (today && linked) {
-                    Button(onClick = { act.suspend("Enviada a intervals.icu: llegará a tu reloj si tienes la sincronización activada") {
-                        app.sendToday(item.sport)
-                    } }) { Text("Enviar al reloj") }
+                if (canChange) SecondaryButton(if (open) "Cerrar" else "Cambiar") { open = !open }
+            }
+            if (open) item.alternatives.forEach { alt ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    SportBadge(alt.sport, 32.dp)
+                    Spacer(Modifier.width(10.dp))
+                    Text("${alt.title} · ${alt.durationMin}′", modifier = Modifier.weight(1f), fontSize = 14.sp)
+                    TextButton(onClick = { act.run { app.chooseAlternative(day.date, item.slot, alt.sport) } }) { Text("Haré esta") }
+                }
+            }
+            if (today && linked) {
+                TextButton(onClick = { act.suspend("Enviada a intervals.icu: llegará a tu reloj si tienes la sincronización activada") {
+                    app.sendToday(item.sport)
+                } }) {
+                    Glyph(R.drawable.ic_watch, 18.dp, Palette.ok)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Enviar al reloj")
                 }
             }
             if (item.isStrength && (day.isPast || today)) LiftRows(app, day.date, item.exercises, act)
             if (item.chosen) TextButton(onClick = { act.run { app.clearChoice(day.date) } }) { Text("Volver a la planificada") }
-            if (!done && !day.isPast && item.alternatives.isNotEmpty()) {
-                var open by remember { mutableStateOf(false) }
-                TextButton(onClick = { open = !open }) { Text(if (item.chosen) "Otras opciones" else "¿Prefieres otro deporte?") }
-                if (open) item.alternatives.forEach { alt ->
-                    Row {
-                        Text("${SPORT_LABEL[alt.sport]} · ${alt.title} · ${alt.durationMin}′", modifier = Modifier.weight(1f).padding(top = 12.dp), fontSize = 14.sp)
-                        TextButton(onClick = { act.run { app.chooseAlternative(day.date, item.slot, alt.sport) } }) { Text("Haré esta") }
-                    }
-                }
-            }
         }
     }
-    day.matches.forEach { ReasonRow(Reason(it.text, null), if (it.counts) Palette.bio else Palette.alert) }
-    day.reasons.forEach { ReasonRow(it, Palette.accent) }
+    day.matches.forEach { ReasonRow(Reason(it.text, null), if (it.counts) Palette.ok else Palette.caution) }
+    if (!today || day.adjustments.isNotEmpty()) day.reasons.forEach { ReasonRow(it, Palette.ok) }  // en Hoy, sin ajuste, ya van en la tarjeta de estado
     if (!day.isPast && day.items.isNotEmpty()) {
-        TextButton(onClick = { act.run { app.changeDay(day.date, 0) } }) { Text("Hoy no puedo entrenar") }
+        TextButton(onClick = { act.run { app.changeDay(day.date, 0) } }) { Text("Hoy no puedo entrenar", color = Palette.muted) }
     }
 }
 
@@ -123,7 +133,7 @@ private fun ReadinessCard(act: Act) {
     var energy by remember { mutableIntStateOf(3) }
     var soreness by remember { mutableIntStateOf(3) }
     Module {
-        Text("¿Cómo estás hoy?", fontWeight = FontWeight.Bold)
+        SectionTitle("¿Cómo estás hoy?")
         Secondary("Sin reloj vinculado, tus respuestas ajustan la sesión de hoy: si dormiste mal o estás cargado, será más suave.")
         for ((label, value, set) in listOf(
             Triple("Sueño", sleep) { v: Int -> sleep = v },
@@ -138,7 +148,7 @@ private fun ReadinessCard(act: Act) {
                 }
             }
         }
-        Button(onClick = { act.run { act.app.answerReadiness(sleep, energy, soreness) } }) { Text("Ajustar hoy") }
+        PrimaryButton("Ajustar hoy") { act.run { act.app.answerReadiness(sleep, energy, soreness) } }
     }
 }
 
@@ -155,7 +165,7 @@ fun LiftRows(app: TrainSyncApp, date: String, exercises: List<String>, act: Act)
             hint.last?.let { l ->
                 Secondary("La última vez: ${l.weightKg?.let { kg(it) } ?: "tu peso"} × ${l.reps} (${l.sets} series)")
             }
-            hint.suggestion?.let { Text(it, fontSize = 13.sp, color = Palette.accent) }
+            hint.suggestion?.let { Text(it, fontSize = 13.sp, color = Palette.ok) }
             if (!open) TextButton(onClick = { open = true }) { Text("Apuntar", fontSize = 13.sp) }
             else Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(weight, { weight = it }, label = { Text("kg") }, singleLine = true, modifier = Modifier.width(90.dp),

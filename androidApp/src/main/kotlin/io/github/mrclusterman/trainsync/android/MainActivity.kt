@@ -24,6 +24,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
+import androidx.compose.material3.Icon
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import io.github.mrclusterman.trainsync.app.TrainSyncApp
 import io.github.mrclusterman.trainsync.app.systemToday
 import kotlinx.coroutines.CoroutineScope
@@ -32,8 +35,9 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
-            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT))
+        // Iconos de la barra de estado claros u oscuros según el modo del sistema
+        enableEdgeToEdge(statusBarStyle = SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT))
         val app = TrainSyncApp(PrefsStore(this), KeystoreStore(this), { systemToday() })
         setContent { TrainSyncTheme { Root(app) } }
     }
@@ -69,7 +73,8 @@ class Act(val app: TrainSyncApp, private val scope: CoroutineScope, private val 
     }
 }
 
-private val TABS = listOf("Hoy" to "◉", "Calendario" to "▦", "Progreso" to "↗", "Perfil" to "●")
+private val TABS = listOf("Hoy" to R.drawable.ic_tab_today, "Calendario" to R.drawable.ic_tab_calendar,
+    "Progreso" to R.drawable.ic_tab_progress, "Perfil" to R.drawable.ic_tab_profile)
 
 @Composable
 fun Root(app: TrainSyncApp) {
@@ -94,12 +99,14 @@ fun Root(app: TrainSyncApp) {
         containerColor = Palette.bg,
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
-            if (!onboarding) NavigationBar(containerColor = Palette.surface1) {
-                TABS.forEachIndexed { i, (label, glyph) ->
+            if (!onboarding) NavigationBar(containerColor = Palette.surface) {
+                TABS.forEachIndexed { i, (label, icon) ->
                     NavigationBarItem(selected = tab == i, onClick = { tab = i },
-                        icon = { Text(glyph, fontSize = 18.sp) }, label = { Text(label) },
-                        colors = NavigationBarItemDefaults.colors(indicatorColor = Palette.surface3,
-                            selectedTextColor = Palette.accent, selectedIconColor = Palette.accent))
+                        icon = { Icon(painterResource(icon), contentDescription = null) },
+                        label = { Text(label, fontWeight = FontWeight.Bold) },
+                        colors = NavigationBarItemDefaults.colors(indicatorColor = Palette.chip,
+                            selectedTextColor = Palette.ok, selectedIconColor = Palette.ok,
+                            unselectedTextColor = Palette.muted, unselectedIconColor = Palette.muted))
                 }
             }
         },

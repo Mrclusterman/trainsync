@@ -66,17 +66,17 @@ fun Onboarding(app: TrainSyncApp, act: Act) {
         Spacer(Modifier.height(24.dp))
         when (step) {
             0 -> {
-                Text("TrainSync", fontSize = 34.sp, fontWeight = FontWeight.Bold)
-                Text("El sistema operativo de tu cuerpo", fontSize = 18.sp, color = Palette.accent)
+                Text("TrainSync", fontSize = 36.sp, fontWeight = FontWeight.ExtraBold)
+                Text("El sistema operativo de tu cuerpo", fontSize = 18.sp, color = Palette.ok)
                 Secondary("Te dice qué hacer hoy y por qué, con tus datos y según la evidencia. Gratis, sin anuncios y de código abierto.")
                 Secondary(PRIVACY_NOTE)
                 Button(onClick = { step = 1 }, modifier = Modifier.fillMaxWidth()) { Text("Empezar") }
             }
             1 -> {
-                Text("¿Qué quieres conseguir?", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Text("¿Qué quieres conseguir?", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold)
                 Secondary("Podrás cambiarlo o abandonarlo cuando quieras.")
                 GOALS.forEach { (kind, texts) ->
-                    Module(Modifier.clickable { goal = kind }, accent = if (goal == kind) Palette.accent else null) {
+                    Module(Modifier.clickable { goal = kind }, accent = if (goal == kind) Palette.ok else null, background = if (goal == kind) Palette.okSoft else Palette.surface) {
                         Text(texts.first, fontWeight = FontWeight.Bold, fontSize = 17.sp)
                         Secondary(texts.second)
                     }
@@ -89,19 +89,19 @@ fun Onboarding(app: TrainSyncApp, act: Act) {
                 }) { Text(if (hasProfile) "Guardar objetivo" else "Siguiente") }
             }
             2 -> {
-                Text("Tu semana", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Text("Tu semana", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold)
                 Secondary("Con esto el plan cabe en tu vida: solo los días y minutos que tienes.")
                 ProfileForm(profile) { profile = it }
                 val year = profile.birthYear
                 val ageOk = year != null && ageAllowed(year, systemToday().year)
-                if (year != null && !ageOk) Secondary("Hace falta tener al menos $MIN_AGE años.", Palette.alert)
+                if (year != null && !ageOk) Secondary("Hace falta tener al menos $MIN_AGE años.", Palette.caution)
                 Button(enabled = ageOk && profile.days.values.any { it > 0 }, modifier = Modifier.fillMaxWidth(),
                     onClick = { step = 3 }) { Text("Siguiente") }
                 TextButton(onClick = { step = 1 }) { Text("Atrás") }
             }
             else -> {
-                Text("Antes de empezar", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                Module(accent = Palette.alert) { Secondary(HEALTH_NOTICE, Palette.text) }
+                Text("Antes de empezar", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold)
+                Module(background = Palette.cautionSoft) { Secondary(HEALTH_NOTICE, Palette.text) }
                 Row(Modifier.toggleable(accepted, role = Role.Checkbox) { accepted = it }, verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(accepted, null)
                     Text("Lo he leído y entreno bajo mi responsabilidad", fontSize = 14.sp)

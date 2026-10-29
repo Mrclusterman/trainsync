@@ -11,13 +11,14 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -49,13 +50,13 @@ fun CalendarTab(app: TrainSyncApp, version: Int, act: Act) {
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            TextButton(onClick = { if (month == 1) { month = 12; year -= 1 } else month -= 1 }) { Text("‹", fontSize = 22.sp) }
-            Text(screen.title, fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            TextButton(onClick = { if (month == 12) { month = 1; year += 1 } else month += 1 }) { Text("›", fontSize = 22.sp) }
+            IconButton(onClick = { if (month == 1) { month = 12; year -= 1 } else month -= 1 }) { Glyph(R.drawable.ic_chevron_left, label = "Mes anterior") }
+            Text(screen.title, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
+            IconButton(onClick = { if (month == 12) { month = 1; year += 1 } else month += 1 }) { Glyph(R.drawable.ic_chevron_right, label = "Mes siguiente") }
         }
         Row {
             listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN").forEach {
-                Text(WEEKDAY_SHORT[it]!!, color = Palette.secondary, fontSize = 12.sp, modifier = Modifier.weight(1f).padding(start = 6.dp))
+                Text(WEEKDAY_SHORT[it]!!, color = Palette.muted, fontSize = 12.sp, modifier = Modifier.weight(1f).padding(start = 6.dp))
             }
         }
         for (week in screen.weeks) {
@@ -63,19 +64,25 @@ fun CalendarTab(app: TrainSyncApp, version: Int, act: Act) {
                 week.forEach { d -> DayCell(d, Modifier.weight(1f)) { selected = d.date } }
             }
         }
-        Secondary("Punto de color: sesión planificada. ✓: hecha. Toca un día para ver el detalle.")
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Glyph(R.drawable.ic_sport_running, 16.dp, Palette.muted)
+            Text("planificada", fontSize = 13.sp, color = Palette.muted)
+            Spacer(Modifier.width(8.dp))
+            Glyph(R.drawable.ic_check, 16.dp, Palette.ok)
+            Text("hecha · toca un día para ver el detalle", fontSize = 13.sp, color = Palette.muted)
+        }
         Spacer(Modifier.height(24.dp))
     }
 
     selected?.let { date ->
-        ModalBottomSheet(onDismissRequest = { selected = null }, containerColor = Palette.surface1) {
+        ModalBottomSheet(onDismissRequest = { selected = null }, containerColor = Palette.surface) {
             val day = remember(version, date) { app.day(date) }
             val cell = screen.weeks.flatten().firstOrNull { it.date == date }
             Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(dateLabel(date), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(dateLabel(date), fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
                 cell?.done?.forEach { a ->
-                    Module(accent = Palette.bio) {
-                        Text(a.title, fontWeight = FontWeight.Bold)
+                    Module(background = Palette.okSoft) {
+                        SectionTitle(a.title)
                         Secondary(listOfNotNull("${a.minutes} min", a.start?.let { "a las $it" }).joinToString(" "))
                     }
                 }
@@ -88,20 +95,23 @@ fun CalendarTab(app: TrainSyncApp, version: Int, act: Act) {
 
 @Composable
 private fun DayCell(d: CalendarDay, modifier: Modifier, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(10.dp)
+    val shape = RoundedCornerShape(12.dp)
     Column(
         modifier.aspectRatio(0.8f).clip(shape)
-            .background(if (d.inMonth) Palette.surface1 else Palette.bg)
-            .then(if (d.isToday) Modifier.border(1.dp, Palette.accent, shape) else Modifier)
+            .background(if (d.inMonth) Palette.surface else Palette.bg)
+            .then(if (d.isToday) Modifier.border(2.dp, Palette.ok, shape) else Modifier)
             .clickable(onClick = onClick).padding(4.dp),
         verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
-        Text("${d.dayOfMonth}", fontFamily = Mono, fontSize = 12.sp, color = if (d.inMonth) Palette.text else Palette.secondary)
-        Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-            d.planned.take(3).forEach { SportDot(it.sport, 7) }
+        Text("${d.dayOfMonth}", fontFamily = Mono, fontSize = 12.sp, color = if (d.inMonth) Palette.text else Palette.muted)
+        Row(horizontalArrangement = Arrangement.spacedBy(1.dp)) {
+            d.planned.take(2).forEach { Glyph(sportIcon(it.sport), 14.dp, Palette.muted) }
         }
         val done = d.done.map { it.sport } + d.manual
-        if (done.isNotEmpty()) Text("✓" + if (done.size > 1) done.size.toString() else "", color = Palette.bio, fontSize = 11.sp)
+        if (done.isNotEmpty()) Row(verticalAlignment = Alignment.CenterVertically) {
+            Glyph(R.drawable.ic_check, 14.dp, Palette.ok, label = "Hecha")
+            if (done.size > 1) Text("${done.size}", color = Palette.ok, fontSize = 11.sp, fontFamily = Mono)
+        }
     }
 }
 
