@@ -132,7 +132,7 @@ memoria, sin comprobar) y un dominio.
 |---|---|---|
 | 1. Cohesión | Estructura de la sección 5, un solo motor, flujo de objetivo, lenguaje llano, errores de la revisión | Una app que se entiende de punta a punta. **Hecha (2026-10-22)** en las apps nativas |
 | 2. Progreso | Historial y tendencias con los datos de intervals.icu | Lo básico de Garmin Connect y Apple Health. **Hecha la base (2026-10-22):** tendencias con tu rango normal, de intervals.icu o del móvil |
-| 3. Apps nativas | Núcleo compartido, iOS y Android, Apple Salud y Health Connect, notificaciones | Usable sin intervals.icu y sin servidor. **En curso (2026-10-22):** núcleo, las dos apps, Health Connect, Apple Salud y el recordatorio diario opcional hechos; falta probar en móviles reales |
+| 3. Apps nativas | Núcleo compartido, iOS y Android, Apple Salud y Health Connect, notificaciones | Usable sin intervals.icu y sin servidor. **En curso (2026-10-22):** núcleo, las dos apps, Health Connect, Apple Salud y el recordatorio diario opcional hechos; probada en iPhone real (2026-10-29: arranca y vincula intervals.icu, firmada sin cuenta de desarrollador); falta Android real |
 | 4. Entrenadores | Varios atletas por cuenta | Abre el perfil profesional |
 | 5. Integraciones | Strava y Garmin directos (con servidor) | Plataforma completa |
 
