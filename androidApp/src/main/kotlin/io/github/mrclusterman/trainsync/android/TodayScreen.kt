@@ -67,7 +67,7 @@ fun TodayTab(app: TrainSyncApp, version: Int, act: Act, openGoal: () -> Unit) {
             if (screen.meetsWho) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Glyph(R.drawable.ic_check, 18.dp, Palette.ok)
                 Text("Cumples la recomendación de la OMS para tu salud", color = Palette.ok, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-            } else Secondary("Fuerza ${screen.strengthDays} de 2 días")
+            } else Secondary(if (screen.strengthDays >= 2) "Fuerza: ${screen.strengthDays} días, mínimo cumplido" else "Fuerza: ${screen.strengthDays} de 2 días")
             screen.warnings.forEach { ReasonRow(Reason(it, null)) }
             screen.info.forEach { Secondary(it) }
         }

@@ -38,7 +38,7 @@ struct TodayView: View {
                                 .foregroundStyle(Palette.ok)
                         }
                     } else {
-                        Secondary("Fuerza \(screen.strengthDays) de 2 días")
+                        Secondary(screen.strengthDays >= 2 ? "Fuerza: \(screen.strengthDays) días, mínimo cumplido" : "Fuerza: \(screen.strengthDays) de 2 días")
                     }
                     ForEach(screen.warnings, id: \.self) { ReasonRow(reason: Reason(text: $0, evidence: nil)) }
                     ForEach(screen.info, id: \.self) { Secondary($0) }
