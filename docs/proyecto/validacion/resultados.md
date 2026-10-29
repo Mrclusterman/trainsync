@@ -1,6 +1,6 @@
 # Resultados de la validación del motor
 
-187 de 187 comprobaciones aplicables cumplen (10 no aplican). Datos sintéticos; generado con `VALIDATION_REPORT=1 ./gradlew :shared:jvmTest --tests '*ValidationTest*'`. Criterios en `VALIDACION.md`.
+199 de 199 comprobaciones aplicables cumplen (10 no aplican). Datos sintéticos; generado con `VALIDATION_REPORT=1 ./gradlew :shared:jvmTest --tests '*ValidationTest*'`. Criterios en `VALIDACION.md`.
 
 ## Planes sin fecha (V1–V11)
 
@@ -138,40 +138,40 @@
 | media maratón, 4 días | prioridad A | R1 | sí | base_early → base → build → peak → taper |
 | media maratón, 4 días | prioridad A | R2 | sí | subida máx. de la carga semanal +10.0 % (18 semanas) |
 | media maratón, 4 días | prioridad A | R3 | sí | 3 semanas de descarga, todas con menos carga que la anterior |
-| media maratón, 4 días | prioridad A | R4 | sí | volumen del afinado = 48 % del de las 3 semanas previas (12 días) |
+| media maratón, 4 días | prioridad A | R4 | sí | volumen del afinado = 46 % del de las 3 semanas previas (12 días) |
 | media maratón, 4 días | prioridad A | R5 | sí | todas caben |
 | media maratón, 4 días | prioridad A | R6 | sí | semanas sin un día de descanso: 0 |
-| media maratón, 4 días | prioridad A | R7 | sí | Z1–Z2 = 90 % del tiempo |
+| media maratón, 4 días | prioridad A | R7 | sí | Z1–Z2 = 88 % del tiempo |
 | media maratón, 4 días | prioridad A | R8 | sí | tirada larga máx. 120 min (tope 120) |
 | media maratón, 4 días | prioridad A | R9 | sí | ninguna |
 | media maratón, 4 días | prioridad A | R10 | sí | dos ejecuciones idénticas |
 | maratón, 5 días | prioridad A | R1 | sí | base_early → base → build → peak → taper |
-| maratón, 5 días | prioridad A | R2 | sí | subida máx. de la carga semanal +9.4 % (17 semanas) |
+| maratón, 5 días | prioridad A | R2 | sí | subida máx. de la carga semanal +9.7 % (17 semanas) |
 | maratón, 5 días | prioridad A | R3 | sí | 3 semanas de descarga, todas con menos carga que la anterior |
 | maratón, 5 días | prioridad A | R4 | sí | volumen del afinado = 41 % del de las 3 semanas previas (21 días) |
 | maratón, 5 días | prioridad A | R5 | sí | todas caben |
 | maratón, 5 días | prioridad A | R6 | sí | semanas sin un día de descanso: 0 |
-| maratón, 5 días | prioridad A | R7 | sí | Z1–Z2 = 95 % del tiempo |
+| maratón, 5 días | prioridad A | R7 | sí | Z1–Z2 = 91 % del tiempo |
 | maratón, 5 días | prioridad A | R8 | sí | tirada larga máx. 129 min (tope 150) |
 | maratón, 5 días | prioridad A | R9 | sí | ninguna |
 | maratón, 5 días | prioridad A | R10 | sí | dos ejecuciones idénticas |
 | trail 30 km | prioridad A | R1 | sí | base_early → base → build → peak → taper |
-| trail 30 km | prioridad A | R2 | sí | subida máx. de la carga semanal +9.6 % (17 semanas) |
+| trail 30 km | prioridad A | R2 | sí | subida máx. de la carga semanal +9.8 % (17 semanas) |
 | trail 30 km | prioridad A | R3 | sí | 3 semanas de descarga, todas con menos carga que la anterior |
-| trail 30 km | prioridad A | R4 | sí | volumen del afinado = 49 % del de las 3 semanas previas (21 días) |
+| trail 30 km | prioridad A | R4 | sí | volumen del afinado = 46 % del de las 3 semanas previas (21 días) |
 | trail 30 km | prioridad A | R5 | sí | todas caben |
 | trail 30 km | prioridad A | R6 | sí | semanas sin un día de descanso: 0 |
-| trail 30 km | prioridad A | R7 | sí | Z1–Z2 = 92 % del tiempo |
+| trail 30 km | prioridad A | R7 | sí | Z1–Z2 = 89 % del tiempo |
 | trail 30 km | prioridad A | R8 | sí | tirada larga máx. 150 min (tope 150) |
 | trail 30 km | prioridad A | R9 | sí | ninguna |
 | trail 30 km | prioridad A | R10 | sí | dos ejecuciones idénticas |
 | gran fondo | prioridad A | R1 | sí | base_early → base → build → peak → taper |
-| gran fondo | prioridad A | R2 | sí | subida máx. de la carga semanal +10.0 % (18 semanas) |
+| gran fondo | prioridad A | R2 | sí | subida máx. de la carga semanal +9.7 % (18 semanas) |
 | gran fondo | prioridad A | R3 | sí | 3 semanas de descarga, todas con menos carga que la anterior |
 | gran fondo | prioridad A | R4 | sí | volumen del afinado = 49 % del de las 3 semanas previas (14 días) |
 | gran fondo | prioridad A | R5 | sí | todas caben |
 | gran fondo | prioridad A | R6 | sí | semanas sin un día de descanso: 0 |
-| gran fondo | prioridad A | R7 | sí | Z1–Z2 = 93 % del tiempo |
+| gran fondo | prioridad A | R7 | sí | Z1–Z2 = 88 % del tiempo |
 | gran fondo | prioridad A | R9 | sí | ninguna |
 | gran fondo | prioridad A | R10 | sí | dos ejecuciones idénticas |
 | triatlón olímpico | prioridad A | R1 | sí | base_early → base → build → peak → taper |
@@ -180,7 +180,7 @@
 | triatlón olímpico | prioridad A | R4 | sí | volumen del afinado = 39 % del de las 3 semanas previas (14 días) |
 | triatlón olímpico | prioridad A | R5 | sí | todas caben |
 | triatlón olímpico | prioridad A | R6 | sí | semanas sin un día de descanso: 0 |
-| triatlón olímpico | prioridad A | R7 | sí | Z1–Z2 = 90 % del tiempo |
+| triatlón olímpico | prioridad A | R7 | sí | Z1–Z2 = 87 % del tiempo |
 | triatlón olímpico | prioridad A | R9 | sí | ninguna |
 | triatlón olímpico | prioridad A | R10 | sí | dos ejecuciones idénticas |
 | 10 km preparatoria (C) | prioridad C | R1 | sí | base_early → base → build → peak → taper |
@@ -207,9 +207,9 @@
 | respuestas: todo a 1 | sintético | E8 | sí | queda: walking |
 | móvil: 5,2 h de sueño (sueles 7,4) | sintético | E9 | sí | pasa a aerobic, ×0.7 |
 | móvil: 5,4 h (sueles 5,6) | sintético | E10 | sí | sin cambios: es tu sueño normal |
-| 14 días desde el día 28 de la maratón | sintético | E11 | sí | semana 1: 355, semana 2: 352 |
-| 14 días desde el día 63 de la maratón | sintético | E11 | sí | semana 1: 374, semana 2: 337 |
-| 14 días desde el día 91 de la maratón | sintético | E11 | sí | semana 1: 363, semana 2: 374 |
+| 14 días desde el día 28 de la maratón | sintético | E11 | sí | semana 1: 356, semana 2: 359 |
+| 14 días desde el día 63 de la maratón | sintético | E11 | sí | semana 1: 397, semana 2: 393 |
+| 14 días desde el día 91 de la maratón | sintético | E11 | sí | semana 1: 384, semana 2: 374 |
 
 ## Natación (N1–N3)
 
@@ -218,3 +218,20 @@
 | natación con CSS 1:45 | 64 sesiones | N1 | sí | todas las series en metros y en largos de 25 m |
 | natación con CSS 1:45 | 174 series | N2 | sí | metros coherentes con el tiempo y el ritmo de cada zona |
 | natación con CSS 1:45 | texto para el reloj | N3 | sí | en el reloj, distancia y ritmo /100 m; sin CSS, por tiempo y esfuerzo |
+
+## Combinaciones generadas (F1–F12)
+
+| Caso | Variante | Criterio | Cumple | Detalle |
+|---|---|---|---|---|
+| 300 perfiles sin fecha × 8 semanas | generados | F1 | sí | sin errores |
+| 300 perfiles sin fecha × 8 semanas | generados | F2 | sí | cada día cabe en sus minutos y nada en los días sin entreno |
+| 300 perfiles sin fecha × 8 semanas | generados | F3 | sí | un día de descanso por semana |
+| 300 perfiles sin fecha × 8 semanas | generados | F4 | sí | con tope del cribado, sin Z4+ ni RIR por debajo del tope (3 ligero-moderado, 2 moderado) |
+| 300 perfiles sin fecha × 8 semanas | generados | F5 | sí | determinista |
+| 300 carreras desde un punto cualquiera | generadas | F6 | sí | sin errores |
+| 300 carreras desde un punto cualquiera | generadas | F7 | sí | cada día cabe en sus minutos y nada en los días sin entreno |
+| 300 carreras desde un punto cualquiera | generadas | F8 | sí | un día de descanso por semana |
+| 300 carreras desde un punto cualquiera | generadas | F9 | sí | fases en orden |
+| 300 carreras desde un punto cualquiera | generadas | F10 | sí | carga semanal +10 % como mucho; 1 semanas suben más con todo ya al mínimo (sesiones en su parte fija) |
+| 300 carreras desde un punto cualquiera | generadas | F11 | sí | determinista |
+| 300 carreras desde un punto cualquiera | generadas | F12 | sí | cada descarga baja la carga |

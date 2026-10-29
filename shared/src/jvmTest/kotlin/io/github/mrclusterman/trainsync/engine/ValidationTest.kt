@@ -6,6 +6,7 @@ package io.github.mrclusterman.trainsync.engine
 //   R1–R9   planes hacia una carrera: 7 carreras, de la preparación (20 semanas) al día de la prueba
 //   E1–E11  ajuste del día con datos del reloj o del móvil, o con las tres preguntas; plan de 14 días
 //   N1–N3   natación: en metros con tu CSS, por esfuerzo sin él
+//   F1–F12  combinaciones generadas (semilla fija): 300 perfiles sin fecha y 300 carreras con reglas que valen para todos
 // Con VALIDATION_REPORT=1 escribe docs/proyecto/validacion/resultados.md; sin él solo comprueba.
 // Caso real (realAccount): con INTERVALS_ATHLETE_ID e INTERVALS_API_KEY en el entorno, los mismos criterios con la
 // fisiología y el estado de esa cuenta. Sin ellas se omite (así en la nube). El informe solo dice si cumple, más la LTHR y
@@ -416,12 +417,119 @@ class ValidationTest {
         return rows
     }
 
+    // ------------------------------------------------------------------ F: combinaciones generadas
+
+    private fun fuzzRows(): List<Row> {
+        val rnd = kotlin.random.Random(20261029)
+        val rows = mutableListOf<Row>()
+        fun days(): Map<String, Int> {
+            val n = rnd.nextInt(1, 8)
+            return all.shuffled(rnd).take(n).associateWith { listOf(20, 30, 45, 60, 75, 90, 120, 180, 240).random(rnd) }
+        }
+        // Planes sin fecha
+        val fails = linkedMapOf("F1" to mutableListOf<String>(), "F2" to mutableListOf(), "F3" to mutableListOf(),
+            "F4" to mutableListOf(), "F5" to mutableListOf())
+        val healthN = 300
+        repeat(healthN) { n ->
+            val cap = listOf("vigorous", "moderate", "light_moderate").random(rnd)
+            val p = HealthProfile(listOf("fitness", "strength").random(rnd), days(), strength = listOf("gym", "bodyweight", "none").random(rnd),
+                cardio = CARDIO.shuffled(rnd).take(rnd.nextInt(1, 5)), level = LEVELS.random(rnd), age = listOf(null, 15, 30, 50, 68, 82).random(rnd),
+                intensityCap = cap, lthr = listOf(null, 160.0, 175.0).random(rnd), maxHr = 190.0, css = listOf(null, 95.0, 130.0).random(rnd))
+            val tag = "#$n ${p.goal} ${p.level} ${p.days} ${p.strength} ${p.cardio} $cap"
+            val weeks = try {
+                val history = mutableListOf<Double>()
+                (0 until 8).map { w -> weekPlan(p, start.plusDays(7 * w), history.take(w / 4), w % 4).also { if (w % 4 == 3) history += 0.7 } }
+            } catch (e: Exception) { fails["F1"]!! += "$tag: ${e.message}"; return@repeat }
+            for (w in weeks) {
+                val strengthShort = w.warnings.any { "sesión mínima de fuerza" in it }
+                w.days.forEach { d ->
+                    val used = d.sessions.sumOf { it.durationMin }
+                    val avail = p.days[d.weekday] ?: 0
+                    if (avail == 0 && d.sessions.isNotEmpty()) fails["F2"]!! += "$tag: sesión el ${d.weekday}, que no entrenas"
+                    else if (used > avail && !strengthShort) fails["F2"]!! += "$tag: ${d.weekday} $used de $avail min"
+                }
+                if (w.days.none { it.sessions.isEmpty() }) fails["F3"]!! += "$tag: semana sin descanso"
+                if (cap != "vigorous") {
+                    val vig = w.sessions().filterIsInstance<HealthCardio>().any { s -> s.session.blocks.any { it.zone in vigorous } }
+                    val rirMin = if (cap == "light_moderate") 3 else 2  // tope moderado: RIR 2 (HealthPlan, strengthSession)
+                    if (vig || w.strength().any { it.rir < rirMin }) fails["F4"]!! += "$tag: intensidad por encima del tope"
+                }
+            }
+            if (n % 10 == 0 && weekPlan(p, start) != weekPlan(p, start)) fails["F5"]!! += "$tag: no determinista"
+        }
+        val healthText = mapOf("F1" to "sin errores", "F2" to "cada día cabe en sus minutos y nada en los días sin entreno",
+            "F3" to "un día de descanso por semana", "F4" to "con tope del cribado, sin Z4+ ni RIR por debajo del tope (3 ligero-moderado, 2 moderado)", "F5" to "determinista")
+        fails.forEach { (id, f) -> rows += Row("$healthN perfiles sin fecha × 8 semanas", "generados", id, f.isEmpty(),
+            if (f.isEmpty()) healthText[id]!! else "${f.size} fallos; p. ej. ${f.first()}") }
+
+        // Carreras: desde hoy (cualquier punto de la preparación) hasta el día de la prueba
+        val raceFails = linkedMapOf("F6" to mutableListOf<String>(), "F7" to mutableListOf(), "F8" to mutableListOf(),
+            "F9" to mutableListOf(), "F10" to mutableListOf(), "F11" to mutableListOf(), "F12" to mutableListOf())
+        val raceN = 300
+        var floorWeeks = 0
+        val distances = mapOf("running" to listOf(5.0, 10.0, 21.1, 42.2, 60.0, null), "cycling" to listOf(40.0, 100.0, 160.0, null),
+            "swimming_pool" to listOf(1.5, 3.0, null), "swimming_open" to listOf(1.5, 5.0, null), "triathlon" to listOf(null), "duathlon" to listOf(null))
+        repeat(raceN) { n ->
+            val sport = distances.keys.random(rnd)
+            val minutes = days()
+            val sports = (listOf("running", "cycling", "swimming_pool").shuffled(rnd).take(rnd.nextInt(1, 4)))
+            val today = start.plusDays(rnd.nextInt(0, 7))
+            val goal = Goal("carrera", sport, today.plusDays(7 * rnd.nextInt(2, 31) + rnd.nextInt(0, 7)), listOf("A", "B", "C").random(rnd),
+                distances[sport]!!.random(rnd), trail = sport == "running" && rnd.nextBoolean())
+            val profile = Profile(activeSports = sports, strength = listOf("gym", "bodyweight", "none").random(rnd),
+                restDays = all.filter { it !in minutes }, dayMinutes = minutes, lthr = listOf(null, 165.0).random(rnd),
+                maxHr = 190.0, css = listOf(null, 100.0).random(rnd))
+            val tag = "#$n $sport ${goal.distanceKm} ${goal.priority} ${today.daysUntil(goal.date)} días ${minutes} $sports"
+            val days = try {
+                (0..today.daysUntil(goal.date)).map { proposeDay(today.plusDays(it), profile, goal) }
+            } catch (e: Exception) { raceFails["F6"]!! += "$tag: ${e.message}"; return@repeat }
+            days.forEach { d ->
+                val avail = minutes[d.weekday] ?: 0
+                if (avail == 0 && (d.main != null || d.strength != null)) raceFails["F7"]!! += "$tag: sesión el ${d.weekday}, que no entrenas"
+                else if (d.minutes() > avail) raceFails["F7"]!! += "$tag: ${d.date} ${d.minutes()} de $avail min"
+            }
+            if (days.chunked(7).any { w -> w.size == 7 && w.all { it.main != null || it.strength != null } }) raceFails["F8"]!! += "$tag: semana sin descanso"
+            val order = listOf("base_early", "base", "build", "peak", "taper")
+            val prepStart = goal.date.plusDays(-7 * PREP_WEEKS).toString()  // antes, base de mantenimiento
+            if (days.filter { it.date >= prepStart }.zipWithNext().any { (a, b) -> order.indexOf(b.phase) < order.indexOf(a.phase) }) raceFails["F9"]!! += "$tag: fases desordenadas"
+            // Carga: alineada con las semanas del motor (desde el inicio de la preparación)
+            val prep = goal.date.plusDays(-7 * PREP_WEEKS)
+            val weeks = days.filter { it.phase != "taper" }.groupBy { prep.daysUntil(LocalDate.parse(it.date)) / 7 }.filterValues { it.size == 7 }
+            val keys = weeks.keys.filter { it >= 0 }.sorted()  // antes de la preparación, mantenimiento: sin progresión
+            var last: Double? = null
+            val scales = rampScales(profile, goal)
+            for (k in keys) {
+                val w = weeks[k]!!
+                val load = w.sumOf { it.load() }
+                // Con el volumen ya al mínimo (sesiones en su parte fija) no hay de dónde bajar: se cuenta aparte
+                val atFloor = (scales.getOrNull(k) ?: 1.0) <= 0.15 + 1e-9
+                if (w.any { it.recoveryWeek }) {
+                    // Con todo ya en la sesión mínima (20′) no hay de dónde bajar
+                    if (last != null && last!! > 0 && load >= last!! && w.any { it.minutes() > 20 } && !atFloor) raceFails["F12"]!! += "$tag: la descarga de la semana $k no baja (${fmt(load, 0)} frente a ${fmt(last!!, 0)})"
+                    continue
+                }
+                if (last != null && last!! > 0 && load > last!! * 1.105 && atFloor) floorWeeks += 1
+                else if (last != null && last!! > 0 && load > last!! * 1.105) raceFails["F10"]!! += "$tag: semana $k sube ${pct(load / last!! - 1)}"
+                last = load
+            }
+            if (n % 10 == 0 && (0..6).map { proposeDay(today.plusDays(it), profile, goal) } != days.take(7)) raceFails["F11"]!! += "$tag: no determinista"
+        }
+        val raceText = mapOf("F6" to "sin errores", "F7" to "cada día cabe en sus minutos y nada en los días sin entreno",
+            "F8" to "un día de descanso por semana", "F9" to "fases en orden", "F10" to "carga semanal +10 % como mucho",
+            "F11" to "determinista", "F12" to "cada descarga baja la carga")
+        raceFails.forEach { (id, f) -> rows += Row("$raceN carreras desde un punto cualquiera", "generadas", id, f.isEmpty(),
+            (if (f.isEmpty()) raceText[id]!! else "${f.size} fallos; p. ej. ${f.first()}") +
+                if (id == "F10" && floorWeeks > 0) "; $floorWeeks semanas suben más con todo ya al mínimo (sesiones en su parte fija)" else "") }
+        return rows
+    }
+
     // ------------------------------------------------------------------ informe
 
     @Test
     fun theEngineMeetsEveryCriterion() {
         val parts = listOf("Planes sin fecha (V1–V11)" to healthRows(), "Hacia una carrera (R1–R10)" to raceRows(),
-            "Ajuste del día (E1–E11)" to stateRows(), "Natación (N1–N3)" to swimRows())
+            "Ajuste del día (E1–E11)" to stateRows(), "Natación (N1–N3)" to swimRows(),
+            "Combinaciones generadas (F1–F12)" to fuzzRows())
         val rows = parts.flatMap { it.second }
         if (System.getenv("VALIDATION_REPORT") == "1") report(parts)
         val failed = rows.filter { it.ok == false && "${it.id} ${it.case} (${it.variant})" !in KNOWN }

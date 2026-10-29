@@ -12,12 +12,12 @@
 | tu cuenta, objetivos de FC | fisiología real | FC | sí | LTHR 174, FC máx. 192 → techo fácil 144 ppm = 75.0 % de la FC máx.; 4 sesiones, objetivos 50.0–75.0 % HR |
 | tu cuenta, umbral estimado | cycling | LTHR | sí | estimado 166 con tus 28 sesiones de 90 días; en intervals.icu 174 |
 | tu cuenta, media maratón | prioridad A | R1 | sí | base_early → base → build → peak → taper |
-| tu cuenta, media maratón | prioridad A | R2 | sí | subida máx. de la carga semanal +9.4 % (18 semanas) |
+| tu cuenta, media maratón | prioridad A | R2 | sí | subida máx. de la carga semanal +10.0 % (18 semanas) |
 | tu cuenta, media maratón | prioridad A | R3 | sí | 3 semanas de descarga, todas con menos carga que la anterior |
-| tu cuenta, media maratón | prioridad A | R4 | sí | volumen del afinado = 44 % del de las 3 semanas previas (12 días) |
+| tu cuenta, media maratón | prioridad A | R4 | sí | volumen del afinado = 42 % del de las 3 semanas previas (12 días) |
 | tu cuenta, media maratón | prioridad A | R5 | sí | todas caben |
 | tu cuenta, media maratón | prioridad A | R6 | sí | semanas sin un día de descanso: 0 |
-| tu cuenta, media maratón | prioridad A | R7 | sí | Z1–Z2 = 93 % del tiempo |
+| tu cuenta, media maratón | prioridad A | R7 | sí | Z1–Z2 = 91 % del tiempo |
 | tu cuenta, media maratón | prioridad A | R8 | sí | tirada larga máx. 120 min (tope 120) |
 | tu cuenta, media maratón | prioridad A | R9 | sí | ninguna |
 | tu cuenta, media maratón | prioridad A | R10 | sí | dos ejecuciones idénticas |

@@ -20,8 +20,14 @@ Se distinguen tres niveles, de menor a mayor alcance:
    - **Hacia una carrera (R1–R10):** 7 carreras (10 km con 3 días, media maratón, maratón, trail de 30 km, gran fondo,
      triatlón olímpico y una 10 km preparatoria de prioridad C), cada una desde el inicio de la preparación (20 semanas)
      hasta el día de la prueba, con los días y minutos de cada perfil.
-   - **Ajuste del día (E1–E10):** estados sintéticos del reloj o del móvil (fatiga, variabilidad cardíaca, sueño en
-     puntuación o en horas, días sin entrenar, esfuerzo raro) y respuestas a las tres preguntas.
+   - **Ajuste del día (E1–E11):** estados sintéticos del reloj o del móvil (fatiga, variabilidad cardíaca, sueño en
+     puntuación o en horas, días sin entrenar, esfuerzo raro), respuestas a las tres preguntas y el plan de 14 días.
+   - **Natación (N1–N3):** sesiones en metros con el CSS y por esfuerzo sin él.
+   - **Combinaciones generadas (F1–F12):** con una semilla fija, 300 perfiles sin fecha (objetivo, nivel, material,
+     deportes, de 1 a 7 días de 20 a 240 min, edades de 15 a 82, tope del cribado, con y sin fisiología) durante 8
+     semanas, y 300 carreras de los 6 tipos (distancias, prioridades A/B/C, de 2 a 30 semanas vista, desde cualquier
+     punto de la preparación). Reglas que valen para todos: sin errores, cada día cabe, descanso semanal, tope del
+     cribado, fases en orden, +10 % semanal como mucho, cada descarga baja y determinismo.
 3. **Caso real** (`ValidationTest.realAccount`): los mismos criterios con la fisiología y el estado de hoy de una cuenta
    real de intervals.icu (cuenta de pruebas del autor): un plan sin fecha, los objetivos de FC que llegarían al reloj, una
    media maratón de 20 semanas y el plan de 14 días con el estado de hoy. Se ejecuta en local con
@@ -33,7 +39,7 @@ planes): exige un estudio con participantes y aprobación de un comité de étic
 
 ## 2. Resultados
 
-**181 de 181 comprobaciones aplicables cumplen**; 10 no aplican. La prueba admite una lista de fallos conocidos (salen en
+**199 de 199 comprobaciones aplicables cumplen**; 10 no aplican. La prueba admite una lista de fallos conocidos (salen en
 el informe, pero no rompen la compilación, y avisa en cuanto se cumplen); hoy está vacía.
 
 ### 2.1 Planes sin fecha
@@ -82,6 +88,22 @@ el informe, pero no rompen la compilación, y avisa en cuanto se cumplen); hoy e
 | E8 Respuestas todo a 1 → solo un paseo | Cumple |
 | E9 Móvil, sin puntuación de sueño: 5,2 h cuando sueles dormir 7,4 → sin intensidad y −30 % | Cumple |
 | E10 Móvil: 5,4 h cuando sueles dormir 5,6 → sin cambios (se compara con lo normal en ti) | Cumple |
+| E11 Plan de 14 días: la 2.ª semana parte del CTL proyectado y no sube más del 10 % (en base, construcción y pico) | Cumple |
+
+### 2.4 Natación
+
+| Criterio | Resultado |
+|---|---|
+| N1 Con CSS, todas las series en metros y en largos de 25 m | Cumple (64 sesiones) |
+| N2 Los metros cuadran con el tiempo al ritmo de la zona | Cumple (174 series) |
+| N3 En el reloj, distancia (`mtr`) y ritmo /100 m; sin CSS, por tiempo y esfuerzo | Cumple |
+
+### 2.5 Combinaciones generadas
+
+| Criterio | Resultado |
+|---|---|
+| F1–F5 Sin fecha: sin errores, cada día cabe, descanso semanal, tope del cribado (sin Z4+; RIR ≥ 3 ligero-moderado, ≥ 2 moderado), determinismo | Cumple en los 300 perfiles |
+| F6–F12 Carreras: sin errores, cada día cabe, descanso semanal, fases en orden, +10 % semanal, determinismo, cada descarga baja | Cumple en las 300. Una semana sube más del 10 % con el volumen ya al mínimo (las sesiones no bajan de su parte fija): se cuenta aparte en el informe |
 
 ## 3. Defectos que encontró la validación (y su corrección)
 
@@ -95,7 +117,20 @@ La primera ejecución de R1–R10 dio 13 fallos en 6 de las 7 carreras:
 | Días que no cabían en los minutos del usuario (p. ej. 66 de 60 min) | La fuerza solo se quitaba si no quedaban 20 min libres, pero las series tienen una parte fija mayor (26 min o más) | Si la sesión principal y la fuerza no caben juntas, fuera la fuerza, con su motivo |
 | Una sesión de series sola no cabía en un día de 45 min (55 min) | Su parte fija (calentamiento y series) no baja con el volumen | Ese día pasa a la versión continua de la sesión, con su motivo |
 
-### 3.2 Planes sin fecha (2026-10-21, en Python)
+### 3.2 Combinaciones generadas (2026-10-29)
+
+La primera ejecución de F1–F12 encontró cuatro defectos del motor y dos errores del propio criterio:
+
+| Defecto | Causa | Corrección |
+|---|---|---|
+| Días cortos (20–30 min) con sesiones de 35 | La sesión no baja de su parte fija y nada lo comprobaba | Si no cabe, la versión corta (recuperación); si tampoco, ese día solo fuerza o descanso, con su motivo |
+| Con un solo día a la semana, la fuerza se comía el día (tirada larga de 20 min) | La fuerza solo cedía si no quedaban 20 min | Hacia una carrera, la fuerza solo si deja al menos la mitad del día a la sesión principal |
+| Subidas de hasta +18 % con 1–2 días a la semana | El ajuste del 10 % no convergía cuando la fuerza entraba y salía según el volumen | Bisección del volumen entre 0,15 y 1 |
+| Semanas de descarga con más carga que la anterior (116 frente a 74) | La descarga coincidía con el paso a construcción (sesiones nuevas) y no se limitaba | La descarga también se limita: como mucho el 80 % de la última semana de carga |
+| *Criterio:* el tope moderado daba fallo con RIR 2 | El motor permite RIR 2 con tope moderado a propósito | El criterio usa el mismo tope que el motor |
+| *Criterio:* "fases desordenadas" a más de 20 semanas vista | Antes de la preparación toca base de mantenimiento, que es correcto | Se comprueba desde el inicio de la preparación |
+
+### 3.3 Planes sin fecha (2026-10-21, en Python)
 
 La simulación hizo su función: la primera ejecución dio 106 de 120 y destapó defectos que los tests unitarios no veían.
 
