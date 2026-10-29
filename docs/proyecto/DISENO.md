@@ -72,9 +72,11 @@ Entrada: días disponibles, minutos por sesión, dosis de la semana. Algoritmo d
    alternativos, preferir bici o natación. [Schumann 2022, Lundberg 2022 (EA §3); Inferencia en el detalle]
 5. **Elección de la semana:** se prueban semanas candidatas y se elige la primera que cumple el suelo aeróbico de la OMS
    con monotonía de Foster < 2. Orden de preferencia: la fuerza ocupa todo su tiempo antes que menos (no se quita fuerza
-   sin necesidad), y para cada caso, la semana tal cual antes que con un día libre convertido en descanso (con una nota
+   sin necesidad); para cada caso, la semana tal cual antes que con un día libre convertido en descanso (con una nota
    que lo explica en lenguaje llano). El usuario puede recuperar ese día con un toque y entonces el motor no lo vuelve a
-   quitar esa semana. Si ninguna cumple ambas cosas, prima el suelo de la OMS. [Foster 1998; orden: Inferencia]
+   quitar esa semana. Y en cada una, primero con aeróbico en todos los días de fuerza y luego solo en algunos (los de más
+   tiempo libre) o en ninguno, que alterna días solo de fuerza y días de resistencia (2026-10-29). Si ninguna cumple
+   ambas cosas, prima el suelo de la OMS. [Foster 1998; orden: Inferencia]
 6. **Duración:** cada sesión cabe en los minutos disponibles; si la dosis no cabe en los días dados, el plan lo dice
    en vez de alargar sesiones sin límite. Solo es un aviso si no llega al mínimo de la OMS (150 min) y la persona no es
    principiante; si no, es información en tono neutro. Los minutos suaves (Z1) no cuentan para la OMS, pero la app los

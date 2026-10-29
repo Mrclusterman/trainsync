@@ -1,6 +1,6 @@
 # Resultados de la validación del motor
 
-178 de 179 comprobaciones aplicables cumplen (10 no aplican). Datos sintéticos; generado con `VALIDATION_REPORT=1 ./gradlew :shared:jvmTest --tests '*ValidationTest*'`. Criterios en `VALIDACION.md`.
+179 de 179 comprobaciones aplicables cumplen (10 no aplican). Datos sintéticos; generado con `VALIDATION_REPORT=1 ./gradlew :shared:jvmTest --tests '*ValidationTest*'`. Criterios en `VALIDACION.md`.
 
 ## Planes sin fecha (V1–V11)
 
@@ -69,17 +69,17 @@
 | gimnasio | baja | V9 | sí | sin límite de tiempo: máx. 1.58 (18 semanas) |
 | gimnasio | baja | V10 | sí | dos ejecuciones idénticas |
 | gimnasio | baja vs alta | V11 | sí | último bloque: 60 min (baja) frente a 150 (alta) |
-| corredor | alta | V1 | sí | 18 semanas estables; mín. 156 min equivalentes |
+| corredor | alta | V1 | sí | 18 semanas estables; mín. 183 min equivalentes |
 | corredor | alta | V5 | sí | subida máx. 0.0 %; descarga cada 4.ª semana: sí |
 | corredor | alta | V7 | sí | día de descanso: sí; pierna en días seguidos: no |
 | corredor | alta | V9 | sí | sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 1.98 (18 semanas) |
 | corredor | alta | V10 | sí | dos ejecuciones idénticas |
-| corredor | media | V1 | sí | 18 semanas estables; mín. 156 min equivalentes |
+| corredor | media | V1 | sí | 18 semanas estables; mín. 184 min equivalentes |
 | corredor | media | V5 | sí | subida máx. 0.0 %; descarga cada 4.ª semana: sí |
 | corredor | media | V7 | sí | día de descanso: sí; pierna en días seguidos: no |
 | corredor | media | V9 | sí | sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 1.98 (18 semanas) |
 | corredor | media | V10 | sí | dos ejecuciones idénticas |
-| corredor | baja | V1 | sí | 3 semanas estables; mín. 156 min equivalentes |
+| corredor | baja | V1 | sí | 3 semanas estables; mín. 195 min equivalentes |
 | corredor | baja | V5 | sí | subida máx. +10.0 %; descarga cada 4.ª semana: sí |
 | corredor | baja | V7 | sí | día de descanso: sí; pierna en días seguidos: no |
 | corredor | baja | V9 | sí | sin límite de tiempo: máx. 1.99 (9 semanas); limitadas por tiempo: máx. 2.00 (9 semanas) |
@@ -93,12 +93,12 @@
 | seis días | media | V1 | no aplica | no aplica: sin semanas estables (la progresión aún no ha llegado a la meta) |
 | seis días | media | V5 | sí | subida máx. +10.0 %; descarga cada 4.ª semana: sí |
 | seis días | media | V7 | sí | día de descanso: sí; pierna en días seguidos: no |
-| seis días | media | V9 | sí | sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 1.58 (18 semanas) |
+| seis días | media | V9 | sí | sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 1.81 (18 semanas) |
 | seis días | media | V10 | sí | dos ejecuciones idénticas |
 | seis días | baja | V1 | no aplica | no aplica: sin semanas estables (la progresión aún no ha llegado a la meta) |
 | seis días | baja | V5 | sí | subida máx. +10.0 %; descarga cada 4.ª semana: sí |
 | seis días | baja | V7 | sí | día de descanso: sí; pierna en días seguidos: no |
-| seis días | baja | V9 | sí | sin límite de tiempo: máx. 1.95 (10 semanas); limitadas por tiempo: máx. 1.58 (8 semanas) |
+| seis días | baja | V9 | sí | sin límite de tiempo: máx. 1.95 (10 semanas); limitadas por tiempo: máx. 1.81 (8 semanas) |
 | seis días | baja | V10 | sí | dos ejecuciones idénticas |
 | seis días | baja vs alta | V11 | sí | último bloque: 79 min (baja) frente a 300 (alta) |
 | cribado con tope | alta | V1 | sí | 18 semanas estables; mín. 156 min equivalentes |
@@ -117,7 +117,7 @@
 | cribado con tope | baja | V5 | sí | subida máx. +10.0 %; descarga cada 4.ª semana: sí |
 | cribado con tope | baja | V6 | sí | sin Z4+ ni RIR < 3 |
 | cribado con tope | baja | V7 | sí | día de descanso: sí; pierna en días seguidos: no |
-| cribado con tope | baja | V9 | **no** (conocido: la dosis pesa más que la monotonía cuando todo es moderado) | sin límite de tiempo: máx. 2.26 (7 semanas); limitadas por tiempo: máx. 1.99 (11 semanas) |
+| cribado con tope | baja | V9 | sí | sin límite de tiempo: máx. 1.99 (7 semanas); limitadas por tiempo: máx. 1.99 (11 semanas) |
 | cribado con tope | baja | V10 | sí | dos ejecuciones idénticas |
 | cribado con tope | baja vs alta | V11 | sí | último bloque: 98 min (baja) frente a 300 (alta) |
 

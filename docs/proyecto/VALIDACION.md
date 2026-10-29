@@ -22,17 +22,19 @@ Se distinguen tres niveles, de menor a mayor alcance:
      hasta el día de la prueba, con los días y minutos de cada perfil.
    - **Ajuste del día (E1–E8):** estados sintéticos del reloj (fatiga, variabilidad cardíaca, sueño, días sin entrenar,
      esfuerzo raro) y respuestas a las tres preguntas.
-3. **Caso real**: hasta el 2026-10-21, el motor de Python con la fisiología de una cuenta real de intervals.icu (cuenta de
-   pruebas del autor). No se ha pasado a Kotlin: la validación nueva usa solo datos sintéticos.
+3. **Caso real** (`ValidationTest.realAccount`): los mismos criterios con la fisiología y el estado de hoy de una cuenta
+   real de intervals.icu (cuenta de pruebas del autor): un plan sin fecha, los objetivos de FC que llegarían al reloj, una
+   media maratón de 20 semanas y el plan de 14 días con el estado de hoy. Se ejecuta en local con
+   `set -a; . prototype/.env; set +a; VALIDATION_REPORT=1 ./gradlew :shared:jvmTest --tests '*realAccount*'`; sin
+   credenciales se omite. El informe (`validacion/resultados-cuenta-real.md`) solo recoge la LTHR y la FC máx. de la cuenta.
 
 Queda fuera, como trabajo futuro, la **validación de eficacia** (si las personas mejoran su forma física siguiendo los
 planes): exige un estudio con participantes y aprobación de un comité de ética.
 
 ## 2. Resultados
 
-**178 de 179 comprobaciones aplicables cumplen**; 10 no aplican. La que no cumple (V9 en un caso) es un fallo conocido,
-explicado en §4: sale en el informe, pero no rompe la compilación. Si el motor llega a cumplirla, la prueba avisa para
-quitarla de la lista de fallos conocidos.
+**179 de 179 comprobaciones aplicables cumplen**; 10 no aplican. La prueba admite una lista de fallos conocidos (salen en
+el informe, pero no rompen la compilación, y avisa en cuanto se cumplen); hoy está vacía.
 
 ### 2.1 Planes sin fecha
 
@@ -46,10 +48,10 @@ quitarla de la lista de fallos conocidos.
 | V6 Tope del cribado: sin Z4+ ni RIR < 3 | Cumple |
 | V7 Descanso semanal; pierna pesada nunca en días seguidos | Cumple |
 | V8 Fuerza y músculo: sin carrera el día de pierna | Cumple |
-| V9 Monotonía de Foster < 2 | Cumple en 17 de 18 casos. No cumple en uno: tope de intensidad + adherencia baja (máx. 2,26), un conflicto estructural explicado en §4 |
+| V9 Monotonía de Foster < 2 | Cumple en los 18 casos (máx. 1,99). Hasta el 2026-10-29 fallaba uno, tope de intensidad + adherencia baja (2,26): §4 |
 | V10 Determinismo | Cumple |
 | V11 Adherencia baja → menos volumen que alta | Cumple |
-| Caso real (Python, 2026-10-21) | Cumplía: LTHR 174, FC máx. 192 → techo fácil 144 ppm = 75 % de la FC máx.; todos los objetivos entre el 50 y el 100 %. No se ha pasado a Kotlin |
+| Caso real (2026-10-29) | Cumplen las 16 comprobaciones aplicables (V1 no aplica con adherencia media). LTHR 174, FC máx. 192 → techo fácil 144 ppm = 75 % de la FC máx.; objetivos entre el 50 y el 75 %. Media maratón: subida máx. +9,4 %, afinado al 44 %, 93 % del tiempo en Z1–Z2. Detalle en `validacion/resultados-cuenta-real.md` |
 
 ### 2.2 Hacia una carrera
 
@@ -114,14 +116,18 @@ La primera versión del motor llenaba las semanas de 6 días hasta el límite de
 de Foster (media / desviación de la carga diaria) superaba 2 en los tres perfiles de 6 días (hasta 2,42). Se corrigió
 haciendo que el motor elija entre semanas candidatas (DISENO §5.5); ahora cumplen 17 de los 18 casos.
 
-Queda uno: el perfil con tope de intensidad ligera-moderada y adherencia baja. Ahí la dosis (160 min) queda pegada al suelo
-de la OMS (150) y el tope solo permite sesiones moderadas, que suman de uno en uno: para llegar a 150 hay que usar los seis
-días casi por igual. Se comprobaron todas las alternativas —ceder tiempo de fuerza, añadir un día de descanso y cargar más
-los días de fuerza— y ninguna cumple a la vez el suelo y la monotonía (el caso se reproduce con `ValidationTest`; la
-búsqueda de alternativas se hizo con un script aparte durante el desarrollo, y el 2026-10-29 se probó también con dos
-días de descanso más: tampoco llega). Es un
-conflicto estructural, y el motor prioriza el suelo de la OMS: el umbral de 2 procede del seguimiento de deportistas con
-cargas altas (Foster, 1998), mientras que este caso es de carga baja y moderada. [Inferencia en la prioridad]
+Quedaba uno: el perfil con tope de intensidad ligera-moderada y adherencia baja (2,26 en la semana 17). Ahí la dosis
+(135 min) queda pegada al suelo de la OMS y el tope solo permite sesiones moderadas. En los tres días sin fuerza caben
+128 min equivalentes como mucho (60 min por día, y el calentamiento en Z1 no cuenta), así que hacía falta aeróbico
+también en los días de fuerza. El motor solo probaba dos repartos: aeróbico en todos los días de fuerza (seis días casi
+iguales) o un día de descanso más (no llega a la dosis). Ceder tiempo de fuerza y cargar más los días de fuerza tampoco
+lo resolvían.
+
+**Solución (2026-10-29):** entre las semanas candidatas se prueba también con aeróbico solo en algunos días de fuerza (los
+de más tiempo libre) o en ninguno. Con uno basta: 135 min equivalentes y monotonía 1,71, porque se alternan días con más
+carga y días solo de fuerza. Si no hay aeróbico en ningún día de fuerza, los días libres se reparten por igual, ya que la
+alternancia la dan los de fuerza. Cambia el reparto en 53 de las 384 semanas de referencia y todos los criterios siguen
+cumpliéndose. [Inferencia: el orden de preferencia entre candidatas]
 
 ## 5. Limitaciones
 

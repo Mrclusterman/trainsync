@@ -307,9 +307,13 @@ fun cardioKinds(p: HealthProfile, n: Int): MutableList<String> {
 
 /** Resistencia de la semana (§5.3–§5.5): primero los días sin fuerza; si no llegan, también los de fuerza. */
 private fun weekCardio(p: HealthProfile, start: LocalDate, dose: Dose, days: List<String>,
-                       strength: Map<String, HealthStrength>): Pair<Map<String, Session>, Double> {
+                       strength: Map<String, HealthStrength>, strengthSlots: Int = 7): Pair<Map<String, Session>, Double> {
     val free = days.filter { it !in strength }
-    val slots = free + strength.keys.filter { p.days[it]!! - strength[it]!!.durationMin >= 20 }
+    // Días de fuerza que también llevan aeróbico: los de más tiempo libre primero, como mucho `strengthSlots`
+    val extra = strength.keys.filter { p.days[it]!! - strength[it]!!.durationMin >= 20 }
+        .sortedByDescending { p.days[it]!! - strength[it]!!.durationMin }.take(strengthSlots).toSet()
+    val slots = free + strength.keys.filter { it in extra }
+    val onStrengthDays = extra.isNotEmpty()
     val sports = p.cardio.ifEmpty { listOf("walking") }
     var pending = dose.aerobic.toDouble()
     val planDays = linkedMapOf<String, Session>()
@@ -318,7 +322,8 @@ private fun weekCardio(p: HealthProfile, start: LocalDate, dose: Dose, days: Lis
     // Días duros y suaves alternos (monotonía de Foster < 2, MOTOR §3): entre los libres, de más a menos tiempo, 1,3 y 0,7
     // alternos; los días que ya tienen fuerza llevan menos aeróbico (0,5). [Inferencia en los factores]
     val byCap = free.sortedWith(compareBy({ -caps[it]!! }, { WEEKDAYS.indexOf(it) }))
-    val weight = free.associateWith { caps[it]!! * (if (byCap.indexOf(it) % 2 == 0) 1.3 else 0.7) } +
+    // Sin aeróbico los días de fuerza, la alternancia ya la dan esos días: los libres se reparten por igual
+    val weight = free.associateWith { caps[it]!! * (if (!onStrengthDays) 1.0 else if (byCap.indexOf(it) % 2 == 0) 1.3 else 0.7) } +
         slots.filter { it in strength }.associateWith { caps[it]!! * 0.5 }
     val kinds = cardioKinds(p, slots.size)
     for ((i, day) in slots.withIndex()) {
@@ -379,8 +384,11 @@ fun weekPlan(p: HealthProfile, start: LocalDate, adherence: List<Double> = empty
     for (share in STRENGTH_SHARES) {
         val budget = sDays.associateWith { max(pyRound(p.days[it]!! * share), 20) }
         val strength = strengthWeek(p, sDays, dose.sets, budget)
-        for (rest in listOf<String?>(null) + free) {
-            val (planDays, doneEq) = weekCardio(p, start, dose, days.filter { it != rest }, strength)
+        // Con poca dosis repartida en muchos días, los días quedan iguales: también se prueba con aeróbico solo en
+        // algunos días de fuerza (o en ninguno), que alterna días solo de fuerza y días de resistencia (validación V9)
+        val slotOptions = listOf(7) + (0 until sDays.size)
+        for ((rest, slotsOnStrength) in (listOf<String?>(null) + free).flatMap { r -> slotOptions.map { r to it } }) {
+            val (planDays, doneEq) = weekCardio(p, start, dose, days.filter { it != rest }, strength, slotsOnStrength)
             val candidate = Candidate(strength, planDays, doneEq, rest)
             if (rest == null && (most == null || doneEq > most.doneEq)) most = candidate  // sin el suelo, no se quita un día
             if (doneEq < floorEq) continue

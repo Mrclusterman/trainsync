@@ -6,7 +6,15 @@ package io.github.mrclusterman.trainsync.engine
 //   R1–R9   planes hacia una carrera: 7 carreras, de la preparación (20 semanas) al día de la prueba
 //   E1–E8   ajuste del día con datos del reloj o con las tres preguntas
 // Con VALIDATION_REPORT=1 escribe docs/proyecto/validacion/resultados.md; sin él solo comprueba.
+// Caso real (realAccount): con INTERVALS_ATHLETE_ID e INTERVALS_API_KEY en el entorno, los mismos criterios con la
+// fisiología y el estado de esa cuenta. Sin ellas se omite (así en la nube). El informe solo dice si cumple, más la LTHR y
+// la FC máx.; ningún dato de sueño, VFC ni actividades sale del equipo.
 
+import io.github.mrclusterman.trainsync.app.systemToday
+import io.github.mrclusterman.trainsync.intervals.IntervalsClient
+import io.github.mrclusterman.trainsync.intervals.dayState
+import io.github.mrclusterman.trainsync.intervals.fillPhysiology
+import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.daysUntil
 import java.io.File
@@ -20,10 +28,8 @@ private data class Row(val case: String, val variant: String, val id: String, va
  * Fallos conocidos y aceptados por ahora: salen en el informe como "no", pero no rompen la compilación. Cada uno con su
  * motivo; quitarlo de aquí en cuanto el motor lo cumpla.
  */
-private val KNOWN = mapOf(
-    // Con tope de intensidad y poca constancia, quitar un día deja la semana por debajo de la dosis: el motor prefiere la
-    // dosis a la variedad. Ya fallaba igual en el prototipo de Python (2,26). Arreglo: variar la duración de los días.
-    "V9 cribado con tope (baja)" to "la dosis pesa más que la monotonía cuando todo es moderado",
+private val KNOWN = mapOf<String, String>(
+    // Ninguno. El último (V9 "cribado con tope", adherencia baja) se resolvió el 2026-10-29: VALIDACION.md §4.
 )
 
 class ValidationTest {
@@ -282,6 +288,70 @@ class ValidationTest {
         val (rest, _) = adjustDay(p, day, readiness(1, 1, 1), 2)
         row("E8", "respuestas: todo a 1", rest.size <= 1 && rest.all { it.sport == "walking" }, "queda: ${rest.joinToString { it.sport }}")
         return rows
+    }
+
+    // ------------------------------------------------------------------ caso real
+
+    @Test
+    fun realAccount() {
+        val id = System.getenv("INTERVALS_ATHLETE_ID") ?: return
+        val key = System.getenv("INTERVALS_API_KEY") ?: return
+        val today = systemToday()
+        val client = IntervalsClient(id, key)
+        val (athlete, wellness, activities) = try {
+            runBlocking { Triple(client.athlete(), client.wellness(today.plusDays(-90), today), client.activities(today.plusDays(-90), today)) }
+        } finally {
+            client.close()
+        }
+        val sports = System.getenv("ACTIVE_SPORTS")?.split(",")?.map { it.trim() }?.filter { it in setOf("running", "cycling", "swimming_pool") }
+            ?.ifEmpty { null } ?: listOf("running", "cycling")
+        val restDays = System.getenv("REST_DAYS")?.split(",")?.map { it.trim() }?.filter { it in WEEKDAYS } ?: listOf("MON")
+        val minutes = all.filter { it !in restDays }.associateWith { if (it == "SUN") 120 else 60 }
+        val ep = fillPhysiology(Profile(activeSports = sports, restDays = restDays, dayMinutes = minutes), athlete)
+        val rows = mutableListOf<Row>()
+
+        // Planes sin fecha con tu fisiología
+        val hp = HealthProfile("fitness", minutes, cardio = sports.filter { it in CARDIO }, level = "intermediate",
+            lthr = ep.lthr, maxHr = ep.maxHr, css = ep.css)
+        checkHealth(hp, "media", simulate(hp, adherence["media"]!!)).forEach { (c, r) -> rows += Row("tu cuenta, sin fecha", "media", c, r.first, r.second) }
+
+        // Objetivos de FC que llegarían al reloj: techo fácil = LTHR − 30 (MOTOR §3) en % de la FC máx., todos en 50–100 %
+        val lthr = ep.lthr
+        val maxHr = ep.maxHr
+        if (lthr != null && maxHr != null) {
+            val texts = weekPlan(hp, start).sessions().filterIsInstance<HealthCardio>().map { describe(it.session, ep) }
+            val pct = texts.flatMap { t -> Regex("""(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)% HR""").findAll(t).flatMap { m -> m.groupValues.drop(1).map { it.toDouble() } } }
+            val cap = 100 * (lthr - 30) / maxHr
+            rows += Row("tu cuenta, objetivos de FC", "fisiología real", "FC",
+                pct.isNotEmpty() && pct.all { it in 50.0..100.0 } && pct.any { kotlin.math.abs(it - cap) < 0.1 },
+                "LTHR ${fmt(lthr, 0)}, FC máx. ${fmt(maxHr, 0)} → techo fácil ${fmt(lthr - 30, 0)} ppm = ${fmt(cap, 1)} % de la FC máx.; " +
+                    "${texts.size} sesiones, objetivos ${fmt(pct.minOrNull() ?: 0.0, 1)}–${fmt(pct.maxOrNull() ?: 0.0, 1)} % HR")
+        } else rows += Row("tu cuenta, objetivos de FC", "fisiología real", "FC", null, "no aplica: intervals.icu no tiene LTHR o FC máx.")
+
+        // Una media maratón con tu fisiología
+        val goal = Goal("media maratón", "running", today.plusDays(7 * PREP_WEEKS), "A", 21.1)
+        val race = Race(goal, ep.copy(activeSports = listOf("running") + sports.filter { it != "running" }, planStart = null))
+        checkRace(race, raceDays(race)).forEach { (c, r) -> rows += Row("tu cuenta, media maratón", "prioridad A", c, r.first, r.second) }
+
+        // Tu estado de hoy: el plan de 14 días se calcula con él y sigue cabiendo en tus minutos
+        val state = dayState(wellness, activities, today)
+        val twoWeeks = plan(today, 14, race.profile, goal, state)
+        val over = twoWeeks.count { d -> d.minutes() > (minutes[d.weekday] ?: 0) }
+        rows += Row("tu cuenta, estado de hoy", "datos reales", "E-real", over == 0,
+            "plan de 14 días con tu estado de hoy; días que no caben: $over")
+
+        println(rows.joinToString("\n") { "${it.id} ${it.case}: ${when (it.ok) { true -> "cumple"; false -> "NO cumple"; null -> "no aplica" }} · ${it.detail}" })
+        if (System.getenv("VALIDATION_REPORT") == "1") {
+            val mark = { ok: Boolean? -> when (ok) { true -> "sí"; false -> "**no**"; null -> "no aplica" } }
+            File("../docs/proyecto/validacion/resultados-cuenta-real.md").writeText((listOf(
+                "# Validación con la cuenta real de pruebas ($today)", "",
+                "${rows.count { it.ok == true }} de ${rows.count { it.ok != null }} comprobaciones aplicables cumplen. Solo la LTHR y la FC máx. " +
+                    "salen de la cuenta; el resto son cifras del plan.", "",
+                "| Caso | Variante | Criterio | Cumple | Detalle |", "|---|---|---|---|---|") +
+                rows.map { "| ${it.case} | ${it.variant} | ${it.id} | ${mark(it.ok)} | ${it.detail} |" }).joinToString("\n") + "\n")
+        }
+        val failed = rows.filter { it.ok == false }
+        if (failed.isNotEmpty()) fail("Con la cuenta real no cumplen:\n" + failed.joinToString("\n") { "  ${it.id} ${it.case}: ${it.detail}" })
     }
 
     // ------------------------------------------------------------------ informe
