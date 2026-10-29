@@ -616,6 +616,28 @@ da una sesión por hecha.
   ya dio por hecha no cuenta dos veces. La adherencia de cada bloque usa este mismo emparejado y la app muestra el motivo de
   cada actividad ("Bici de 45 min a las 08:00 en tu reloj: cuenta por «Aeróbico base»"). [Inferencia]
 
+## 15.2 Reglas añadidas en el núcleo de Kotlin (2026-10-29)
+
+Desde el 2026-10-29 el motor vive solo en `shared/src/commonMain/kotlin/io/github/mrclusterman/trainsync/engine/`; el de
+Python del prototipo queda congelado. Cada regla está cubierta por `ValidationTest` (docs/proyecto/VALIDACION.md).
+
+| Regla | Dónde | Evidencia |
+|---|---|---|
+| La carga semanal de la preparación no sube más del 10 % sobre la última semana de carga; la descarga pesa como mucho el 80 % de esa semana. El volumen de cada semana se busca por bisección entre 0,15 y 1 (`rampScales`) | `TrainingEngine.kt` | [Práctica] |
+| Nada que no quepa en el día: si la sesión de calidad no cabe, su versión continua; si tampoco, recuperación; si nada cabe, ese día solo fuerza o descanso. Hacia una carrera, la fuerza solo si deja al menos la mitad del día a la sesión principal | `proposeDay` | [Inferencia] |
+| Plan de N días: cada bloque de 7 parte del CTL proyectado con la carga planificada del anterior | `plan` | [Inferencia] |
+| Tope del cribado del ACSM (si hay respuestas): sin sesiones de calidad y ningún tramo por encima de Z3 (moderado) o Z2 (ligero-moderado); con síntomas y actividad, ningún ejercicio. Las apps no hacen el cuestionario (CUMPLIMIENTO.md) | `Screening.kt`, `buildSession`, `proposeDay`, `Planner` | [Verificado: Riebe 2015] |
+| Sueño sin puntuación (Health Connect, Apple Salud): menos de 6 h y una o más por debajo de tu mediana de 28 días → sin intensidad y −30 % | `adjust`, `dayState` | [Verificado: ≥ 7 h, Watson 2015; umbrales: Inferencia] |
+| Sin reloj, las tres respuestas ajustan también los días de carrera (`feltStatus`); con datos del móvil sin sueño ni VFC, se siguen preguntando | `adjust`, `Planner` | [Inferencia] |
+| Objetivos sin fecha con reloj o móvil: el día se ajusta con las mismas reglas que en carrera (`watchReadiness`) | `HealthPlan.kt` | [Inferencia] |
+| Umbral (LTHR) sin intervals.icu: FC media de la sesión más dura de 20–70 min, si llegó al 85 % de la FC máx. (tope 95 %); FC máx. medida sin picos > 220 | `HealthData.kt` | [Práctica: test de Friel; límites: Inferencia] |
+| Carga sin pulso por deporte (caminar 25/h, correr 60, bici 45, nadar 50, fuerza 35) | `HealthData.kt` | [Inferencia] |
+| Natación con CSS en metros, en largos de 25 m al ritmo medio de su zona (`mtr` en intervals.icu) | `swimMeters`, `describe` | [Práctica] |
+| Menores de 18: meta de 60 min al día de media (420/semana) y fuerza 3 días | `HealthPlan.kt` | [Verificado: Bull 2020, OMS] |
+| Monotonía (V9): también semanas con aeróbico solo en algunos días de fuerza o en ninguno | `weekPlan`, `weekCardio` | [Foster 1998; orden: Inferencia] |
+| Varios cambios de días en una semana: historial de cambios; cada día pasado queda como estaba (también en carrera) | `weekWithHistory`, `Planner` | — |
+| Fuerza: lo apuntado cuenta como sesión hecha; por debajo del rango o 3 sesiones sin ganar repeticiones, bajar un 10 % | `Lifts.kt`, `Planner` | [Práctica: ACSM 2009; cifras: Inferencia] |
+
 ## 16. Referencias
 
 1. Seiler S. What is best practice for training intensity and duration distribution in endurance athletes? *Int J Sports Physiol Perform.* 2010;5(3):276-291. doi:10.1123/ijspp.5.3.276 — https://pubmed.ncbi.nlm.nih.gov/20861519/
@@ -671,6 +693,7 @@ da una sesión por hecha.
 
 | Versión | Fecha | Cambios |
 |---|---|---|
+| 0.7 | 2026-10-29 | El núcleo de Kotlin es la única fuente; reglas nuevas de §15.2 tras la validación ampliada (carreras, ajuste del día, natación, 600 combinaciones generadas y 100 usuarios simulados). |
 | 0.6 | 2026-10-21 | Plantilla ajustada a los días del usuario (`fit_days`) y emparejado de lo hecho con lo planificado con motivo visible (`match_day`) (§15.1). |
 | 0.5 | 2026-10-21 | Reparto de la carga como el load focus de Garmin (§12), sesiones tempo y anaeróbicas, vuelta a la base tras 7 días sin entrenar, ritmos de carrera desde la FC con la relación FC-velocidad propia (§13), envío al reloj con una métrica por sesión (§14) y comparación con Garmin (§15). |
 | 0.4 | 2026-10-19 | RPE verificado e implementado (§3.3). Todas las pruebas: running por distancia (5K→ultra), trail (§4.1.b), ciclismo de fondo, natación en piscina y aguas abiertas, triatlón/duatlón (§6.4). Taper por distancia (§8.2), topes de larga 5K/ultra (§8.4). Implementados: neuromusculares, tests de onboarding, brick, notas si te sientes mal/bien, pesos por tipo de sesión (§9.1) e intermitentes con fracción de trabajo. Corregido: sin PLAN_START la fase no avanzaba. 12 referencias nuevas. |
