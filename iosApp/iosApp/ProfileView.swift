@@ -73,6 +73,56 @@ struct ProfileForm: View {
     }
 }
 
+/// Carreras preparatorias (B o C) antes de la principal: el plan afina unos días antes y recupera después.
+struct OtherRacesView: View {
+    @EnvironmentObject var model: AppModel
+    @State private var adding = false
+    @State private var name = ""
+    @State private var date = Calendar.current.date(byAdding: .month, value: 1, to: Date()) ?? Date()
+    @State private var priority = "C"
+
+    var body: some View {
+        let core = model.core
+        if let goal = core.data.goal, goal.kind == .race, let main = goal.race {
+            VStack(alignment: .leading, spacing: 8) {
+                Secondary("Otras carreras antes de \(main.name)")
+                ForEach(goal.otherRaces, id: \.date) { r in
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text(r.name).font(.subheadline).bold()
+                            Secondary(ScreensKt.dateLabel(date: r.date) + (r.priority == "B" ? " · importante" : " · de preparación"))
+                        }
+                        Spacer()
+                        Button("Quitar") { model.run { core.removeRace(date: r.date) } }
+                    }
+                }
+                if adding {
+                    TextField("Nombre de la carrera", text: $name).textFieldStyle(.roundedBorder)
+                    DatePicker("Fecha", selection: $date, displayedComponents: .date)
+                    Picker("Prioridad", selection: $priority) {
+                        Text("Importante (B)").tag("B")
+                        Text("De preparación (C)").tag("C")
+                    }.pickerStyle(.segmented)
+                    HStack {
+                        Button("Añadir") {
+                            let f = DateFormatter()
+                            f.dateFormat = "yyyy-MM-dd"
+                            f.locale = Locale(identifier: "en_US_POSIX")
+                            let race = RaceInfo(name: name.trimmingCharacters(in: .whitespaces), sport: main.sport, date: f.string(from: date),
+                                                priority: priority, distanceKm: nil, trail: false)
+                            model.run("Carrera añadida") { try core.addRace(race: race); adding = false; name = "" }
+                        }.buttonStyle(.borderedProminent)
+                        Button("Cancelar") { adding = false }
+                    }
+                } else {
+                    Secondary("El plan afina unos días antes de cada una y te deja recuperar después.")
+                    Button("Añadir otra carrera") { adding = true }.buttonStyle(.bordered)
+                }
+            }
+        }
+    }
+}
+
 struct FlowChips: View {
     let options: [(String, String)]
     let isSelected: (String) -> Bool
@@ -104,6 +154,7 @@ struct ProfileView: View {
                     Text(core.data.goal.map { TextsKt.goalLabel(goal: $0) } ?? "Sin objetivo").font(.title3).bold()
                     Secondary("Puedes cambiarlo o abandonarlo cuando quieras; el plan se rehace al momento.")
                     Button("Cambiar objetivo") { model.run { core.abandonGoal() } }.buttonStyle(.bordered)
+                    OtherRacesView()
                 }
                 Module {
                     ProfileForm(draft: $draft)

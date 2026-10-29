@@ -4,9 +4,9 @@ package io.github.mrclusterman.trainsync.engine
 // la antigua validación en Python del prototipo: el motor de Kotlin es la única fuente. Tres partes, todas con datos sintéticos:
 //   V1–V11  planes sin fecha: 6 perfiles × 3 adherencias durante 24 semanas
 //   R1–R9   planes hacia una carrera: 7 carreras, de la preparación (20 semanas) al día de la prueba
-//   E1–E11  ajuste del día con datos del reloj o del móvil, o con las tres preguntas; plan de 14 días
+//   E1–E12  ajuste del día con datos del reloj o del móvil, o con las tres preguntas; plan de 14 días
 //   N1–N3   natación: en metros con tu CSS, por esfuerzo sin él
-//   F1–F13  combinaciones generadas (semilla fija): 300 perfiles sin fecha y 300 carreras con reglas que valen para todos
+//   F1–F14  combinaciones generadas (semilla fija): 300 perfiles sin fecha y 300 carreras con reglas que valen para todos
 // Con VALIDATION_REPORT=1 escribe docs/proyecto/validacion/resultados.md; sin él solo comprueba.
 // Caso real (realAccount): con INTERVALS_ATHLETE_ID e INTERVALS_API_KEY en el entorno, los mismos criterios con la
 // fisiología y el estado de esa cuenta. Sin ellas se omite (así en la nube). El informe solo dice si cumple, más la LTHR y
@@ -191,6 +191,12 @@ class ValidationTest {
         race("triatlón olímpico", "triathlon", null, "A", listOf("swimming_pool", "cycling", "running"),
             days("MON" to 45, "TUE" to 60, "WED" to 60, "THU" to 60, "SAT" to 150, "SUN" to 90), lthr = 162.0),
         race("10 km preparatoria (C)", "running", 10.0, "C", listOf("running"), days("TUE" to 45, "THU" to 45, "SUN" to 70)),
+        "maratón con media B y 10 km C" to race("x", "running", 42.2, "A", listOf("running"),
+            days("TUE" to 60, "WED" to 45, "THU" to 75, "SAT" to 45, "SUN" to 150), lthr = 165.0).second.let { r ->
+                r.copy(goal = r.goal.copy(name = "maratón", secondary = listOf(
+                    Goal("10 km C", "running", r.goal.date.plusDays(-7 * 14), "C", 10.0),
+                    Goal("media B", "running", r.goal.date.plusDays(-7 * 6), "B", 21.1))))
+            },
     )
 
     private fun raceDays(r: Race): List<Day> {
@@ -225,14 +231,25 @@ class ValidationTest {
         val weeks = build.chunked(7).filter { it.size == 7 }
         val load = weeks.map { w -> w.sumOf { it.load() } }
         val recovery = weeks.map { w -> w.any { it.recoveryWeek } }
-        val rises = (1 until weeks.size).filter { !recovery[it] && load[it - 1] > 0 }.map { i ->
-            val before = if (recovery[i - 1] && i >= 2) i - 2 else i - 1  // tras la descarga se compara con la semana previa a ella
-            load[i] / load[before]
+        // Las semanas con una carrera preparatoria bajan a propósito: no cuentan ni como subida ni como referencia
+        val racing = weeks.map { w -> w.any { secondaryRace(LocalDate.parse(it.date), r.goal) != null } }
+        var last: Double? = null
+        val rises = mutableListOf<Double>()
+        var deloads = 0
+        var deloadOk = true
+        for (i in weeks.indices) {
+            if (racing[i]) continue
+            if (recovery[i]) {
+                deloads += 1
+                if (last != null && load[i] >= last) deloadOk = false
+                continue
+            }
+            last?.takeIf { it > 0 }?.let { rises += load[i] / it }
+            last = load[i]
         }
         val top = rises.maxOrNull() ?: 1.0
         out["R2"] = (top <= 1.105) to "subida máx. de la carga semanal ${pct(top - 1)} (${weeks.size} semanas)"
-        val deloads = (1 until weeks.size).filter { recovery[it] }
-        out["R3"] = deloads.all { load[it] < load[it - 1] } to "${deloads.size} semanas de descarga, todas con menos carga que la anterior"
+        out["R3"] = deloadOk to "$deloads semanas de descarga, todas con menos carga que la última de carga"
 
         // R4 afinado: −40–60 % de volumen (Bosquet 2007); solo en la carrera principal, las B y C apenas afinan
         if (r.goal.priority == "A") {
@@ -263,6 +280,19 @@ class ValidationTest {
         out["R9"] = quality.isEmpty() to if (quality.isEmpty()) "ninguna" else
             "${quality.size} veces; p. ej. ${quality.first().first.date} ${quality.first().first.main!!.type} + ${quality.first().second.main!!.type}"
         out["R10"] = (raceDays(r) == days) to "dos ejecuciones idénticas"
+        // R11 carreras preparatorias: el día de la carrera sin sesión, antes sin series ni tirada larga, después suave
+        if (r.goal.secondary.isNotEmpty()) {
+            val bad = days.filter { d ->
+                val (sec, until) = secondaryRace(LocalDate.parse(d.date), r.goal) ?: return@filter false
+                when {
+                    until == 0 -> d.main != null || d.strength != null
+                    until > 0 -> d.main?.type in QUALITY || d.main?.type == "long"
+                    else -> d.main != null && d.main!!.type != "recovery" || d.strength != null
+                }
+            }
+            out["R11"] = bad.isEmpty() to if (bad.isEmpty()) "${r.goal.secondary.size} preparatorias: afinado, día de carrera y recuperación"
+                else "${bad.size} días mal; p. ej. ${bad.first().date} ${bad.first().main?.type}"
+        }
         return out
     }
 
@@ -288,7 +318,10 @@ class ValidationTest {
         adjust("threshold", calm.copy(sleepScore = 35.0)).let { (t, v, _) ->
             row("E4", "mal sueño", t !in QUALITY && v < 1.0, "pasa a $t, ×$v")
         }
-        adjust("vo2max", calm.copy(daysSinceActivity = 10)).let { (t, _, _) -> row("E5", "10 días sin entrenar", t !in QUALITY, "pasa a $t") }
+        adjust("vo2max", calm.copy(daysSinceActivity = 10)).let { (t, v, _) -> row("E5", "10 días sin entrenar", t !in QUALITY && v == 1.0, "pasa a $t, ×$v") }
+        adjust("long", calm.copy(daysSinceActivity = 21)).let { (t, v, _) ->
+            row("E12", "21 días sin entrenar (lesión, enfermedad)", t == "aerobic" && v <= 0.6, "pasa a $t, ×$v")
+        }
         adjust("vo2max", calm.copy(effortMismatch = true)).let { (t, _, _) ->
             row("E6", "esfuerzo alto con pulso bajo", t !in QUALITY, "pasa a $t")
         }
@@ -481,7 +514,7 @@ class ValidationTest {
 
         // Carreras: desde hoy (cualquier punto de la preparación) hasta el día de la prueba
         val raceFails = linkedMapOf("F6" to mutableListOf<String>(), "F7" to mutableListOf(), "F8" to mutableListOf(),
-            "F9" to mutableListOf(), "F10" to mutableListOf(), "F11" to mutableListOf(), "F12" to mutableListOf(), "F13" to mutableListOf())
+            "F9" to mutableListOf(), "F10" to mutableListOf(), "F11" to mutableListOf(), "F12" to mutableListOf(), "F13" to mutableListOf(), "F14" to mutableListOf())
         val raceN = 300
         var floorWeeks = 0
         val distances = mapOf("running" to listOf(5.0, 10.0, 21.1, 42.2, 60.0, null), "cycling" to listOf(40.0, 100.0, 160.0, null),
@@ -491,8 +524,14 @@ class ValidationTest {
             val minutes = days()
             val sports = (listOf("running", "cycling", "swimming_pool").shuffled(rnd).take(rnd.nextInt(1, 4)))
             val today = start.plusDays(rnd.nextInt(0, 7))
-            val goal = Goal("carrera", sport, today.plusDays(7 * rnd.nextInt(0, 31) + rnd.nextInt(0, 7)), listOf("A", "B", "C").random(rnd),
-                distances[sport]!!.random(rnd), trail = sport == "running" && rnd.nextBoolean())
+            val main = today.plusDays(7 * rnd.nextInt(0, 31) + rnd.nextInt(0, 7))
+            val gap = today.daysUntil(main)
+            // En un tercio, una o dos preparatorias (B o C) antes de la principal
+            val preps = if (gap > 14 && rnd.nextInt(3) == 0) (0 until rnd.nextInt(1, 3)).map {
+                Goal("prep$it", sport, today.plusDays(rnd.nextInt(1, gap - 7)), listOf("B", "C").random(rnd), distances[sport]!!.random(rnd))
+            } else emptyList()
+            val goal = Goal("carrera", sport, main, listOf("A", "B", "C").random(rnd),
+                distances[sport]!!.random(rnd), trail = sport == "running" && rnd.nextBoolean(), secondary = preps)
             val profile = Profile(activeSports = sports, strength = listOf("gym", "bodyweight", "none").random(rnd),
                 restDays = all.filter { it !in minutes }, dayMinutes = minutes, lthr = listOf(null, 165.0).random(rnd),
                 maxHr = 190.0, css = listOf(null, 100.0).random(rnd),
@@ -518,6 +557,7 @@ class ValidationTest {
             val scales = rampScales(profile, goal)
             for (k in keys) {
                 val w = weeks[k]!!
+                if (w.any { secondaryRace(LocalDate.parse(it.date), goal) != null }) continue  // baja a propósito
                 val load = w.sumOf { it.load() }
                 // Con el volumen ya al mínimo (sesiones en su parte fija) no hay de dónde bajar: se cuenta aparte
                 val atFloor = (scales.getOrNull(k) ?: 1.0) <= 0.15 + 1e-9
@@ -530,13 +570,22 @@ class ValidationTest {
                 else if (last != null && last!! > 0 && load > last!! * 1.105) raceFails["F10"]!! += "$tag: semana $k sube ${pct(load / last!! - 1)}"
                 last = load
             }
+            days.forEach { d ->
+                val (_, until) = secondaryRace(LocalDate.parse(d.date), goal) ?: return@forEach
+                val wrong = when {
+                    until == 0 -> d.main != null || d.strength != null
+                    until > 0 -> d.main?.type in QUALITY || d.main?.type == "long"
+                    else -> d.main != null && d.main!!.type != "recovery" || d.strength != null
+                }
+                if (wrong) raceFails["F14"]!! += "$tag: ${d.date} (${if (until == 0) "día de carrera" else if (until > 0) "afinado" else "recuperación"}) con ${d.main?.type}"
+            }
             if (profile.intensityCap != "vigorous" && days.any { d -> d.main?.type in QUALITY || d.main?.type == "neuromuscular" ||
                     d.main?.blocks?.any { it.zone in vigorous } == true }) raceFails["F13"]!! += "$tag: intensidad por encima del tope ${profile.intensityCap}"
             if (n % 10 == 0 && days.indices.take(7).map { proposeDay(today.plusDays(it), profile, goal) } != days.take(7)) raceFails["F11"]!! += "$tag: no determinista"
         }
         val raceText = mapOf("F6" to "sin errores", "F7" to "cada día cabe en sus minutos y nada en los días sin entreno",
             "F8" to "un día de descanso por semana", "F9" to "fases en orden", "F10" to "carga semanal +10 % como mucho",
-            "F11" to "determinista", "F12" to "cada descarga baja la carga", "F13" to "con tope del cribado, ni series ni Z4+")
+            "F11" to "determinista", "F12" to "cada descarga baja la carga", "F13" to "con tope del cribado, ni series ni Z4+", "F14" to "preparatorias: afinado sin series, día de carrera libre y recuperación suave")
         raceFails.forEach { (id, f) -> rows += Row("$raceN carreras desde un punto cualquiera", "generadas", id, f.isEmpty(),
             (if (f.isEmpty()) raceText[id]!! else "${f.size} fallos; p. ej. ${f.first()}") +
                 if (id == "F10" && floorWeeks > 0) "; $floorWeeks semanas suben más con todo ya al mínimo (sesiones en su parte fija)" else "") }
@@ -548,8 +597,8 @@ class ValidationTest {
     @Test
     fun theEngineMeetsEveryCriterion() {
         val parts = listOf("Planes sin fecha (V1–V11)" to healthRows(), "Hacia una carrera (R1–R10)" to raceRows(),
-            "Ajuste del día (E1–E11)" to stateRows(), "Natación (N1–N3)" to swimRows(),
-            "Combinaciones generadas (F1–F13)" to fuzzRows())
+            "Ajuste del día (E1–E12)" to stateRows(), "Natación (N1–N3)" to swimRows(),
+            "Combinaciones generadas (F1–F14)" to fuzzRows())
         val rows = parts.flatMap { it.second }
         if (System.getenv("VALIDATION_REPORT") == "1") report(parts)
         val failed = rows.filter { it.ok == false && "${it.id} ${it.case} (${it.variant})" !in KNOWN }

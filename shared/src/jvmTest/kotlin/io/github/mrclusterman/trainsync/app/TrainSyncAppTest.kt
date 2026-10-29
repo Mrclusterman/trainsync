@@ -132,6 +132,28 @@ class TrainSyncAppTest {
     }
 
     @Test
+    fun preparatoryRacesGetTheirTaperRaceDayAndRecovery() {
+        val a = app()
+        a.saveProfile(profile)
+        a.setGoal(GoalKind.RACE, RaceInfo("Maratón", "running", "2027-03-14", distanceKm = 42.2))
+        assertFailsWith<IllegalArgumentException> { a.addRace(RaceInfo("Tarde", "running", "2027-04-01", "B")) }  // después de la principal
+        assertFailsWith<IllegalArgumentException> { a.addRace(RaceInfo("Otra A", "running", "2027-01-10", "A")) }
+        a.addRace(RaceInfo("Media de prueba", "running", "2027-01-10", "B", 21.1))  // domingo
+        val race = a.day("2027-01-10")
+        assertTrue(race.items.isEmpty())
+        assertTrue(race.reasons.any { "Hoy es tu carrera: Media de prueba" in it.text })
+        val quality = setOf("vo2max", "threshold", "race_specific", "brick", "tempo", "anaerobic", "neuromuscular", "long")
+        (1..4).map { a.day(LocalDate(2027, 1, 10).plusDays(-it).toString()) }.forEach { d ->
+            assertTrue(d.items.none { it.kind in quality }, "${d.date}: ${d.items.map { it.kind }}")
+        }
+        (1..3).map { a.day(LocalDate(2027, 1, 10).plusDays(it).toString()) }.forEach { d ->
+            assertTrue(d.items.filter { !it.isStrength }.all { it.kind == "recovery" } && d.items.none { it.isStrength }, "${d.date}: ${d.items.map { it.kind }}")
+        }
+        a.removeRace("2027-01-10")
+        assertTrue(a.day("2027-01-10").reasons.none { "Hoy es tu carrera" in it.text })
+    }
+
+    @Test
     fun dataSurvivesARestart() {
         val store = MemoryStore()
         app(store).apply { saveProfile(profile); setGoal(GoalKind.STRENGTH) }

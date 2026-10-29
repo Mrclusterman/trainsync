@@ -55,6 +55,24 @@ class TrainSyncApp(
         save(data.copy(goal = UserGoal(kind, race, now.toString()), blockStart = mondayOf(now).toString()))
     }
 
+    /** Otra carrera antes de la principal (preparatoria, B o C): el plan afina unos días antes y recupera después. */
+    @Throws(Exception::class)  // Swift recibe el error en vez de cerrarse la app
+    fun addRace(race: RaceInfo) {
+        val goal = data.goal
+        val main = goal?.race?.takeIf { goal.kind == GoalKind.RACE }
+        require(goal != null && main != null) { "Primero elige una carrera principal como objetivo" }
+        val date = LocalDate.parse(race.date)
+        require(race.name.isNotBlank()) { "Ponle un nombre a la carrera" }
+        require(date >= today() && date < LocalDate.parse(main.date)) { "Tiene que ser antes de ${main.name} y no en el pasado" }
+        require(race.priority in setOf("B", "C")) { "Una carrera preparatoria es importante (B) o de preparación (C)" }
+        save(data.copy(goal = goal.copy(otherRaces = (goal.otherRaces.filterNot { it.date == race.date } + race).sortedBy { it.date })))
+    }
+
+    fun removeRace(date: String) {
+        val goal = data.goal ?: return
+        save(data.copy(goal = goal.copy(otherRaces = goal.otherRaces.filterNot { it.date == date })))
+    }
+
     /** Abandonar el objetivo: la app vuelve a preguntar qué quieres. */
     fun abandonGoal() = save(data.copy(goal = null))
 

@@ -26,7 +26,12 @@ data class RaceInfo(
 )
 
 @Serializable
-data class UserGoal(val kind: GoalKind, val race: RaceInfo? = null, val since: String)
+data class UserGoal(
+    val kind: GoalKind,
+    val race: RaceInfo? = null,
+    val since: String,
+    val otherRaces: List<RaceInfo> = emptyList(),  // preparatorias (B o C) antes de la principal
+)
 
 @Serializable
 data class UserProfile(

@@ -42,7 +42,7 @@ planes): exige un estudio con participantes y aprobación de un comité de étic
 
 ## 2. Resultados
 
-**216 de 216 comprobaciones aplicables cumplen**; 10 no aplican. La prueba admite una lista de fallos conocidos (salen en
+**229 de 229 comprobaciones aplicables cumplen**; 10 no aplican. La prueba admite una lista de fallos conocidos (salen en
 el informe, pero no rompen la compilación, y avisa en cuanto se cumplen); hoy está vacía.
 
 ### 2.1 Planes sin fecha
@@ -77,6 +77,7 @@ el informe, pero no rompen la compilación, y avisa en cuanto se cumplen); hoy e
 | R8 La tirada larga no pasa del tope por distancia (`LONG_CAP`) | Cumple |
 | R9 Nunca dos sesiones de calidad en días seguidos [Práctica] | Cumple |
 | R10 Determinismo | Cumple |
+| R11 Carreras preparatorias (B y C) dentro del plan: el día de la carrera sin sesión, antes sin series ni tirada larga, después solo recuperación y sin fuerza | Cumple (maratón con una media B y un 10 km C, añadido el 2026-10-29) |
 
 ### 2.3 Ajuste del día
 
@@ -92,6 +93,7 @@ el informe, pero no rompen la compilación, y avisa en cuanto se cumplen); hoy e
 | E8 Respuestas todo a 1 → solo un paseo | Cumple |
 | E9 Móvil, sin puntuación de sueño: 5,2 h cuando sueles dormir 7,4 → sin intensidad y −30 % | Cumple |
 | E10 Móvil: 5,4 h cuando sueles dormir 5,6 → sin cambios (se compara con lo normal en ti) | Cumple |
+| E12 21 días sin entrenar (lesión, enfermedad, vacaciones): sin intensidad ni tirada larga y −40 % de volumen | Cumple |
 | E11 Plan de 14 días: la 2.ª semana parte del CTL proyectado y no sube más del 10 % (en base, construcción y pico) | Cumple |
 
 ### 2.4 Natación
@@ -107,6 +109,7 @@ el informe, pero no rompen la compilación, y avisa en cuanto se cumplen); hoy e
 | Criterio | Resultado |
 |---|---|
 | F1–F5 Sin fecha: sin errores, cada día cabe, descanso semanal, tope del cribado (sin Z4+; RIR ≥ 3 ligero-moderado, ≥ 2 moderado), determinismo | Cumple en los 300 perfiles |
+| F14 Carreras generadas con una o dos preparatorias al azar (un tercio): afinado, día de carrera y recuperación | Cumple |
 | F6–F13 Carreras: sin errores, cada día cabe, descanso semanal, fases en orden, +10 % semanal, determinismo, cada descarga baja y, con tope del cribado, ni series ni Z4+ | Cumple en las 300. Una semana sube más del 10 % con el volumen ya al mínimo (las sesiones no bajan de su parte fija): se cuenta aparte en el informe |
 
 ## 3. Defectos que encontró la validación (y su corrección)

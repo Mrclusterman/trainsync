@@ -145,7 +145,10 @@ class Planner(private val data: AppData, private val today: LocalDate) {
     }
 
     fun raceGoal(): Goal? = goal?.race?.takeIf { goal.kind == GoalKind.RACE }?.let {
-        Goal(it.name, it.sport, LocalDate.parse(it.date), it.priority, it.distanceKm, it.trail)
+        val main = LocalDate.parse(it.date)
+        Goal(it.name, it.sport, main, it.priority, it.distanceKm, it.trail,
+            secondary = goal.otherRaces.map { r -> Goal(r.name, r.sport, LocalDate.parse(r.date), r.priority, r.distanceKm, r.trail) }
+                .filter { r -> r.date < main })
     }
 
     // ------------------------------------------------------------ sin fecha (ponerse en forma, fuerza, salud)

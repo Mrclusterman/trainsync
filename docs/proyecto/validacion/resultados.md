@@ -1,6 +1,6 @@
 # Resultados de la validación del motor
 
-216 de 216 comprobaciones aplicables cumplen (13 no aplican). Datos sintéticos; generado con `VALIDATION_REPORT=1 ./gradlew :shared:jvmTest --tests '*ValidationTest*'`. Criterios en `VALIDACION.md`.
+229 de 229 comprobaciones aplicables cumplen (13 no aplican). Datos sintéticos; generado con `VALIDATION_REPORT=1 ./gradlew :shared:jvmTest --tests '*ValidationTest*'`. Criterios en `VALIDACION.md`.
 
 ## Planes sin fecha (V1–V11)
 
@@ -146,7 +146,7 @@
 |---|---|---|---|---|
 | 10 km, 3 días | prioridad A | R1 | sí | base_early → base → build → peak → taper |
 | 10 km, 3 días | prioridad A | R2 | sí | subida máx. de la carga semanal +7.3 % (18 semanas) |
-| 10 km, 3 días | prioridad A | R3 | sí | 3 semanas de descarga, todas con menos carga que la anterior |
+| 10 km, 3 días | prioridad A | R3 | sí | 3 semanas de descarga, todas con menos carga que la última de carga |
 | 10 km, 3 días | prioridad A | R4 | sí | volumen del afinado = 57 % del de las 3 semanas previas (9 días) |
 | 10 km, 3 días | prioridad A | R5 | sí | todas caben |
 | 10 km, 3 días | prioridad A | R6 | sí | semanas sin un día de descanso: 0 |
@@ -156,7 +156,7 @@
 | 10 km, 3 días | prioridad A | R10 | sí | dos ejecuciones idénticas |
 | media maratón, 4 días | prioridad A | R1 | sí | base_early → base → build → peak → taper |
 | media maratón, 4 días | prioridad A | R2 | sí | subida máx. de la carga semanal +10.0 % (18 semanas) |
-| media maratón, 4 días | prioridad A | R3 | sí | 3 semanas de descarga, todas con menos carga que la anterior |
+| media maratón, 4 días | prioridad A | R3 | sí | 3 semanas de descarga, todas con menos carga que la última de carga |
 | media maratón, 4 días | prioridad A | R4 | sí | volumen del afinado = 46 % del de las 3 semanas previas (12 días) |
 | media maratón, 4 días | prioridad A | R5 | sí | todas caben |
 | media maratón, 4 días | prioridad A | R6 | sí | semanas sin un día de descanso: 0 |
@@ -166,7 +166,7 @@
 | media maratón, 4 días | prioridad A | R10 | sí | dos ejecuciones idénticas |
 | maratón, 5 días | prioridad A | R1 | sí | base_early → base → build → peak → taper |
 | maratón, 5 días | prioridad A | R2 | sí | subida máx. de la carga semanal +9.7 % (17 semanas) |
-| maratón, 5 días | prioridad A | R3 | sí | 3 semanas de descarga, todas con menos carga que la anterior |
+| maratón, 5 días | prioridad A | R3 | sí | 3 semanas de descarga, todas con menos carga que la última de carga |
 | maratón, 5 días | prioridad A | R4 | sí | volumen del afinado = 41 % del de las 3 semanas previas (21 días) |
 | maratón, 5 días | prioridad A | R5 | sí | todas caben |
 | maratón, 5 días | prioridad A | R6 | sí | semanas sin un día de descanso: 0 |
@@ -176,7 +176,7 @@
 | maratón, 5 días | prioridad A | R10 | sí | dos ejecuciones idénticas |
 | trail 30 km | prioridad A | R1 | sí | base_early → base → build → peak → taper |
 | trail 30 km | prioridad A | R2 | sí | subida máx. de la carga semanal +9.8 % (17 semanas) |
-| trail 30 km | prioridad A | R3 | sí | 3 semanas de descarga, todas con menos carga que la anterior |
+| trail 30 km | prioridad A | R3 | sí | 3 semanas de descarga, todas con menos carga que la última de carga |
 | trail 30 km | prioridad A | R4 | sí | volumen del afinado = 46 % del de las 3 semanas previas (21 días) |
 | trail 30 km | prioridad A | R5 | sí | todas caben |
 | trail 30 km | prioridad A | R6 | sí | semanas sin un día de descanso: 0 |
@@ -186,7 +186,7 @@
 | trail 30 km | prioridad A | R10 | sí | dos ejecuciones idénticas |
 | gran fondo | prioridad A | R1 | sí | base_early → base → build → peak → taper |
 | gran fondo | prioridad A | R2 | sí | subida máx. de la carga semanal +9.7 % (18 semanas) |
-| gran fondo | prioridad A | R3 | sí | 3 semanas de descarga, todas con menos carga que la anterior |
+| gran fondo | prioridad A | R3 | sí | 3 semanas de descarga, todas con menos carga que la última de carga |
 | gran fondo | prioridad A | R4 | sí | volumen del afinado = 49 % del de las 3 semanas previas (14 días) |
 | gran fondo | prioridad A | R5 | sí | todas caben |
 | gran fondo | prioridad A | R6 | sí | semanas sin un día de descanso: 0 |
@@ -195,7 +195,7 @@
 | gran fondo | prioridad A | R10 | sí | dos ejecuciones idénticas |
 | triatlón olímpico | prioridad A | R1 | sí | base_early → base → build → peak → taper |
 | triatlón olímpico | prioridad A | R2 | sí | subida máx. de la carga semanal +9.8 % (18 semanas) |
-| triatlón olímpico | prioridad A | R3 | sí | 3 semanas de descarga, todas con menos carga que la anterior |
+| triatlón olímpico | prioridad A | R3 | sí | 3 semanas de descarga, todas con menos carga que la última de carga |
 | triatlón olímpico | prioridad A | R4 | sí | volumen del afinado = 39 % del de las 3 semanas previas (14 días) |
 | triatlón olímpico | prioridad A | R5 | sí | todas caben |
 | triatlón olímpico | prioridad A | R6 | sí | semanas sin un día de descanso: 0 |
@@ -204,15 +204,26 @@
 | triatlón olímpico | prioridad A | R10 | sí | dos ejecuciones idénticas |
 | 10 km preparatoria (C) | prioridad C | R1 | sí | base_early → base → build → peak → taper |
 | 10 km preparatoria (C) | prioridad C | R2 | sí | subida máx. de la carga semanal +6.7 % (20 semanas) |
-| 10 km preparatoria (C) | prioridad C | R3 | sí | 4 semanas de descarga, todas con menos carga que la anterior |
+| 10 km preparatoria (C) | prioridad C | R3 | sí | 4 semanas de descarga, todas con menos carga que la última de carga |
 | 10 km preparatoria (C) | prioridad C | R5 | sí | todas caben |
 | 10 km preparatoria (C) | prioridad C | R6 | sí | semanas sin un día de descanso: 0 |
 | 10 km preparatoria (C) | prioridad C | R7 | sí | Z1–Z2 = 87 % del tiempo |
 | 10 km preparatoria (C) | prioridad C | R8 | sí | tirada larga máx. 70 min (tope 90) |
 | 10 km preparatoria (C) | prioridad C | R9 | sí | ninguna |
 | 10 km preparatoria (C) | prioridad C | R10 | sí | dos ejecuciones idénticas |
+| maratón con media B y 10 km C | prioridad A | R1 | sí | base_early → base → build → peak → taper |
+| maratón con media B y 10 km C | prioridad A | R2 | sí | subida máx. de la carga semanal +9.9 % (17 semanas) |
+| maratón con media B y 10 km C | prioridad A | R3 | sí | 3 semanas de descarga, todas con menos carga que la última de carga |
+| maratón con media B y 10 km C | prioridad A | R4 | sí | volumen del afinado = 50 % del de las 3 semanas previas (21 días) |
+| maratón con media B y 10 km C | prioridad A | R5 | sí | todas caben |
+| maratón con media B y 10 km C | prioridad A | R6 | sí | semanas sin un día de descanso: 0 |
+| maratón con media B y 10 km C | prioridad A | R7 | sí | Z1–Z2 = 91 % del tiempo |
+| maratón con media B y 10 km C | prioridad A | R8 | sí | tirada larga máx. 129 min (tope 150) |
+| maratón con media B y 10 km C | prioridad A | R9 | sí | ninguna |
+| maratón con media B y 10 km C | prioridad A | R10 | sí | dos ejecuciones idénticas |
+| maratón con media B y 10 km C | prioridad A | R11 | sí | 2 preparatorias: afinado, día de carrera y recuperación |
 
-## Ajuste del día (E1–E11)
+## Ajuste del día (E1–E12)
 
 | Caso | Variante | Criterio | Cumple | Detalle |
 |---|---|---|---|---|
@@ -220,7 +231,8 @@
 | fatiga muy alta (forma −35) | sintético | E2 | sí | pasa a recovery |
 | VFC por debajo de lo normal 7 días | sintético | E3 | sí | pasa a aerobic |
 | mal sueño | sintético | E4 | sí | pasa a aerobic, ×0.7 |
-| 10 días sin entrenar | sintético | E5 | sí | pasa a aerobic |
+| 10 días sin entrenar | sintético | E5 | sí | pasa a aerobic, ×1.0 |
+| 21 días sin entrenar (lesión, enfermedad) | sintético | E12 | sí | pasa a aerobic, ×0.6 |
 | esfuerzo alto con pulso bajo | sintético | E6 | sí | pasa a aerobic |
 | respuestas: dormí y estoy mal | sintético | E7 | sí | 60 → 50 min, sin Z4+ |
 | respuestas: todo a 1 | sintético | E8 | sí | queda: walking |
@@ -238,7 +250,7 @@
 | natación con CSS 1:45 | 174 series | N2 | sí | metros coherentes con el tiempo y el ritmo de cada zona |
 | natación con CSS 1:45 | texto para el reloj | N3 | sí | en el reloj, distancia y ritmo /100 m; sin CSS, por tiempo y esfuerzo |
 
-## Combinaciones generadas (F1–F13)
+## Combinaciones generadas (F1–F14)
 
 | Caso | Variante | Criterio | Cumple | Detalle |
 |---|---|---|---|---|
@@ -251,7 +263,8 @@
 | 300 carreras desde un punto cualquiera | generadas | F7 | sí | cada día cabe en sus minutos y nada en los días sin entreno |
 | 300 carreras desde un punto cualquiera | generadas | F8 | sí | un día de descanso por semana |
 | 300 carreras desde un punto cualquiera | generadas | F9 | sí | fases en orden |
-| 300 carreras desde un punto cualquiera | generadas | F10 | sí | carga semanal +10 % como mucho; 3 semanas suben más con todo ya al mínimo (sesiones en su parte fija) |
+| 300 carreras desde un punto cualquiera | generadas | F10 | sí | carga semanal +10 % como mucho |
 | 300 carreras desde un punto cualquiera | generadas | F11 | sí | determinista |
 | 300 carreras desde un punto cualquiera | generadas | F12 | sí | cada descarga baja la carga |
 | 300 carreras desde un punto cualquiera | generadas | F13 | sí | con tope del cribado, ni series ni Z4+ |
+| 300 carreras desde un punto cualquiera | generadas | F14 | sí | preparatorias: afinado sin series, día de carrera libre y recuperación suave |

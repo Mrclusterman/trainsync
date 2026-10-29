@@ -46,6 +46,9 @@ import io.github.mrclusterman.trainsync.app.TrainSyncApp
 import io.github.mrclusterman.trainsync.app.UserProfile
 import io.github.mrclusterman.trainsync.app.WEEKDAY_LABEL
 import io.github.mrclusterman.trainsync.app.goalLabel
+import io.github.mrclusterman.trainsync.app.GoalKind
+import io.github.mrclusterman.trainsync.app.RaceInfo
+import io.github.mrclusterman.trainsync.app.dateLabel
 
 private val CARDIO_OPTIONS = listOf("walking" to "Caminar", "running" to "Correr", "cycling" to "Bici", "swimming_pool" to "Nadar")
 private val STRENGTH_OPTIONS = listOf("gym" to "Gimnasio", "bodyweight" to "Con tu peso", "none" to "Sin fuerza")
@@ -112,6 +115,7 @@ fun ProfileTab(app: TrainSyncApp, version: Int, act: Act, changeGoal: () -> Unit
             Text(app.data.goal?.let { goalLabel(it) } ?: "Sin objetivo", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Secondary("Puedes cambiarlo o abandonarlo cuando quieras; el plan se rehace al momento.")
             OutlinedButton(onClick = changeGoal) { Text("Cambiar objetivo") }
+            OtherRaces(app, act)
         }
         Module {
             ProfileForm(draft) { draft = it }
@@ -151,6 +155,35 @@ fun ProfileTab(app: TrainSyncApp, version: Int, act: Act, changeGoal: () -> Unit
             text = { Text("Se borran tu perfil, tu objetivo, tu historial y la clave de intervals.icu de este móvil. No se puede deshacer. Tus datos en intervals.icu no se tocan.") },
             confirmButton = { TextButton(onClick = { confirmDelete = false; act.run { app.deleteAll() } }) { Text("Borrar", color = Palette.danger) } },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancelar") } })
+    }
+}
+
+/** Carreras preparatorias (B o C) antes de la principal: el plan afina unos días antes y recupera después. */
+@Composable
+private fun OtherRaces(app: TrainSyncApp, act: Act) {
+    val goal = app.data.goal ?: return
+    val main = goal.race?.takeIf { goal.kind == GoalKind.RACE } ?: return
+    var adding by remember { mutableStateOf(false) }
+    var extra by remember { mutableStateOf(RaceInfo("", main.sport, "", "C")) }
+    SectionTitle("Otras carreras antes de ${main.name}")
+    goal.otherRaces.forEach { r ->
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(r.name, fontWeight = FontWeight.Medium)
+                Secondary("${dateLabel(r.date)} · ${if (r.priority == "B") "importante" else "de preparación"}")
+            }
+            TextButton(onClick = { act.run { app.removeRace(r.date) } }) { Text("Quitar") }
+        }
+    }
+    if (adding) {
+        RaceForm(extra) { extra = it }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = { act.run("Carrera añadida") { app.addRace(extra); adding = false; extra = RaceInfo("", main.sport, "", "C") } }) { Text("Añadir") }
+            TextButton(onClick = { adding = false }) { Text("Cancelar") }
+        }
+    } else {
+        Secondary("El plan afina unos días antes de cada una y te deja recuperar después. Elige importante (B) o de preparación (C).")
+        OutlinedButton(onClick = { adding = true }) { Text("Añadir otra carrera") }
     }
 }
 

@@ -119,7 +119,7 @@ fun Onboarding(app: TrainSyncApp, act: Act) {
 }
 
 @Composable
-private fun RaceForm(race: RaceInfo, onChange: (RaceInfo) -> Unit) {
+fun RaceForm(race: RaceInfo, onChange: (RaceInfo) -> Unit) {
     Module {
         OutlinedTextField(race.name, { onChange(race.copy(name = it)) }, label = { Text("Nombre de la carrera") },
             singleLine = true, modifier = Modifier.fillMaxWidth())

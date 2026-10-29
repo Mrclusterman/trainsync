@@ -122,7 +122,17 @@ data class Goal(
     val priority: String = "A",
     val distanceKm: Double? = null,
     val trail: Boolean = false,
+    val secondary: List<Goal> = emptyList(),  // carreras B y C antes de esta (la principal manda en la periodización)
 )
+
+/** Días de recuperación tras una carrera preparatoria: 3 tras una B, 1 tras una C. [Práctica] */
+fun recoveryDaysAfter(race: Goal): Int = if (race.priority == "C") 1 else 3
+
+/** La carrera preparatoria que afecta a ese día y cuántos días faltan (0 = ese día; negativo = ya pasó). */
+fun secondaryRace(day: LocalDate, goal: Goal?): Pair<Goal, Int>? = goal?.secondary?.firstNotNullOfOrNull { r ->
+    val until = day.daysUntil(r.date)
+    if (until in -recoveryDaysAfter(r)..taperDays(r)) r to until else null
+}
 
 fun runClass(goal: Goal?): String? {
     if (goal == null || goal.sport != "running" || goal.distanceKm == null || goal.distanceKm == 0.0) return null
@@ -290,7 +300,13 @@ fun adjust(sessionType: String, state: DayState): Triple<String, Double, List<St
     }
     // Tras una parada se reconstruye la base antes de la intensidad [Práctica: Garmin; 7 días: Inferencia]
     val idle = state.daysSinceActivity
-    if (idle != null && idle >= 7 && type in QUALITY) {
+    if (idle != null && idle >= 14) {
+        // Tras 2 semanas o más (lesión, enfermedad, vacaciones) se pierde forma: menos volumen además de sin intensidad
+        // [Práctica: programas de vuelta a correr empiezan con ~50–60 % del volumen; la cifra exacta, Inferencia]
+        if (type in QUALITY || type == "long") type = "aerobic"
+        volume *= 0.6
+        reasons += "$idle días sin entrenar: vuelves con un 40 % menos de volumen y sin intensidad; se recupera en pocas semanas [Práctica]"
+    } else if (idle != null && idle >= 7 && type in QUALITY) {
         type = "aerobic"
         reasons += "$idle días sin entrenar: primero base, la intensidad vuelve después [Práctica]"
     }
@@ -564,6 +580,9 @@ fun rampScales(profile: Profile, goal: Goal): List<Double> {
     val scales = (0..start.daysUntil(goal.date) / 7).map { w ->
         val first = proposeDay(start.plusDays(7 * w), profile, goal, ramp = false)
         if (first.phase == "taper") return@map 1.0
+        // Semana con una carrera preparatoria: su afinado y su recuperación bajan la carga a propósito; no cuenta como
+        // referencia, para que la semana siguiente no quede limitada por ella
+        if ((0 until 7).any { secondaryRace(start.plusDays(7 * w + it), goal) != null }) return@map 1.0
         // La descarga también se limita: si coincide con el cambio de fase, sus sesiones nuevas podían superar a la anterior
         val recovery = first.recoveryWeek
         var scale = 1.0
@@ -607,6 +626,25 @@ fun proposeDay(day: LocalDate, profile: Profile, goal: Goal?, state: DayState? =
         volume *= rise
         if (rise < 0.95 && kind != "rest") reasons += "Carga de la semana limitada a +10 % sobre la anterior: subir más de golpe aumenta el riesgo de lesión [Práctica]"
     }
+    // Carreras preparatorias dentro del plan: afinado corto antes, la carrera, y recuperación después [Práctica: MOTOR §8.2]
+    val race = secondaryRace(day, goal)
+    race?.let { (r, until) ->
+        when {
+            until == 0 -> {
+                kind = "rest"
+                reasons += "Hoy es tu carrera: ${r.name}. Calienta 10–15 min suaves antes de la salida [Práctica]"
+            }
+            until > 0 -> {
+                if (kind in QUALITY || kind == "long" || kind == "neuromuscular") kind = DOWNGRADE[kind]!!
+                volume *= 0.7
+                reasons += "Afinando para ${r.name} (en $until ${if (until == 1) "día" else "días"}): menos volumen y sin series [Práctica]"
+            }
+            else -> {
+                if (kind != "rest") kind = "recovery"
+                reasons += "Recuperando de ${r.name}: hoy suave [Práctica]"
+            }
+        }
+    }
     // Con tope del cribado, nada de series ni sesiones de calidad hasta que lo valore el médico [Verificado: ACSM 2015]
     if (profile.intensityCap != "vigorous" && (kind in QUALITY || kind == "neuromuscular")) {
         kind = DOWNGRADE[kind]!!
@@ -634,7 +672,7 @@ fun proposeDay(day: LocalDate, profile: Profile, goal: Goal?, state: DayState? =
     val preferred = if (kind == "brick") "cycling" else mainSport(weekday, goal, profile)
     val event = if (goal != null && goal.trail) "trail" else null
     // Sin fuerza si el estado del día ha obligado a bajar la carga
-    if (profile.strength != "none" && weekday in STRENGTH_DAYS[phase]!! && why.isEmpty()) {
+    if (profile.strength != "none" && weekday in STRENGTH_DAYS[phase]!! && why.isEmpty() && race == null) {
         out.strength = buildStrength(goal?.sport ?: preferred, profile, phase)
         val dayCap = profile.dayMinutes?.get(weekday)
         // Hacia una carrera manda la resistencia: la fuerza solo si deja al menos la mitad del día (y 20′) a la principal
