@@ -546,7 +546,9 @@ const val MAX_WEEKLY_RISE = 1.10
 /** Lo más que pesa una semana de descarga frente a la última de carga (el volumen ya baja un 30 %). [Práctica] */
 const val MAX_DELOAD_SHARE = 0.80
 
-private var rampCache: Pair<Pair<Profile, Goal>, List<Double>>? = null  // último plan calculado: el mismo se pide muchas veces
+// Los últimos perfiles calculados (con los cambios de cada semana hay varios): el mismo se pide muchas veces.
+// shortcut: sin sincronizar (las apps calculan el plan en el hilo principal); protegerla si se calcula desde varios hilos
+private val rampCache = LinkedHashMap<Pair<Profile, Goal>, List<Double>>()
 
 /**
  * Factor de volumen de cada semana de la preparación para que la carga (TSS) no suba más de un 10 % sobre la última
@@ -555,7 +557,7 @@ private var rampCache: Pair<Pair<Profile, Goal>, List<Double>>? = null  // últi
  */
 fun rampScales(profile: Profile, goal: Goal): List<Double> {
     val key = profile to goal
-    rampCache?.takeIf { it.first == key }?.let { return it.second }
+    rampCache[key]?.let { return it }
     val start = profile.planStart ?: goal.date.plusDays(-7 * PREP_WEEKS)
     fun load(w: Int, scale: Double) = (0 until 7).sumOf { dayTss(proposeDay(start.plusDays(7 * w + it), profile, goal, scale = scale, ramp = false)) }
     var last: Double? = null
@@ -582,7 +584,8 @@ fun rampScales(profile: Profile, goal: Goal): List<Double> {
         if (!recovery) last = actual
         scale
     }
-    rampCache = key to scales
+    if (rampCache.size >= 8) rampCache.remove(rampCache.keys.first())
+    rampCache[key] = scales
     return scales
 }
 
