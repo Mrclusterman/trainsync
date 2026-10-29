@@ -222,7 +222,11 @@ class TrainSyncApp(
     // ------------------------------------------------------------ datos de salud del móvil
 
     /** Guarda lo leído de Health Connect o Apple Salud (lo lee cada plataforma con su permiso). */
-    fun importHealth(snapshot: HealthSnapshot) = save(data.copy(health = snapshot))
+    fun importHealth(snapshot: HealthSnapshot) {
+        // Una lectura vacía (permiso retirado, Health Connect no disponible) no borra lo que ya había: para eso, "Olvidar"
+        if (snapshot.days.isEmpty() && snapshot.workouts.isEmpty() && data.health != null) return
+        save(data.copy(health = snapshot))
+    }
 
     fun clearHealth() = save(data.copy(health = null))
 

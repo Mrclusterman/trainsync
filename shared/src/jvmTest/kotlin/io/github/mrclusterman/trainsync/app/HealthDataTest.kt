@@ -147,6 +147,16 @@ class HealthDataTest {
     }
 
     @Test
+    fun anEmptyReadDoesNotWipeYourData() {
+        val app = TrainSyncApp(MemoryStore(), MemoryStore(), { today })
+        app.importHealth(snapshot())
+        app.importHealth(HealthSnapshot("Health Connect", emptyList(), emptyList(), today.toString()))  // sin permiso
+        assertEquals(60, app.data.health?.days?.size)
+        app.clearHealth()
+        kotlin.test.assertNull(app.data.health)
+    }
+
+    @Test
     fun oldDataIsMigrated() {
         val old = AppData(schema = 1, profile = profile)
         assertEquals(SCHEMA, migrate(old).schema)
