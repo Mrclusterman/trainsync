@@ -97,8 +97,11 @@ class TrainSyncApp(
         require(target >= now && target < monday.plusDays(7)) { "Solo se pueden cambiar los días que quedan de esta semana" }
         val key = monday.toString()
         val weekday = Planner.weekdayOf(target)
-        val changes = (data.weekChanges[key]?.changes ?: emptyMap()) + (weekday to minutes)
-        save(data.copy(weekChanges = data.weekChanges + (key to WeekChange(changes, now.toString()))))
+        val current = data.weekChanges[key]
+        val changes = (current?.changes ?: emptyMap()) + (weekday to minutes)
+        // Un cambio de otro día guarda el anterior: los días que ya pasaron siguen como estaban
+        val earlier = current?.let { if (it.since == now.toString()) it.earlier else it.earlier + it.copy(earlier = emptyList()) } ?: emptyList()
+        save(data.copy(weekChanges = data.weekChanges + (key to WeekChange(changes, now.toString(), earlier))))
     }
 
     fun resetWeek() = save(data.copy(weekChanges = data.weekChanges - mondayOf(today()).toString()))

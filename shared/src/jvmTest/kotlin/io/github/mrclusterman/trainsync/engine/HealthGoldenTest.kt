@@ -145,7 +145,7 @@ class HealthGoldenTest {
         val history = adherenceHistory(profile(i["profile"].str()!!), LocalDate.parse(i["block_start"].str()!!),
             i["done"]!!.jsonObject.mapValues { (_, v) -> v.jsonArray.map { done(it) } }, i["blocks"]!!.jsonPrimitive.int,
             i["changes"]!!.jsonObject.mapValues { (_, v) ->
-                v.jsonArray[0].jsonObject.mapValues { it.value.jsonPrimitive.int } to LocalDate.parse(v.jsonArray[1].str()!!)
+                listOf(v.jsonArray[0].jsonObject.mapValues { it.value.jsonPrimitive.int } to LocalDate.parse(v.jsonArray[1].str()!!))
             })
         JsonArray(history.map { JsonPrimitive(it) })
     }

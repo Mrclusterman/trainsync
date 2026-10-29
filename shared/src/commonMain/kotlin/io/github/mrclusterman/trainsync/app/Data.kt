@@ -45,8 +45,12 @@ data class ManualDone(val date: String, val sport: String)
 @Serializable
 data class LiftLog(val date: String, val exercise: String, val weightKg: Double?, val reps: Int, val sets: Int)
 
+/** Cambios de una semana (acumulados) desde `since`; `earlier`: los anteriores de esa semana, para que lo pasado no cambie. */
 @Serializable
-data class WeekChange(val changes: Map<String, Int>, val since: String)
+data class WeekChange(val changes: Map<String, Int>, val since: String, val earlier: List<WeekChange> = emptyList()) {
+    fun steps(): List<Pair<Map<String, Int>, kotlinx.datetime.LocalDate>> =
+        (earlier + copy(earlier = emptyList())).map { it.changes to kotlinx.datetime.LocalDate.parse(it.since) }
+}
 
 @Serializable
 data class Readiness(val sleep: Int, val energy: Int, val soreness: Int)

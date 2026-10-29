@@ -76,6 +76,27 @@ class TrainSyncAppTest {
     }
 
     @Test
+    fun severalChangesInAWeekKeepWhatAlreadyHappened() {
+        var now = LocalDate(2026, 10, 19)  // lunes
+        val store = MemoryStore()
+        val a = TrainSyncApp(store, MemoryStore(), { now })
+        a.saveProfile(profile)
+        a.setGoal(GoalKind.FITNESS)
+        a.changeDay("2026-10-20", 0)  // lunes: el martes no puedo
+        val tuesdayPlan = a.day("2026-10-21")  // lo que el miércoles tocaba tras el primer cambio
+        now = LocalDate(2026, 10, 22)  // jueves: el sábado tampoco
+        a.changeDay("2026-10-24", 0)
+        assertEquals(1, a.data.weekChanges["2026-10-19"]!!.earlier.size)
+        // El miércoles ya pasó: sigue como se veía tras el primer cambio, no como el plan original
+        assertEquals(tuesdayPlan.items.map { it.title }, a.day("2026-10-21").items.map { it.title })
+        assertTrue(a.day("2026-10-24").items.isEmpty())
+        assertTrue(a.day("2026-10-20").items.isEmpty())
+        // Dos cambios el mismo día no amontonan historial
+        a.changeDay("2026-10-25", 30)
+        assertEquals(1, a.data.weekChanges["2026-10-19"]!!.earlier.size)
+    }
+
+    @Test
     fun dataSurvivesARestart() {
         val store = MemoryStore()
         app(store).apply { saveProfile(profile); setGoal(GoalKind.STRENGTH) }

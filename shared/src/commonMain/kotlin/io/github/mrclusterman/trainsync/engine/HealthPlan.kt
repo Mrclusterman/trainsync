@@ -493,20 +493,31 @@ fun position(blockStart: LocalDate, monday: LocalDate): Pair<Int, Int> {
 /**
  * Semana con cambios de disponibilidad: `changes` = minutos por día solo para esta semana (0 = ese día no puede). Se
  * recalcula con las mismas reglas; los días anteriores a `since` (cuando se hizo el cambio) quedan como estaban.
- * shortcut: los días pasados siguen contando como disponibles al recalcular, y con varios cambios en una semana los días
- * entre el primero y el último usan el plan original; guardar el historial de cambios si hace falta más precisión.
+ * Los días pasados siguen contando como disponibles al recalcular: así el reparto de lo que queda no se dispara.
  */
 fun weekWithChanges(p: HealthProfile, start: LocalDate, adherence: List<Double>, weekInBlock: Int,
-                    changes: Map<String, Int>? = null, since: LocalDate? = null): WeekPlan {
+                    changes: Map<String, Int>? = null, since: LocalDate? = null): WeekPlan =
+    weekWithHistory(p, start, adherence, weekInBlock, if (changes.isNullOrEmpty()) emptyList() else listOf(changes to (since ?: start)))
+
+/**
+ * Lo mismo con varios cambios en la semana: `steps` = (cambios acumulados, desde cuándo), del más antiguo al último.
+ * Cada día sale del plan que estaba vigente ese día; así lo ya pasado queda como lo viste entonces.
+ */
+fun weekWithHistory(p: HealthProfile, start: LocalDate, adherence: List<Double>, weekInBlock: Int,
+                    steps: List<Pair<Map<String, Int>, LocalDate>>): WeekPlan {
     val base = weekPlan(p, start, adherence, weekInBlock)
-    if (changes.isNullOrEmpty()) return base
-    val days = (p.days + changes).filterValues { it != 0 }
-    val keep = p.keep + changes.filterValues { it != 0 }.keys  // "quiero entrenar este día": no se vuelve a quitar
-    val changed = weekPlan(p.copy(days = days, keep = keep), start, adherence, weekInBlock)
-    val cutoff = (since ?: start).toString()
-    val out = base.days.zip(changed.days).map { (b, c) -> if (b.date < cutoff) b else c }
+    val active = steps.filter { it.first.isNotEmpty() }
+    if (active.isEmpty()) return base
+    val plans = active.map { (changes, since) ->
+        val days = (p.days + changes).filterValues { it != 0 }
+        val keep = p.keep + changes.filterValues { it != 0 }.keys  // "quiero entrenar este día": no se vuelve a quitar
+        since to weekPlan(p.copy(days = days, keep = keep), start, adherence, weekInBlock)
+    }
+    val out = base.days.mapIndexed { i, b ->
+        plans.lastOrNull { (since, _) -> b.date >= since.toString() }?.second?.days?.get(i) ?: b
+    }
     val eq = out.sumOf { d -> d.sessions.sumOf { (it as? HealthCardio)?.equivalentMin ?: 0 } }
-    return changed.copy(days = out, equivalentMin = eq, changed = true)
+    return plans.last().second.copy(days = out, equivalentMin = eq, changed = true)
 }
 
 val SPORT_NAMES = mapOf("walking" to "Caminata", "running" to "Carrera", "cycling" to "Bici",
@@ -572,15 +583,14 @@ fun matchDay(sessions: List<Planned>, done: List<Done>): List<Match> {
  * cada bloque con el plan que tocaba entonces, con sus cambios (`changes`: lunes en ISO → (cambios, fecha del cambio)).
  */
 fun adherenceHistory(p: HealthProfile, blockStart: LocalDate, done: Map<String, List<Done>>, blocks: Int,
-                     changes: Map<String, Pair<Map<String, Int>, LocalDate>> = emptyMap()): List<Double> {
+                     changes: Map<String, List<Pair<Map<String, Int>, LocalDate>>> = emptyMap()): List<Double> {
     val history = mutableListOf<Double>()
     for (b in 0 until blocks) {
         var planned = 0
         var completed = 0
         for (w in 0 until 4) {
             val monday = blockStart.plusDays(7 * (4 * b + w))
-            val change = changes[monday.toString()]
-            val week = weekWithChanges(p, monday, history, w, change?.first, change?.second)
+            val week = weekWithHistory(p, monday, history, w, changes[monday.toString()] ?: emptyList())
             for (day in week.days) {
                 planned += day.sessions.size
                 completed += matchDay(day.sessions, done[day.date] ?: emptyList()).count { it.matched != null }

@@ -31,7 +31,7 @@ import io.github.mrclusterman.trainsync.engine.proposeDay
 import io.github.mrclusterman.trainsync.engine.watchReadiness
 import io.github.mrclusterman.trainsync.engine.pyRound
 import io.github.mrclusterman.trainsync.engine.readiness
-import io.github.mrclusterman.trainsync.engine.weekWithChanges
+import io.github.mrclusterman.trainsync.engine.weekWithHistory
 import io.github.mrclusterman.trainsync.engine.weekday
 import io.github.mrclusterman.trainsync.intervals.dayState
 import io.github.mrclusterman.trainsync.intervals.fillPhysiology
@@ -142,7 +142,7 @@ class Planner(private val data: AppData, private val today: LocalDate) {
 
     private val blockStart: LocalDate = data.blockStart?.let { LocalDate.parse(it) } ?: mondayOf(today)
 
-    private val changes = data.weekChanges.mapValues { (_, c) -> c.changes to LocalDate.parse(c.since) }
+    private val changes = data.weekChanges.mapValues { (_, c) -> c.steps() }
 
     // La adherencia de los bloques terminados se calcula una vez: las semanas futuras usan la de hoy
     private val history: List<Double> by lazy {
@@ -155,7 +155,7 @@ class Planner(private val data: AppData, private val today: LocalDate) {
         val (block, week) = position(blockStart, monday)
         val adherence = history.take(block)
         val change = data.weekChanges[monday.toString()]
-        val plan = weekWithChanges(p, monday, adherence, week, change?.changes, change?.since?.let { LocalDate.parse(it) })
+        val plan = weekWithHistory(p, monday, adherence, week, change?.steps() ?: emptyList())
         val days = plan.days.map { d ->
             var sessions: List<Planned> = d.sessions
             var note = d.note
