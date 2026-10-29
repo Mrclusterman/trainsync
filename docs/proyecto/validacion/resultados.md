@@ -1,6 +1,6 @@
 # Resultados de la validación del motor
 
-199 de 199 comprobaciones aplicables cumplen (10 no aplican). Datos sintéticos; generado con `VALIDATION_REPORT=1 ./gradlew :shared:jvmTest --tests '*ValidationTest*'`. Criterios en `VALIDACION.md`.
+215 de 215 comprobaciones aplicables cumplen (13 no aplican). Datos sintéticos; generado con `VALIDATION_REPORT=1 ./gradlew :shared:jvmTest --tests '*ValidationTest*'`. Criterios en `VALIDACION.md`.
 
 ## Planes sin fecha (V1–V11)
 
@@ -120,6 +120,25 @@
 | cribado con tope | baja | V9 | sí | sin límite de tiempo: máx. 1.99 (7 semanas); limitadas por tiempo: máx. 1.99 (11 semanas) |
 | cribado con tope | baja | V10 | sí | dos ejecuciones idénticas |
 | cribado con tope | baja vs alta | V11 | sí | último bloque: 98 min (baja) frente a 300 (alta) |
+| adolescente (15) | alta | V1 | no aplica | no aplica: con 420 min/semana caben ~285 equivalentes; mín. 181 |
+| adolescente (15) | alta | V12 | sí | meta hacia 420 min, fuerza 3 días: sí; aviso si no cabe: sí |
+| adolescente (15) | alta | V5 | sí | subida máx. +9.8 %; descarga cada 4.ª semana: sí |
+| adolescente (15) | alta | V7 | sí | día de descanso: sí; pierna en días seguidos: no |
+| adolescente (15) | alta | V9 | sí | sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 1.42 (18 semanas) |
+| adolescente (15) | alta | V10 | sí | dos ejecuciones idénticas |
+| adolescente (15) | media | V1 | no aplica | no aplica: con 420 min/semana caben ~285 equivalentes; mín. 181 |
+| adolescente (15) | media | V12 | sí | meta hacia 420 min, fuerza 3 días: sí; aviso si no cabe: sí |
+| adolescente (15) | media | V5 | sí | subida máx. +9.8 %; descarga cada 4.ª semana: sí |
+| adolescente (15) | media | V7 | sí | día de descanso: sí; pierna en días seguidos: no |
+| adolescente (15) | media | V9 | sí | sin límite de tiempo: máx. 0.00 (0 semanas); limitadas por tiempo: máx. 1.42 (18 semanas) |
+| adolescente (15) | media | V10 | sí | dos ejecuciones idénticas |
+| adolescente (15) | baja | V1 | no aplica | no aplica: con 420 min/semana caben ~285 equivalentes; mín. 181 |
+| adolescente (15) | baja | V12 | sí | meta hacia 420 min, fuerza 3 días: sí; aviso si no cabe: sí |
+| adolescente (15) | baja | V5 | sí | subida máx. +10.0 %; descarga cada 4.ª semana: sí |
+| adolescente (15) | baja | V7 | sí | día de descanso: sí; pierna en días seguidos: no |
+| adolescente (15) | baja | V9 | sí | sin límite de tiempo: máx. 1.50 (9 semanas); limitadas por tiempo: máx. 1.42 (9 semanas) |
+| adolescente (15) | baja | V10 | sí | dos ejecuciones idénticas |
+| adolescente (15) | baja vs alta | V11 | sí | último bloque: 110 min (baja) frente a 420 (alta) |
 
 ## Hacia una carrera (R1–R10)
 

@@ -12,7 +12,7 @@ Se distinguen tres niveles, de menor a mayor alcance:
 1. **Verificación** (¿el código hace lo que dice el diseño?): 194 tests automáticos (`pytest`) sobre las reglas del
    diseño, el cribado del ACSM (sus ocho ramas), la API, las cuentas y los derechos RGPD.
 2. **Validación por simulación** (¿los planes cumplen la evidencia?), con datos sintéticos, en tres partes:
-   - **Planes sin fecha (V1–V11):** 6 perfiles × 3 niveles de adherencia (95 %, 75 % y 40 % de las sesiones hechas)
+   - **Planes sin fecha (V1–V12):** 7 perfiles × 3 niveles de adherencia (95 %, 75 % y 40 % de las sesiones hechas)
      durante 24 semanas (6 bloques), contra los criterios de `DISENO.md` §11. Perfiles: principiante sedentario, persona
      de 70 años, gimnasio (fuerza y músculo), corredor avanzado, seis días por semana y seis días con tope de intensidad
      del cribado. Los dos últimos eran de pérdida de grasa hasta que se retiró ese objetivo (2026-10-21); con él se retiró
@@ -39,7 +39,7 @@ planes): exige un estudio con participantes y aprobación de un comité de étic
 
 ## 2. Resultados
 
-**199 de 199 comprobaciones aplicables cumplen**; 10 no aplican. La prueba admite una lista de fallos conocidos (salen en
+**215 de 215 comprobaciones aplicables cumplen**; 10 no aplican. La prueba admite una lista de fallos conocidos (salen en
 el informe, pero no rompen la compilación, y avisa en cuanto se cumplen); hoy está vacía.
 
 ### 2.1 Planes sin fecha
@@ -57,6 +57,7 @@ el informe, pero no rompen la compilación, y avisa en cuanto se cumplen); hoy e
 | V9 Monotonía de Foster < 2 | Cumple en los 18 casos (máx. 1,99). Hasta el 2026-10-29 fallaba uno, tope de intensidad + adherencia baja (2,26): §4 |
 | V10 Determinismo | Cumple |
 | V11 Adherencia baja → menos volumen que alta | Cumple |
+| V12 Menores de 18 (OMS 2020: 60 min al día de media y fuerza 3 días): la meta sube hacia 420 min, fuerza 3 días y aviso si no cabe | Cumple (perfil de 15 años, añadido el 2026-10-29; antes se le aplicaban las cifras de adulto) |
 | Caso real (2026-10-29) | Cumplen las 17 comprobaciones aplicables (V1 no aplica con adherencia media). LTHR 174, FC máx. 192 → techo fácil 144 ppm = 75 % de la FC máx.; objetivos entre el 50 y el 75 %. Media maratón: subida máx. +9,4 %, afinado al 44 %, 93 % del tiempo en Z1–Z2. Umbral estimado con sus 28 sesiones de carrera de 90 días: 166 frente a los 174 configurados (dentro de ±8 ppm, pero por debajo: la media de la sesión incluye el calentamiento). Detalle en `validacion/resultados-cuenta-real.md` |
 
 ### 2.2 Hacia una carrera

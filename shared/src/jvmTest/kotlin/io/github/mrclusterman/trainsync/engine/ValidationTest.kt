@@ -58,6 +58,8 @@ class ValidationTest {
             cardio = listOf("walking", "cycling"), level = "intermediate", lthr = 165.0, maxHr = 185.0),
         "cribado con tope" to HealthProfile("fitness", all.take(6).associateWith { 60 }, strength = "gym",
             cardio = listOf("running", "cycling"), level = "advanced", intensityCap = "light_moderate", lthr = 170.0, maxHr = 190.0),
+        "adolescente (15)" to HealthProfile("fitness", mapOf("MON" to 60, "TUE" to 90, "WED" to 60, "THU" to 90, "SAT" to 120),
+            strength = "bodyweight", cardio = listOf("running", "cycling"), level = "intermediate", age = 15),
     )
 
     // ------------------------------------------------------------------ V1–V11: planes sin fecha
@@ -91,11 +93,19 @@ class ValidationTest {
         // según una estimación independiente del motor: minutos − 20 por día de fuerza − 15 de calentamiento por día. [Inferencia]
         val capacity = p.days.values.sum() - 20 * strengthDays(p) - 15 * trainingDays(p).size
         val low = stable.minOfOrNull { it.equivalentMin } ?: 0
+        val floor = aerobicFloor(p)  // 150; en menores de 18, 420 (60 al día de media)
         r["V1"] = when {
             stable.isEmpty() -> null to "no aplica: sin semanas estables (la progresión aún no ha llegado a la meta)"
-            capacity < FLOOR_AEROBIC -> null to "no aplica: con ${p.days.values.sum()} min/semana caben ~$capacity equivalentes; mín. $low"
-            else -> stable.all { it.equivalentMin >= FLOOR_AEROBIC && it.dose.strengthDays >= FLOOR_STRENGTH_DAYS } to
+            capacity < floor -> null to "no aplica: con ${p.days.values.sum()} min/semana caben ~$capacity equivalentes; mín. $low"
+            else -> stable.all { it.equivalentMin >= floor && it.dose.strengthDays >= FLOOR_STRENGTH_DAYS } to
                 "${stable.size} semanas estables; mín. $low min equivalentes"
+        }
+        // V12 menores de 18 (OMS 2020): meta de 60 al día de media, fuerza 3 días y, si no cabe, el plan lo dice
+        if (p.age != null && p.age < 18) {
+            val meta = weeks.first().dose.aerobic >= 0.6 * YOUTH_AEROBIC - 1 && weeks.maxOf { it.dose.aerobic } >= YOUTH_AEROBIC * 0.95
+            val strength = weeks.all { it.dose.strengthDays >= 3 }
+            val told = weeks.filter { it.weekInBlock < 3 && it.equivalentMin + 5 < minOf(it.dose.aerobic, YOUTH_AEROBIC) }.all { w -> (w.warnings + w.info).any { "60 al día" in it } }
+            r["V12"] = (meta && strength && told) to "meta hacia $YOUTH_AEROBIC min, fuerza 3 días: ${yes(strength)}; aviso si no cabe: ${yes(told)}"
         }
         if (p.age != null && p.age >= 65) {
             r["V2"] = weeks.all { w -> w.strength().count { BALANCE in it.exercises } >= 3 } to "equilibrio y fuerza ≥ 3 días todas las semanas"

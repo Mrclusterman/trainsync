@@ -110,6 +110,13 @@ internal val TARGET = mapOf(
 )
 const val FLOOR_AEROBIC = 150  // suelo de la OMS para todos (§1)
 const val FLOOR_STRENGTH_DAYS = 2
+/** OMS 2020 para 5–17 años: una media de 60 min al día de actividad moderada o vigorosa (Bull 2020). [Verificado] */
+const val YOUTH_AEROBIC = 420
+
+fun isYouth(p: HealthProfile) = p.age != null && p.age < 18
+
+/** El suelo de la OMS de esa persona: 150 min a la semana; en menores de 18, 60 al día de media. */
+fun aerobicFloor(p: HealthProfile): Int = if (isYouth(p)) YOUTH_AEROBIC else FLOOR_AEROBIC
 private val START = mapOf("beginner" to 0.6, "intermediate" to 0.8, "advanced" to 1.0)  // [Inferencia] §3
 private val START_SETS_PER_SESSION = mapOf("beginner" to 1, "intermediate" to 2, "advanced" to 3)  // [Inferencia] §3
 private const val AEROBIC_STEP = 1.10  // +10 % por semana de carga [Inferencia] §4
@@ -120,6 +127,7 @@ fun strengthDays(p: HealthProfile): Int {
     val (lo, hi) = TARGET[p.goal]!!.strengthDays
     var n = if (p.level == "beginner") lo else hi
     if (p.age != null && p.age >= 65) n = max(n, 3)  // OMS: equilibrio y fuerza 3 días o más en mayores de 65
+    if (isYouth(p)) n = max(n, 3)  // OMS: en menores de 18, fortalecer músculos y huesos 3 días o más
     return min(n, trainingDays(p).size)
 }
 
@@ -133,19 +141,20 @@ fun nextBase(base: Double, peak: Double, adherence: Double): Double = when {
 /** Dosis de una semana. adherence: sesiones hechas / planificadas de cada bloque ya terminado. */
 fun weekDose(p: HealthProfile, adherence: List<Double>, weekInBlock: Int): Dose {
     val target = TARGET[p.goal]!!
+    val goalAerobic = max(target.aerobic, aerobicFloor(p))  // en menores, al menos 60 al día de media
     val nStrength = strengthDays(p)
-    var aero = max(60.0, target.aerobic * START[p.level]!!)
+    var aero = max(60.0, goalAerobic * START[p.level]!!)
     var sets = (nStrength * START_SETS_PER_SESSION[p.level]!!).toDouble()
     for (done in adherence) {
         // Nunca por debajo de 60 min: algo de actividad es mejor que nada (OMS 2020) [Inferencia en la cifra]
-        aero = max(min(nextBase(aero, min(aero * AEROBIC_STEP.pow(2), target.aerobic.toDouble()), done),
-            target.aerobic.toDouble()), 60.0)
+        aero = max(min(nextBase(aero, min(aero * AEROBIC_STEP.pow(2), goalAerobic.toDouble()), done),
+            goalAerobic.toDouble()), 60.0)
         sets = min(nextBase(sets, min(sets + 2, target.sets.toDouble()), done), target.sets.toDouble())
     }
     val week = min(weekInBlock, 2)
     var minutes = pyRound(aero)
     repeat(week) {  // sobre el valor redondeado y hacia abajo: la subida que se ve nunca pasa del 10 %
-        minutes = min(floor(minutes * AEROBIC_STEP).toInt(), target.aerobic)
+        minutes = min(floor(minutes * AEROBIC_STEP).toInt(), goalAerobic)
     }
     sets = min(sets + week, target.sets.toDouble())  // +1 serie por patrón y semana de carga
     if (weekInBlock == 3) {
@@ -376,7 +385,7 @@ fun weekPlan(p: HealthProfile, start: LocalDate, adherence: List<Double> = empty
     // Semanas candidatas en orden de preferencia: la primera que cumple el suelo aeróbico de la OMS (§1.2) con monotonía
     // < 2 (§5.6). La fuerza ocupa primero todo el día y después menos; para cada parte, la semana tal cual y luego con un
     // día libre más de descanso. Si ninguna baja de 2, la primera que cumple el suelo; si ninguna, la de más minutos.
-    val floorEq = min(dose.aerobic, FLOOR_AEROBIC)
+    val floorEq = min(dose.aerobic, aerobicFloor(p))
     val free = days.filter { it !in sDays && it !in p.keep }
     var chosen: Candidate? = null
     var floorOk: Candidate? = null
@@ -415,16 +424,19 @@ fun weekPlan(p: HealthProfile, start: LocalDate, adherence: List<Double> = empty
             "si algún día tienes más, el plan añade más."
     }
     val minutes = fmt(doneEq, 0)
-    if (doneEq + 5 < dose.aerobic && doneEq < FLOOR_AEROBIC && p.level == "beginner") {
-        info += "Empiezas con $minutes min de actividad a la semana. Para llegar a los $FLOOR_AEROBIC que recomienda la " +
+    val floor = aerobicFloor(p)
+    val floorText = if (isYouth(p)) "$floor min (60 al día de media a tu edad)" else "$floor min"
+    if (doneEq + 5 < dose.aerobic && doneEq < floor && p.level == "beginner") {
+        info += "Empiezas con $minutes min de actividad a la semana. Para llegar a los $floorText que recomienda la " +
             "OMS, más adelante te vendrá bien sumar un día o unos minutos."
-    } else if (doneEq + 5 < dose.aerobic && doneEq < FLOOR_AEROBIC) {
+    } else if (doneEq + 5 < dose.aerobic && doneEq < floor) {
         warnings += "Con tus días y minutos llegas a $minutes min de actividad a la semana. La OMS recomienda al menos " +
-            "$FLOOR_AEROBIC: si puedes, añade un día o unos minutos."
+            "$floorText: si puedes, añade un día o unos minutos."
     } else if (doneEq + 5 < dose.aerobic) {
         info += "Con tu tiempo llegas a $minutes min de actividad a la semana: ya cumples la recomendación de la OMS " +
-            "($FLOOR_AEROBIC min). Si algún día tienes más tiempo, el plan lo aprovecha."
+            "($floorText). Si algún día tienes más tiempo, el plan lo aprovecha."
     }
+
 
     val out = (0 until 7).map { d ->
         val day = start.plusDays(d)
