@@ -102,9 +102,9 @@ data class WeekPlan(
 // ---------------------------------------------------------------- §3 dosis semanal
 
 /** Meta del bloque estable: minutos moderados equivalentes (1 vigoroso = 2 moderados, OMS) y series por patrón. */
-private data class Target(val aerobic: Int, val strengthDays: Pair<Int, Int>, val sets: Int)
+internal data class Target(val aerobic: Int, val strengthDays: Pair<Int, Int>, val sets: Int)
 
-private val TARGET = mapOf(
+internal val TARGET = mapOf(
     "fitness" to Target(300, 2 to 3, 10),  // OMS 150–300; ACSM 2026 ~10 series
     "strength" to Target(150, 3 to 4, 20),  // Schoenfeld 2017: más series, más músculo
 )
@@ -438,6 +438,15 @@ fun readiness(sleep: Int, energy: Int, soreness: Int): String {
     require(answers.all { it in 1..5 })
     if (answers.all { it == 1 }) return "rest"
     return if (answers.count { it <= 2 } >= 2) "easy" else "normal"
+}
+
+/**
+ * Con datos del reloj o del móvil, el mismo ajuste que las tres preguntas: las reglas del modo carrera (`adjust`: fatiga,
+ * variabilidad cardíaca, sueño, días sin entrenar, esfuerzo raro) deciden si hoy toca la versión suave, y por qué.
+ */
+fun watchReadiness(state: DayState): Pair<String, List<String>> {
+    val (kind, volume, why) = adjust("vo2max", state)  // se prueba con una sesión de calidad: si la quitaría, hoy suave
+    return (if (kind != "vo2max" || volume < 1.0) "easy" else "normal") to why
 }
 
 /** Estado del día: suave = resistencia moderada y más corta, fuerza con una serie menos y RIR + 1. */

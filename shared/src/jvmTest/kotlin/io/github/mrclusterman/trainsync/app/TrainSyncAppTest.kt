@@ -107,14 +107,14 @@ class TrainSyncAppTest {
         val a = app(store)
         a.saveProfile(profile)
         a.setGoal(GoalKind.RACE, RaceInfo("Maratón", "running", "2027-02-14", distanceKm = 42.2))
-        // Muy cargado (TSB < −30): el motor pasa a recuperación y la frase lo dice
+        // Muy cargado (forma < −30): el motor pasa a recuperación y la frase lo dice
         val data = a.data.copy(cache = cache(ctl = 50.0, atl = 95.0), intervalsAthlete = "i1")
         store.write("trainsync.data", Json.encodeToString(AppData.serializer(), data))
         val screen = app(store).todayScreen()
         if (screen.day.items.isNotEmpty()) {
             assertTrue(screen.headline.startsWith("Hoy toca bajar el ritmo"), screen.headline)
             assertEquals("recovery", screen.day.items.first { !it.isStrength }.kind)
-            assertTrue(screen.headlineDetail.any { "TSB" in it.text })
+            assertTrue(screen.headlineDetail.any { "Fatiga muy por encima" in it.text })
         }
     }
 

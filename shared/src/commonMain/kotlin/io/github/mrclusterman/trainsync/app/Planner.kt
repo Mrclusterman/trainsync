@@ -28,6 +28,7 @@ import io.github.mrclusterman.trainsync.engine.plan
 import io.github.mrclusterman.trainsync.engine.plusDays
 import io.github.mrclusterman.trainsync.engine.position
 import io.github.mrclusterman.trainsync.engine.proposeDay
+import io.github.mrclusterman.trainsync.engine.watchReadiness
 import io.github.mrclusterman.trainsync.engine.pyRound
 import io.github.mrclusterman.trainsync.engine.readiness
 import io.github.mrclusterman.trainsync.engine.weekWithChanges
@@ -160,11 +161,17 @@ class Planner(private val data: AppData, private val today: LocalDate) {
             var note = d.note
             val adjustments = mutableListOf<Reason>()
             val answers = data.readiness[d.date]
-            if (answers != null && d.date == today.toString()) {
-                val status = readiness(answers.sleep, answers.energy, answers.soreness)
+            if (d.date == today.toString()) {
+                // Tus respuestas mandan; sin ellas, los datos del reloj o del móvil (sin reloj se te preguntan)
+                val watch = if (answers == null) state?.let { watchReadiness(it) } else null
+                val status = answers?.let { readiness(it.sleep, it.energy, it.soreness) } ?: watch?.first ?: "normal"
                 val (adjusted, adjustNote) = adjustDay(p, sessions, status, monday.isoWeek())
                 sessions = adjusted
-                adjustNote?.let { adjustments += Reason(it, "Inferencia"); note = null }
+                if (adjustNote != null) {
+                    adjustments += watch?.second?.map { splitEvidence(it).let { (t, e) -> Reason(t, e) } }
+                        ?: listOf(Reason(adjustNote, "Inferencia"))
+                    note = null
+                }
             }
             val items = sessions.map { s ->
                 when (s) {

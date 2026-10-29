@@ -20,8 +20,8 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 
 /**
- * El motor portado da lo mismo que el prototipo en Python con las mismas entradas.
- * Casos en resources/golden/engine.json, generados con tools/export_golden.py.
+ * El motor da lo mismo que en los casos de referencia (resources/golden/engine.json). Ver `rewriteGolden` para
+ * regenerarlos tras un cambio a propósito.
  */
 class GoldenTest {
     private val golden = Json.parseToJsonElement(
@@ -68,6 +68,7 @@ class GoldenTest {
     }
 
     private fun check(kind: String, run: (JsonObject) -> JsonElement?) {
+        if (updatingGolden) return rewriteGolden("engine", kind, cases[kind]!!.jsonArray.map { run(it.jsonObject["in"]!!.jsonObject) })
         val failures = cases[kind]!!.jsonArray.mapNotNull { c ->
             val case = c.jsonObject
             diff("", case["out"], run(case["in"]!!.jsonObject))?.let { "${case["in"]}\n    $it" }

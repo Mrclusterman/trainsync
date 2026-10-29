@@ -13,14 +13,13 @@ no salen de él ([`docs/VISION.md`](docs/VISION.md)).
 
 | Carpeta | Qué es |
 |---|---|
-| `shared/` | Núcleo compartido en Kotlin Multiplatform: el motor (portado del prototipo con pruebas de equivalencia), la conexión con intervals.icu desde el móvil y el estado de cada pantalla (`app/`) |
+| `shared/` | Núcleo compartido en Kotlin Multiplatform: el motor (la única fuente desde el 2026-10-29), la conexión con intervals.icu desde el móvil y el estado de cada pantalla (`app/`) |
 | `androidApp/` | App de Android (Jetpack Compose): inicio con objetivo, Hoy, Calendario, Progreso y Perfil |
 | `iosApp/` | App de iOS (SwiftUI), las mismas pantallas. El proyecto de Xcode se genera con XcodeGen (`iosApp/project.yml`) |
-| `prototype/` | El prototipo web anterior (FastAPI + Next.js): referencia mientras llegan las apps |
-| `tools/` | Generación del catálogo y de los casos de referencia desde el prototipo |
+| `prototype/` | El prototipo web anterior (FastAPI + Next.js). Su motor en Python está congelado: los cambios del motor se hacen solo en `shared/` |
 
 ```bash
-./gradlew :shared:jvmTest                 # tests del núcleo, incluida la equivalencia con el prototipo
+./gradlew :shared:jvmTest                 # tests del núcleo y validación del motor (docs/proyecto/VALIDACION.md)
 ./gradlew :androidApp:assembleDebug       # APK de depuración en androidApp/build/outputs/apk/debug/
 ```
 
@@ -44,10 +43,10 @@ Backend FastAPI monousuario con el motor de entrenamiento (sección 8 de la memo
   la calidad del día cubre el tipo de carga que te falta (aeróbico bajo, alto o anaeróbico, 28 días), sesiones tempo y
   anaeróbicas, vuelta a la base tras 7 días sin entrenar y ritmos de carrera calculados desde tu FC con tus propias carreras.
 
-Lo marcado `[Inferencia]` en `prototype/backend/app/services/training_engine.py` no tiene evidencia publicada
+Lo marcado `[Inferencia]` en `shared/src/commonMain/kotlin/io/github/mrclusterman/trainsync/engine/` no tiene evidencia publicada
 (ver `docs/MOTOR_ENTRENAMIENTO.md` §11.2).
 
-- Catálogo de 57 sesiones (`prototype/backend/app/services/session_catalog.py`) con rotación semanal: running por distancia
+- Catálogo de 57 sesiones (`shared/.../engine/Catalog.kt`) con rotación semanal: running por distancia
   (5K a ultra), trail, ciclismo, natación en piscina y aguas abiertas, triatlón/duatlón (brick), neuromusculares y tests.
 - Biblioteca de fuerza por fase y TSS semanal según la rampa de CTL, repartido por tipo de sesión.
 - RPE: objetivo por bloque, señal de fatiga (RPE alto con FC baja) y carga semanal sRPE con monotonía/strain.

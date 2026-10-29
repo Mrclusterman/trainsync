@@ -19,7 +19,7 @@ import kotlinx.serialization.json.put
 import kotlin.test.Test
 import kotlin.test.fail
 
-/** Los planes de salud portados dan lo mismo que el prototipo (resources/golden/health.json). */
+/** Los planes de salud dan lo mismo que en los casos de referencia (resources/golden/health.json). */
 class HealthGoldenTest {
     private val data = golden("health")
     private val cases = data["cases"]!!.jsonObject
@@ -77,6 +77,7 @@ class HealthGoldenTest {
     }
 
     private fun check(kind: String, run: (JsonObject) -> JsonElement?) {
+        if (updatingGolden) return rewriteGolden("health", kind, cases[kind]!!.jsonArray.map { run(it.jsonObject["in"]!!.jsonObject) })
         val failures = cases[kind]!!.jsonArray.mapNotNull { c ->
             val case = c.jsonObject
             diff("", case["out"], run(case["in"]!!.jsonObject))?.let { "${case["in"].toString().take(300)}\n    $it" }

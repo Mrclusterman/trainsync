@@ -319,7 +319,7 @@ cada sesión usa una sola (ritmo, FC o potencia).
 
 ## 7. Validación y resultados
 
-El método y los resultados completos están en `docs/proyecto/VALIDACION.md` y se reproducen con `python -m validation.run`.
+El método y los resultados completos están en `docs/proyecto/VALIDACION.md` y se reproducen con `VALIDATION_REPORT=1 ./gradlew :shared:jvmTest --tests '*ValidationTest*'`.
 
 ### 7.1 Método
 
@@ -442,9 +442,9 @@ el usuario y cada afirmación de la memoria reproducible desde el repositorio.
 
 ## 12. Anexos
 
-- **A. Reproducibilidad.** `cd prototype/backend && pip install -e '.[dev]' && pytest` (175 pruebas) y `python -m validation.run`
-  (simulación; añade `--real` con las credenciales de intervals.icu en el entorno). Resultados en
-  `docs/proyecto/validacion/resultados.md` y `resultados.csv`.
+- **A. Reproducibilidad.** `cd prototype/backend && pip install -e '.[dev]' && pytest` (175 pruebas) y
+  `VALIDATION_REPORT=1 ./gradlew :shared:jvmTest --tests '*ValidationTest*'` (simulación con datos sintéticos).
+  Resultados en `docs/proyecto/validacion/resultados.md`.
 - **B. Especificaciones.** `docs/proyecto/DISENO.md` (objetivos sin fecha, criterios V1–V11), `docs/MOTOR_ENTRENAMIENTO.md`
   (eventos), `docs/MEMORIA_TECNICA.md` (requisitos y arquitectura).
 - **C. API.** Documentación OpenAPI generada por FastAPI en `/docs`; tabla de endpoints en el `README.md`.

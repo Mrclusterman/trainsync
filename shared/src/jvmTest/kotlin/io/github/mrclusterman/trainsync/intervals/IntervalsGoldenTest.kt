@@ -3,6 +3,8 @@ package io.github.mrclusterman.trainsync.intervals
 import io.github.mrclusterman.trainsync.engine.HealthStrength
 import io.github.mrclusterman.trainsync.engine.Profile
 import io.github.mrclusterman.trainsync.engine.Session
+import io.github.mrclusterman.trainsync.engine.rewriteGolden
+import io.github.mrclusterman.trainsync.engine.updatingGolden
 import io.github.mrclusterman.trainsync.engine.WorkoutEvent
 import io.github.mrclusterman.trainsync.engine.diff
 import io.github.mrclusterman.trainsync.engine.golden
@@ -35,7 +37,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
-/** Texto para el reloj y lectura de intervals.icu iguales que el prototipo (resources/golden/intervals.json). */
+/** Texto para el reloj y lectura de intervals.icu iguales que en los casos de referencia (resources/golden/intervals.json). */
 class IntervalsGoldenTest {
     private val cases = golden("intervals")
     private val json = Json { encodeDefaults = true; ignoreUnknownKeys = true }
@@ -49,6 +51,7 @@ class IntervalsGoldenTest {
     )
 
     private fun check(kind: String, run: (JsonElement) -> JsonElement?) {
+        if (updatingGolden) return rewriteGolden("intervals", kind, cases[kind]!!.jsonArray.map { run(it.jsonObject["in"]!!) })
         val failures = cases[kind]!!.jsonArray.mapNotNull { c ->
             val case = c.jsonObject
             diff("", case["out"], run(case["in"]!!))?.let { "${case["in"].toString().take(300)}\n    $it" }

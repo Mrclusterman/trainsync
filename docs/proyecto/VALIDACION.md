@@ -1,7 +1,9 @@
-# Validación del motor de planes de salud — TrainSync (Fase D)
+# Validación del motor — TrainSync
 
-> **Fecha:** 2026-10-21 · Reproducible: `cd prototype/backend && python -m validation.run` (con `--real` y las credenciales de
-> intervals.icu en el entorno, añade el caso real). Resultados completos: `validacion/resultados.md` y `resultados.csv`.
+> **Fecha:** 2026-10-29 · Reproducible: `VALIDATION_REPORT=1 ./gradlew :shared:jvmTest --tests '*ValidationTest*'`.
+> Sin la variable solo comprueba; se ejecuta en cada compilación de la nube. Resultados completos:
+> `validacion/resultados.md`. Hasta el 2026-10-21 la validación estaba en Python (`prototype/backend/validation/`); el
+> 2026-10-29 se pasó al núcleo de Kotlin, que es la única fuente del motor, y se amplió a las carreras y al ajuste del día.
 
 ## 1. Método
 
@@ -9,19 +11,30 @@ Se distinguen tres niveles, de menor a mayor alcance:
 
 1. **Verificación** (¿el código hace lo que dice el diseño?): 194 tests automáticos (`pytest`) sobre las reglas del
    diseño, el cribado del ACSM (sus ocho ramas), la API, las cuentas y los derechos RGPD.
-2. **Validación por simulación** (¿los planes cumplen la evidencia?): 6 perfiles × 3 niveles de adherencia (95 %,
-   75 % y 40 % de las sesiones hechas) durante 24 semanas (6 bloques), contra los criterios V1–V11 de `DISENO.md` §11.
-   Perfiles: principiante sedentario, persona de 70 años, gimnasio (fuerza y músculo), corredor avanzado, seis días por
-   semana y seis días con tope de intensidad del cribado. Los dos últimos eran de pérdida de grasa hasta que se retiró ese
-   objetivo (2026-10-21); con él se retiró el criterio V4.
-3. **Caso real**: el motor con la fisiología de una cuenta real de intervals.icu (cuenta de pruebas del autor).
+2. **Validación por simulación** (¿los planes cumplen la evidencia?), con datos sintéticos, en tres partes:
+   - **Planes sin fecha (V1–V11):** 6 perfiles × 3 niveles de adherencia (95 %, 75 % y 40 % de las sesiones hechas)
+     durante 24 semanas (6 bloques), contra los criterios de `DISENO.md` §11. Perfiles: principiante sedentario, persona
+     de 70 años, gimnasio (fuerza y músculo), corredor avanzado, seis días por semana y seis días con tope de intensidad
+     del cribado. Los dos últimos eran de pérdida de grasa hasta que se retiró ese objetivo (2026-10-21); con él se retiró
+     el criterio V4.
+   - **Hacia una carrera (R1–R10):** 7 carreras (10 km con 3 días, media maratón, maratón, trail de 30 km, gran fondo,
+     triatlón olímpico y una 10 km preparatoria de prioridad C), cada una desde el inicio de la preparación (20 semanas)
+     hasta el día de la prueba, con los días y minutos de cada perfil.
+   - **Ajuste del día (E1–E8):** estados sintéticos del reloj (fatiga, variabilidad cardíaca, sueño, días sin entrenar,
+     esfuerzo raro) y respuestas a las tres preguntas.
+3. **Caso real**: hasta el 2026-10-21, el motor de Python con la fisiología de una cuenta real de intervals.icu (cuenta de
+   pruebas del autor). No se ha pasado a Kotlin: la validación nueva usa solo datos sintéticos.
 
 Queda fuera, como trabajo futuro, la **validación de eficacia** (si las personas mejoran su forma física siguiendo los
 planes): exige un estudio con participantes y aprobación de un comité de ética.
 
 ## 2. Resultados
 
-**103 de 104 comprobaciones aplicables cumplen**; 10 no aplican.
+**178 de 179 comprobaciones aplicables cumplen**; 10 no aplican. La que no cumple (V9 en un caso) es un fallo conocido,
+explicado en §4: sale en el informe, pero no rompe la compilación. Si el motor llega a cumplirla, la prueba avisa para
+quitarla de la lista de fallos conocidos.
+
+### 2.1 Planes sin fecha
 
 | Criterio | Resultado |
 |---|---|
@@ -33,12 +46,52 @@ planes): exige un estudio con participantes y aprobación de un comité de étic
 | V6 Tope del cribado: sin Z4+ ni RIR < 3 | Cumple |
 | V7 Descanso semanal; pierna pesada nunca en días seguidos | Cumple |
 | V8 Fuerza y músculo: sin carrera el día de pierna | Cumple |
-| V9 Monotonía de Foster < 2 | Cumple en 17 de 18 casos. No cumple en uno: tope de intensidad + adherencia baja (máx. 2,34), un conflicto estructural explicado en §4 |
+| V9 Monotonía de Foster < 2 | Cumple en 17 de 18 casos. No cumple en uno: tope de intensidad + adherencia baja (máx. 2,26), un conflicto estructural explicado en §4 |
 | V10 Determinismo | Cumple |
 | V11 Adherencia baja → menos volumen que alta | Cumple |
-| Caso real | Cumple: LTHR 174, FC máx. 192 → techo fácil 144 ppm = 75 % de la FC máx.; todos los objetivos entre el 50 y el 100 % (cifras de la última ejecución en `validacion/resultados.md`) |
+| Caso real (Python, 2026-10-21) | Cumplía: LTHR 174, FC máx. 192 → techo fácil 144 ppm = 75 % de la FC máx.; todos los objetivos entre el 50 y el 100 %. No se ha pasado a Kotlin |
+
+### 2.2 Hacia una carrera
+
+| Criterio | Resultado |
+|---|---|
+| R1 Las fases van en orden (base inicial → base → construcción → pico → afinado) | Cumple |
+| R2 La carga semanal (TSS) no sube más del 10 % sobre la última semana de carga [Práctica] | Cumple (antes de corregirlo, hasta +27 %: §3.1) |
+| R3 Cada semana de descarga tiene menos carga que la anterior | Cumple |
+| R4 Afinado de la carrera principal: el volumen baja al 70 % o menos del de las 3 semanas previas (Bosquet 2007: −41 a −60 %) | Cumple |
+| R5 Cada día cabe en los minutos que tienes y no hay sesiones en tus días sin entreno | Cumple (antes de corregirlo, 55 días no cabían: §3.1) |
+| R6 Al menos un día de descanso por semana | Cumple |
+| R7 Distribución polarizada: ≥ 75 % del tiempo de resistencia en Z1–Z2 fuera del afinado (Seiler 2010: ~80 %) | Cumple |
+| R8 La tirada larga no pasa del tope por distancia (`LONG_CAP`) | Cumple |
+| R9 Nunca dos sesiones de calidad en días seguidos [Práctica] | Cumple |
+| R10 Determinismo | Cumple |
+
+### 2.3 Ajuste del día
+
+| Criterio | Resultado |
+|---|---|
+| E1 Todo normal → la sesión no cambia (sin falsas alarmas) | Cumple |
+| E2 Fatiga muy alta (forma < −30) → recuperación | Cumple |
+| E3 Variabilidad cardíaca por debajo de lo normal 7 días → sin intensidad | Cumple |
+| E4 Mal sueño → sin intensidad y −30 % de carga | Cumple |
+| E5 10 días sin entrenar → primero base | Cumple |
+| E6 Esfuerzo alto con pulso bajo → sin intensidad | Cumple |
+| E7 Respuestas "dormí y estoy mal" → versión suave, sin Z4+ | Cumple |
+| E8 Respuestas todo a 1 → solo un paseo | Cumple |
 
 ## 3. Defectos que encontró la validación (y su corrección)
+
+### 3.1 Carreras (2026-10-29)
+
+La primera ejecución de R1–R10 dio 13 fallos en 6 de las 7 carreras:
+
+| Defecto | Causa | Corrección |
+|---|---|---|
+| La carga semanal subía hasta +27 % al pasar de base a construcción | El volumen de la fase sube del 100 al 110 % y la plantilla cambia una sesión neuromuscular por una de umbral, todo en la misma semana | `rampScales`: cada semana de la preparación se escala para no pasar del +10 % sobre la última de carga; las de descarga y el afinado no se tocan |
+| Días que no cabían en los minutos del usuario (p. ej. 66 de 60 min) | La fuerza solo se quitaba si no quedaban 20 min libres, pero las series tienen una parte fija mayor (26 min o más) | Si la sesión principal y la fuerza no caben juntas, fuera la fuerza, con su motivo |
+| Una sesión de series sola no cabía en un día de 45 min (55 min) | Su parte fija (calentamiento y series) no baja con el volumen | Ese día pasa a la versión continua de la sesión, con su motivo |
+
+### 3.2 Planes sin fecha (2026-10-21, en Python)
 
 La simulación hizo su función: la primera ejecución dio 106 de 120 y destapó defectos que los tests unitarios no veían.
 
@@ -64,8 +117,9 @@ haciendo que el motor elija entre semanas candidatas (DISENO §5.5); ahora cumpl
 Queda uno: el perfil con tope de intensidad ligera-moderada y adherencia baja. Ahí la dosis (160 min) queda pegada al suelo
 de la OMS (150) y el tope solo permite sesiones moderadas, que suman de uno en uno: para llegar a 150 hay que usar los seis
 días casi por igual. Se comprobaron todas las alternativas —ceder tiempo de fuerza, añadir un día de descanso y cargar más
-los días de fuerza— y ninguna cumple a la vez el suelo y la monotonía (el caso se reproduce con `validation/run.py`; la
-búsqueda de alternativas se hizo con un script aparte durante el desarrollo). Es un
+los días de fuerza— y ninguna cumple a la vez el suelo y la monotonía (el caso se reproduce con `ValidationTest`; la
+búsqueda de alternativas se hizo con un script aparte durante el desarrollo, y el 2026-10-29 se probó también con dos
+días de descanso más: tampoco llega). Es un
 conflicto estructural, y el motor prioriza el suelo de la OMS: el umbral de 2 procede del seguimiento de deportistas con
 cargas altas (Foster, 1998), mientras que este caso es de carga baja y moderada. [Inferencia en la prioridad]
 

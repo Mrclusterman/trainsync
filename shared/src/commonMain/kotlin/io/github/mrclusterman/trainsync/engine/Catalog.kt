@@ -1,4 +1,4 @@
-// Generado por tools/gen_catalog.py desde el prototipo; desde el port es la fuente de verdad (MOTOR §4 y §5).
+// Generado una vez desde el catálogo del prototipo; desde el port es la fuente de verdad y se edita aquí (MOTOR §4 y §5).
 package io.github.mrclusterman.trainsync.engine
 
 val CATALOG: List<CatalogEntry> = listOf(

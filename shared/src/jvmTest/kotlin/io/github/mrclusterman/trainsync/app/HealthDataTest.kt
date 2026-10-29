@@ -57,6 +57,26 @@ class HealthDataTest {
     }
 
     @Test
+    fun watchDataAdjustsTodayWithoutAskingForHealthGoals() {
+        val thursday = profile.copy(days = profile.days + ("THU" to 60))  // hoy (jueves) toca entrenar
+        fun todayWith(hrv: (Int) -> Double): TodayScreen {
+            val app = TrainSyncApp(MemoryStore(), MemoryStore(), { today })
+            app.saveProfile(thursday)
+            app.setGoal(GoalKind.FITNESS)
+            val s = snapshot()
+            app.importHealth(s.copy(days = s.days.mapIndexed { d, day -> day.copy(hrv = hrv(d)) }))
+            return app.todayScreen()
+        }
+        val calm = todayWith { d -> 60.0 + d % 5 }
+        assertTrue(calm.day.items.isNotEmpty())
+        assertTrue(calm.day.adjustments.isEmpty())  // sin falsas alarmas
+        val tired = todayWith { d -> if (d < 7) 35.0 else 60.0 + d % 5 }  // VFC hundida la última semana
+        assertTrue(tired.day.adjustments.any { "variabilidad cardíaca" in it.text }, tired.day.adjustments.toString())
+        assertFalse(tired.askReadiness)
+        assertTrue(tired.day.items.sumOf { it.durationMin } <= calm.day.items.sumOf { it.durationMin })
+    }
+
+    @Test
     fun oldDataIsMigrated() {
         val old = AppData(schema = 1, profile = profile)
         assertEquals(SCHEMA, migrate(old).schema)

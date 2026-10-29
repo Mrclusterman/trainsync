@@ -104,8 +104,9 @@ Cuatro apartados y un flujo de objetivo. Todo lo de hoy (Salud, Plan, Hoy) se re
 
 - **Apps nativas:** SwiftUI en iOS y Jetpack Compose en Android.
 - **Motor en un núcleo compartido** por las dos apps, que corre en el propio móvil. Propuesta: Kotlin Multiplatform
-  [sin decidir]. El motor actual en Python se reescribe una vez; la validación en Python (`prototype/backend/validation/`) sirve de
-  referencia: el núcleo nuevo debe dar los mismos planes con las mismas entradas.
+  (decidido). El motor en Python se reescribió una vez en Kotlin con pruebas de equivalencia; desde el 2026-10-29 el
+  núcleo de Kotlin es la **única fuente**: el motor del prototipo queda congelado y la validación vive en
+  `shared/src/jvmTest/.../engine/ValidationTest.kt`.
 - **Los datos se quedan en el móvil:** Apple Salud / Health Connect se leen en el dispositivo e intervals.icu se llama
   directamente desde la app con la clave del usuario, guardada en el llavero del sistema.
 - **Sin servidor ni cuentas** en las fases 1–3: no hay contraseñas, emails ni base de datos con datos de salud de nadie.

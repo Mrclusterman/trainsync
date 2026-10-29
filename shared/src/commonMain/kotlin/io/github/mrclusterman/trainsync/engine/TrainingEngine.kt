@@ -238,11 +238,11 @@ fun adjust(sessionType: String, state: DayState): Triple<String, Double, List<St
     // TSB entre -10 y -30 es carga productiva (Friel); solo < -30 obliga a recuperar
     if (tsb < -30) {
         return Triple(if (type != "rest") "recovery" else "rest", 1.0,
-            listOf("TSB ${fmt(tsb, 1)} < -30: riesgo alto, solo recuperación [Práctica]"))
+            listOf("Fatiga muy por encima de tu forma física (forma ${fmt(tsb, 1)}, por debajo de −30): hoy solo recuperación [Práctica]"))
     }
     if (status == "outside_swc" && type in QUALITY) {
         type = "aerobic"
-        reasons += "HRV fuera de tu rango normal (media 7 días): hoy sin intensidad [Verificado]"
+        reasons += "Tu variabilidad cardíaca (VFC) de los últimos 7 días está fuera de tu rango normal: hoy sin intensidad [Verificado]"
     }
     if (state.effortMismatch && type in QUALITY) {
         type = "aerobic"
@@ -263,7 +263,7 @@ fun adjust(sessionType: String, state: DayState): Triple<String, Double, List<St
     }
     if (state.consecutiveDays >= 3 && type in QUALITY && tsb < -20) {  // [Inferencia]
         type = "aerobic"
-        reasons += "${state.consecutiveDays} días seguidos entrenando con TSB ${fmt(tsb, 1)}: sin calidad hoy [Inferencia]"
+        reasons += "${state.consecutiveDays} días seguidos entrenando y con la forma en ${fmt(tsb, 1)}: hoy sin intensidad [Inferencia]"
     }
     return Triple(type, volume, reasons)
 }
@@ -502,8 +502,43 @@ fun mainSport(weekday: String, goal: Goal?, profile: Profile): String {
     return profile.activeSports[WEEKDAYS.indexOf(weekday) % profile.activeSports.size]
 }
 
-/** Propuesta diaria (RF-05): sesión principal, alternativas por deporte activo y fuerza. */
-fun proposeDay(day: LocalDate, profile: Profile, goal: Goal?, state: DayState? = null, scale: Double = 1.0): Day {
+/** Lo más que sube la carga de una semana sobre la última de carga (regla del 10 %). [Práctica] */
+const val MAX_WEEKLY_RISE = 1.10
+
+private var rampCache: Pair<Pair<Profile, Goal>, List<Double>>? = null  // último plan calculado: el mismo se pide muchas veces
+
+/**
+ * Factor de volumen de cada semana de la preparación para que la carga (TSS) no suba más de un 10 % sobre la última
+ * semana de carga: sin él, el paso de base a construcción sube hasta un 27 % de golpe (validación R2). Las semanas de
+ * descarga y el afinado no se tocan.
+ */
+fun rampScales(profile: Profile, goal: Goal): List<Double> {
+    val key = profile to goal
+    rampCache?.takeIf { it.first == key }?.let { return it.second }
+    val start = profile.planStart ?: goal.date.plusDays(-7 * PREP_WEEKS)
+    fun load(w: Int, scale: Double) = (0 until 7).sumOf { dayTss(proposeDay(start.plusDays(7 * w + it), profile, goal, scale = scale, ramp = false)) }
+    var last: Double? = null
+    val scales = (0..start.daysUntil(goal.date) / 7).map { w ->
+        val first = proposeDay(start.plusDays(7 * w), profile, goal, ramp = false)
+        if (first.recoveryWeek || first.phase == "taper") return@map 1.0
+        var scale = 1.0
+        var actual = load(w, 1.0)
+        val cap = last?.let { it * MAX_WEEKLY_RISE }
+        repeat(6) {  // el TSS no es lineal con el volumen (bloques fijos y topes de minutos): se ajusta
+            if (cap == null || actual <= cap || actual == 0.0) return@repeat
+            scale *= cap * 0.99 / actual  // un 1 % por debajo: el ajuste no es exacto
+            actual = load(w, scale)
+        }
+        last = actual
+        scale
+    }
+    rampCache = key to scales
+    return scales
+}
+
+/** Propuesta diaria (RF-05): sesión principal, alternativas por deporte activo y fuerza. `ramp`: aplicar rampScales. */
+fun proposeDay(day: LocalDate, profile: Profile, goal: Goal?, state: DayState? = null, scale: Double = 1.0,
+               ramp: Boolean = true): Day {
     val weekday = day.weekday()
     val week = day.isoWeek()
     val (phase, recoveryWeek) = phaseFor(day, goal, profile.planStart)
@@ -513,6 +548,12 @@ fun proposeDay(day: LocalDate, profile: Profile, goal: Goal?, state: DayState? =
     val reasons = mutableListOf<String>()
     var why: List<String> = emptyList()
     moved[weekday]?.let { reasons += "Viene del ${DAY_NAMES[it]}: ese día no entrenas [Inferencia]" }
+    val prepStart = goal?.let { profile.planStart ?: it.date.plusDays(-7 * PREP_WEEKS) }
+    if (ramp && goal != null && prepStart != null && day >= prepStart && day <= goal.date) {
+        val rise = rampScales(profile, goal)[prepStart.daysUntil(day) / 7]
+        volume *= rise
+        if (rise < 0.95 && kind != "rest") reasons += "Carga de la semana limitada a +10 % sobre la anterior: subir más de golpe aumenta el riesgo de lesión [Práctica]"
+    }
     if (recoveryWeek) {
         volume *= 0.7
         if (kind in QUALITY && weekday == "THU") kind = "aerobic"
@@ -559,10 +600,23 @@ fun proposeDay(day: LocalDate, profile: Profile, goal: Goal?, state: DayState? =
         return session
     }
 
-    val sessions = (listOf(preferred) + profile.activeSports.filter { it != preferred })
-        .mapNotNull { s -> build(s, volume)?.let { s to it } }
+    val order = listOf(preferred) + profile.activeSports.filter { it != preferred }
+    var sessions = order.mapNotNull { s -> build(s, volume)?.let { s to it } }
+    // Las series tienen una parte fija: si ni así caben en tus minutos, hoy toca la versión continua
+    val first = sessions.firstOrNull()?.second
+    if (first != null && limit != null && first.durationMin > limit && kind in QUALITY + "neuromuscular") {
+        kind = DOWNGRADE[kind]!!
+        sessions = order.mapNotNull { s -> build(s, volume)?.let { s to it } }
+        reasons += "Hoy sin series: la sesión de calidad no cabe en tus $limit min [Inferencia]"
+    }
     if (sessions.isEmpty()) return out
     out.main = sessions.first().second
+    // Algunas sesiones no bajan de su parte fija (calentamiento y series): si con la fuerza no cabe, fuera la fuerza
+    val dayCap = profile.dayMinutes?.get(weekday)?.takeIf { it != 0 }
+    if (dayCap != null && out.strength != null && out.main!!.durationMin + out.strength!!.durationMin > dayCap) {
+        out.strength = null
+        reasons += "Sin fuerza hoy: no cabe en tus $dayCap min junto a la sesión principal [Inferencia]"
+    }
     val target = out.main!!.tss
     for ((other, first) in sessions.drop(1)) {
         // Alternativa de carga equivalente (±15 %): el TSS no es lineal con la duración, se itera
