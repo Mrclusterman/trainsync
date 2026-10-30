@@ -123,7 +123,8 @@ Cuatro apartados y un flujo de objetivo. Todo lo de hoy (Salud, Plan, Hoy) se re
   propia, en `web/` (Vite + React + TypeScript), que pinta las pantallas que calcula el núcleo (`WebApp.kt` las entrega
   en JSON); Compose Multiplatform para web se descartó por seguir en Beta, dibujar en canvas (peor accesibilidad) y
   reutilizar poco. Hecha Hoy con datos de prueba. Los datos van en `localStorage`; la clave de intervals.icu, en
-  `sessionStorage` (se borra al cerrar la pestaña), y una CSP solo deja conectar con intervals.icu.
+  `sessionStorage` (se borra al cerrar la pestaña), y una CSP solo deja conectar con intervals.icu. Los tipos de `web/src/types.ts` se escriben a mano; `WebTypesTest` (jsTest) avisa si el núcleo deja de mandar
+  alguno de sus campos.
 - **Conexiones directas sin intervals.icu (estudiado el 2026-10-30, sin decidir):** el móvil ya puede prescindir de
   intervals.icu con Apple Salud y Health Connect (Garmin escribe en Health Connect actividades, pulso y sueño, desde
   Android 14; no Body Battery ni estrés). Garmin, Strava, Polar, COROS o Wahoo directos necesitan servidor (OAuth con
