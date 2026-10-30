@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Línea de pulso (la misma del icono de la web), en la zona segura del icono adaptativo -->
+<!-- Línea de pulso de Brivel (docs/VISION.md §12), en la zona segura del icono adaptativo; también es la capa monocroma -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:strokeColor="#3D7EFF" android:strokeWidth="6" android:strokeLineCap="round" android:strokeLineJoin="round"
-        android:fillColor="#00000000" android:pathData="M30,58 L45,58 L51,42 L60,70 L67,50 L72,58 L78,58" />
+    <path android:strokeColor="#0B1F16" android:strokeWidth="5.8" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:fillColor="#00000000" android:pathData="M23.6,55.6 L39.6,55.6 L46,39.6 L55.6,68.4 L63.6,46 L70,55.6 L84.4,55.6" />
 </vector>
