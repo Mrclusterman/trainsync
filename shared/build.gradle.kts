@@ -15,6 +15,21 @@ kotlin {
         minSdk = 28
     }
 
+    js {
+        browser()  // versión web: el mismo motor en el navegador
+        nodejs {  // los tests, sin navegador
+            testTask {
+                environment("GOLDEN_DIR", file("src/jvmAndJsTest/resources/golden").absolutePath)
+                useMocha { timeout = "120s" }  // los casos de referencia tardan más que los 2 s por defecto
+            }
+        }
+    }
+
+    // Los casos de referencia corren en la JVM y en JS; iOS no puede leerlos del disco del proyecto
+    applyDefaultHierarchyTemplate {
+        common { group("jvmAndJs") { withJvm(); withJs() } }
+    }
+
     // Las Apple solo compilan en macOS (CI de GitHub); en Linux Gradle las omite
     listOf(iosArm64(), iosSimulatorArm64()).forEach {
         it.binaries.framework {
@@ -41,8 +56,14 @@ kotlin {
         jvmMain.dependencies {
             implementation(libs.ktor.client.java)
         }
-        jvmTest.dependencies {
-            implementation(libs.ktor.client.mock)
+        jsMain.dependencies {
+            implementation(libs.ktor.client.js)
+        }
+        val jvmAndJsTest by getting {
+            dependencies {
+                implementation(libs.ktor.client.mock)
+                implementation(libs.kotlinx.coroutines.test)
+            }
         }
     }
 }

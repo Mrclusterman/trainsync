@@ -13,7 +13,7 @@ jobs:
       - uses: actions/setup-java@v6
         with: { distribution: temurin, java-version: "21" }
       - uses: gradle/actions/setup-gradle@v6
-      - run: ./gradlew :shared:compileCommonMainKotlinMetadata :shared:jvmTest :androidApp:assembleDebug --console=plain
+      - run: ./gradlew :shared:compileCommonMainKotlinMetadata :shared:jvmTest :shared:jsNodeTest :androidApp:assembleDebug --console=plain
       - uses: actions/upload-artifact@v7
         with:
           name: trainsync-debug-apk

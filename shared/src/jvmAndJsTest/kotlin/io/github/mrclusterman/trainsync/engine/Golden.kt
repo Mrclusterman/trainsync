@@ -9,7 +9,6 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
-import java.io.File
 import kotlin.math.abs
 
 /**
@@ -17,22 +16,27 @@ import kotlin.math.abs
  * motor de Kotlin es la única fuente, así que tras un cambio a propósito se regeneran con
  * `UPDATE_GOLDEN=1 ./gradlew :shared:jvmTest` (y se revisa el diff antes de guardarlo).
  */
-internal fun golden(name: String): JsonObject =
-    Json.parseToJsonElement(Golden::class.java.getResource("/golden/$name.json")!!.readText()).jsonObject
+internal fun golden(name: String): JsonObject = Json.parseToJsonElement(readGolden(name)).jsonObject
 
-private object Golden
+/** Texto de `src/jvmAndJsTest/resources/golden/<name>.json`; cada plataforma lo lee a su manera. */
+internal expect fun readGolden(name: String): String
 
-internal val updatingGolden = System.getenv("UPDATE_GOLDEN") == "1"
+/** Solo en la JVM: en JS los casos se comprueban, nunca se reescriben. */
+internal expect val updatingGolden: Boolean
+
+/** Reescribe el archivo fuente (no la copia del build, que no ve las reescrituras anteriores de la misma ejecución). */
+internal expect fun editGolden(name: String, edit: (String) -> String)
 
 /** Reescribe la salida esperada de cada caso de `kind` con la que da ahora el motor. */
 internal fun rewriteGolden(name: String, kind: String, outs: List<JsonElement?>) {
-    val file = File("src/jvmTest/resources/golden/$name.json")
-    val root = Json.parseToJsonElement(file.readText()).jsonObject
-    val nested = "cases" in root
-    val cases = if (nested) root["cases"]!!.jsonObject else root
-    val updated = JsonArray(cases[kind]!!.jsonArray.mapIndexed { i, c -> JsonObject(c.jsonObject + ("out" to (outs[i] ?: JsonNull))) })
-    val newCases = JsonObject(cases + (kind to updated))
-    file.writeText(Json.encodeToString(JsonObject.serializer(), if (nested) JsonObject(root + ("cases" to newCases)) else newCases))
+    editGolden(name) { text ->
+        val root = Json.parseToJsonElement(text).jsonObject
+        val nested = "cases" in root
+        val cases = if (nested) root["cases"]!!.jsonObject else root
+        val updated = JsonArray(cases[kind]!!.jsonArray.mapIndexed { i, c -> JsonObject(c.jsonObject + ("out" to (outs[i] ?: JsonNull))) })
+        val newCases = JsonObject(cases + (kind to updated))
+        Json.encodeToString(JsonObject.serializer(), if (nested) JsonObject(root + ("cases" to newCases)) else newCases)
+    }
 }
 
 /** Igualdad de JSON sin distinguir "clave con null" de "sin clave" ni 10 de 10.0. Devuelve la primera diferencia. */

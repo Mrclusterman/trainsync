@@ -17,7 +17,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -152,7 +152,7 @@ class IntervalsGoldenTest {
     }
 
     @Test
-    fun clientSendsAuthAndUpserts() = runBlocking {
+    fun clientSendsAuthAndUpserts() = runTest {
         val seen = mutableListOf<Pair<String, String>>()
         val engine = MockEngine { request ->
             seen += request.method.value to request.url.toString()
@@ -174,7 +174,7 @@ class IntervalsGoldenTest {
     }
 
     @Test
-    fun clientReportsBadKey() = runBlocking {
+    fun clientReportsBadKey() = runTest {
         val client = IntervalsClient("i1", "mala", MockEngine { respond("Unauthorized", HttpStatusCode.Unauthorized) })
         assertEquals(401, assertFailsWith<IntervalsException> { client.athlete() }.status)
     }

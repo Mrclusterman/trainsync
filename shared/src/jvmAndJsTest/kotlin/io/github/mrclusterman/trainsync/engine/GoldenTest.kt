@@ -24,8 +24,7 @@ import kotlin.test.fail
  * regenerarlos tras un cambio a propósito.
  */
 class GoldenTest {
-    private val golden = Json.parseToJsonElement(
-        GoldenTest::class.java.getResource("/golden/engine.json")!!.readText()).jsonObject
+    private val golden = golden("engine")
     private val cases = golden["cases"]!!.jsonObject
     private val json = Json { encodeDefaults = true }
 
