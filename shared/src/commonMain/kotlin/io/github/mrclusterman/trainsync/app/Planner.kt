@@ -41,12 +41,16 @@ import io.github.mrclusterman.trainsync.intervals.fillPhysiology
 import io.github.mrclusterman.trainsync.intervals.watchSessions
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.isoDayNumber
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 /** Un paso de una sesión, ya listo para mostrar. */
+@Serializable
 data class Step(val name: String, val reps: Int, val minutes: Double, val intensityZone: String, val restMinutes: Double?,
                 val detail: String?, val target: String?, val meters: Int? = null)  // meters: natación con CSS
 
 /** Una sesión del plan, de fuerza o de resistencia, con nombre llano y su nombre técnico. */
+@Serializable
 data class PlanItem(
     val sport: String,
     val kind: String,
@@ -60,18 +64,21 @@ data class PlanItem(
     val alternatives: List<PlanItem>,
     val chosen: Boolean,  // la eligió el usuario en lugar de la planificada
     val slot: String,  // deporte de la sesión planificada que ocupa (para el calendario del reloj)
-    internal val session: Session?,
-    internal val healthStrength: HealthStrength?,
-    internal val raceStrength: RaceStrength?,
+    @Transient internal val session: Session? = null,  // la web recibe la pantalla en JSON: lo interno no sale
+    @Transient internal val healthStrength: HealthStrength? = null,
+    @Transient internal val raceStrength: RaceStrength? = null,
 ) {
     val isStrength: Boolean get() = sport == "strength"
 }
 
 /** Un motivo con su etiqueta de evidencia separada. */
+@Serializable
 data class Reason(val text: String, val evidence: String?)
 
+@Serializable
 data class MatchView(val text: String, val counts: Boolean)
 
+@Serializable
 data class DayView(
     val date: String,
     val weekday: String,

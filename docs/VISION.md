@@ -119,8 +119,11 @@ Cuatro apartados y un flujo de objetivo. Todo lo de hoy (Salud, Plan, Hoy) se re
   CI lo comprueba con `:shared:jsNodeTest`. La web sería estática, con el motor en el navegador y los datos guardados
   en él, alojable gratis (por ejemplo Cloudflare). intervals.icu acepta llamadas desde el navegador: CORS comprobado el
   2026-10-30 en `/athlete/0` y `/wellness` (permite `authorization` y GET, POST, PUT, DELETE). El navegador no lee Apple
-  Salud ni Health Connect, así que en la web los datos vendrían de intervals.icu. Falta decidir la interfaz (Compose
-  Multiplatform o propia) y el almacenamiento (`localStorage` o IndexedDB).
+  Salud ni Health Connect, así que en la web los datos vendrían de intervals.icu. **Interfaz decidida el 2026-10-30:**
+  propia, en `web/` (Vite + React + TypeScript), que pinta las pantallas que calcula el núcleo (`WebApp.kt` las entrega
+  en JSON); Compose Multiplatform para web se descartó por seguir en Beta, dibujar en canvas (peor accesibilidad) y
+  reutilizar poco. Hecha Hoy con datos de prueba. Los datos van en `localStorage`; la clave de intervals.icu, en
+  `sessionStorage` (se borra al cerrar la pestaña), y una CSP solo deja conectar con intervals.icu.
 - **Conexiones directas sin intervals.icu (estudiado el 2026-10-30, sin decidir):** el móvil ya puede prescindir de
   intervals.icu con Apple Salud y Health Connect (Garmin escribe en Health Connect actividades, pulso y sueño, desde
   Android 14; no Body Battery ni estrés). Garmin, Strava, Polar, COROS o Wahoo directos necesitan servidor (OAuth con

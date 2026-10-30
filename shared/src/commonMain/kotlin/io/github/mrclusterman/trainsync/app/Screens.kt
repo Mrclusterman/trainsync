@@ -18,6 +18,7 @@ import io.github.mrclusterman.trainsync.intervals.str
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.daysUntil
 import kotlinx.datetime.number
+import kotlinx.serialization.Serializable
 import kotlin.math.sqrt
 
 /** "Viernes 23 de octubre". */
@@ -32,8 +33,10 @@ fun dateLabel(date: String): String {
 enum class Tone { OK, CAUTION, REST }
 
 /** Un día de la semana en Hoy: hecho, planificado o libre. */
+@Serializable
 data class WeekDot(val letter: String, val date: String, val isToday: Boolean, val planned: Boolean, val done: Boolean)
 
+@Serializable
 data class TodayScreen(
     val dateLabel: String,
     val goalLine: String?,  // "Maratón de Valencia · en 6 semanas · Base" o "Bloque 2 · semana 3 de 4"

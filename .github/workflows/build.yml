@@ -13,7 +13,9 @@ jobs:
       - uses: actions/setup-java@v6
         with: { distribution: temurin, java-version: "21" }
       - uses: gradle/actions/setup-gradle@v6
-      - run: ./gradlew :shared:compileCommonMainKotlinMetadata :shared:jvmTest :shared:jsNodeTest :androidApp:assembleDebug --console=plain
+      - run: ./gradlew :shared:compileCommonMainKotlinMetadata :shared:jvmTest :shared:jsNodeTest :shared:jsBrowserProductionLibraryDistribution :androidApp:assembleDebug --console=plain
+      - run: npm ci && npm run build  # la versión web, con el núcleo recién compilado
+        working-directory: web
       - uses: actions/upload-artifact@v7
         with:
           name: trainsync-debug-apk

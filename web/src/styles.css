@@ -1,0 +1,72 @@
+/* Pulso (docs/DISENO_PULSO.md): mismos valores que Theme.kt y Components.swift; si cambias uno, cambia los tres */
+@font-face { font-family: Figtree; font-weight: 400; src: url(../../iosApp/iosApp/Fonts/Figtree-Regular.ttf); }
+@font-face { font-family: Figtree; font-weight: 500; src: url(../../iosApp/iosApp/Fonts/Figtree-Medium.ttf); }
+@font-face { font-family: Figtree; font-weight: 600; src: url(../../iosApp/iosApp/Fonts/Figtree-SemiBold.ttf); }
+@font-face { font-family: Figtree; font-weight: 700; src: url(../../iosApp/iosApp/Fonts/Figtree-Bold.ttf); }
+@font-face { font-family: Figtree; font-weight: 800; src: url(../../iosApp/iosApp/Fonts/Figtree-ExtraBold.ttf); }
+@font-face { font-family: "IBM Plex Mono"; font-weight: 400; src: url(../../iosApp/iosApp/Fonts/IBMPlexMono-Regular.ttf); }
+@font-face { font-family: "IBM Plex Mono"; font-weight: 600; src: url(../../iosApp/iosApp/Fonts/IBMPlexMono-SemiBold.ttf); }
+
+:root {
+  --bg: #F3F0E9; --surface: #FFFFFF; --chip: #ECE7DC; --text: #1B2420; --muted: #5D6762;
+  --ok: #1F7A5C; --on-ok: #FFFFFF; --ok-soft: #DCEFE5; --caution: #9A6400; --caution-soft: #F6E7C8;
+  --z1: #4ECDC4; --z2: #45B7D1; --z3: #FFA500; --z4: #FF6B35; --z5: #FF4757; --z6: #C0392B; --on-zone: #0B1F22;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0F1412; --surface: #18201C; --chip: #243029; --text: #EEF2EE; --muted: #A3B0A8;
+    --ok: #5FD3A4; --on-ok: #0B1F16; --ok-soft: #16302A; --caution: #F2B95A; --caution-soft: #3A2E17;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; }
+body { background: var(--bg); color: var(--text); font: 15px/1.4 Figtree, system-ui, sans-serif; }
+main { max-width: 560px; margin: 0 auto; padding: 16px 18px 40px; display: flex; flex-direction: column; gap: 14px; }
+h1 { font-size: 26px; font-weight: 800; }
+h2 { font-size: 24px; line-height: 28px; font-weight: 800; }
+h3 { font-size: 15px; font-weight: 700; flex: 1; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+.mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+.big { font-size: 22px; font-weight: 600; }
+.row { display: flex; align-items: center; gap: 10px; }
+.icon { display: inline-block; flex: none; background: currentColor; mask-size: contain; mask-repeat: no-repeat; -webkit-mask-size: contain; }
+
+.module { background: var(--surface); border-radius: 24px; padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.module.done { box-shadow: inset 0 0 0 2px var(--ok); }
+.badge { width: 36px; height: 36px; border-radius: 12px; background: var(--chip); display: grid; place-items: center; }
+.sport { flex: 1; font-size: 13px; font-weight: 600; color: var(--muted); }
+.hecha { display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: var(--ok); }
+
+.state { display: flex; gap: 12px; padding: 14px; border-radius: 20px; }
+.state.ok { background: var(--ok-soft); --tone: var(--ok); }
+.state.caution { background: var(--caution-soft); --tone: var(--caution); }
+.state.rest { background: var(--chip); --tone: var(--muted); }
+.state-icon { width: 44px; height: 44px; border-radius: 50%; flex: none; display: grid; place-items: center; background: var(--tone); color: var(--bg); }
+.state.ok .state-icon { color: var(--on-ok); }
+.state > div { display: flex; flex-direction: column; gap: 6px; padding-top: 2px; }
+.state-title { font-size: 16px; font-weight: 700; }
+
+.reason { display: flex; gap: 10px; font-size: 14px; line-height: 20px; }
+.reason .bar { width: 3px; height: 16px; margin-top: 3px; border-radius: 2px; flex: none; background: var(--caution); }
+.reason .bar.ok { background: var(--ok); }
+.reason .bar.rest { background: var(--muted); }
+.evidence { color: var(--muted); }
+
+.steps { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.steps li { display: flex; align-items: center; gap: 10px; }
+.zone { width: 40px; height: 24px; border-radius: 999px; display: grid; place-items: center; flex: none;
+  font: 600 12px "IBM Plex Mono", monospace; color: var(--on-zone); }
+.step { flex: 1; display: flex; flex-direction: column; }
+
+button { font: inherit; min-height: 50px; border: 0; border-radius: 999px; padding: 0 22px; cursor: pointer; }
+button.primary { background: var(--ok); color: var(--on-ok); font-weight: 600; }
+button:focus-visible { outline: 3px solid var(--text); outline-offset: 2px; }
+
+.week { list-style: none; padding: 0; display: flex; justify-content: space-between; }
+.week li { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.dot { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--chip); display: grid; place-items: center; }
+.dot.today { border-color: var(--ok); }
+.dot.done { background: var(--ok); }
+.dot i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
+.ok-text { display: flex; align-items: center; gap: 6px; color: var(--ok); font-size: 14px; font-weight: 600; }

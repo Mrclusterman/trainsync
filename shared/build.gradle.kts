@@ -16,7 +16,11 @@ kotlin {
     }
 
     js {
-        browser()  // versión web: el mismo motor en el navegador
+        browser()  // versión web (web/): el mismo motor en el navegador
+        binaries.library()
+        generateTypeScriptDefinitions()
+        useEsModules()
+        outputModuleName = "trainsync-shared"
         nodejs {  // los tests, sin navegador
             testTask {
                 environment("GOLDEN_DIR", file("src/jvmAndJsTest/resources/golden").absolutePath)
