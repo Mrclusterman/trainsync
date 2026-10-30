@@ -1,6 +1,6 @@
 package io.github.mrclusterman.trainsync.engine
 
-// Sesión de TrainSync → entrenamiento estructurado de intervals.icu, que lo pasa al reloj o al ciclocomputador.
+// Sesión de Brivel → entrenamiento estructurado de intervals.icu, que lo pasa al reloj o al ciclocomputador.
 // Portado de prototype/backend/app/services/workout_text.py.
 //
 // Cada paso lleva un objetivo que intervals.icu convierte en límites (el reloj avisa al salirse del rango). Sintaxis
@@ -72,8 +72,8 @@ fun stepTarget(zone: String, session: Session, profile: Profile, mode: String): 
         val (fast, slow) = RUN_PACE_ZONES[zone]!!
         return "${paceText(profile.runPace!! * slow)}-${paceText(profile.runPace * fast)}/km Pace"
     }
-    // FC: las zonas de TrainSync en % de la FC máx., porque intervals.icu no acepta ppm y "% LTHR" usaría la LTHR
-    // guardada en intervals.icu, que puede no ser la que usa TrainSync
+    // FC: las zonas de Brivel en % de la FC máx., porque intervals.icu no acepta ppm y "% LTHR" usaría la LTHR
+    // guardada en intervals.icu, que puede no ser la que usa Brivel
     val (lo, hi) = bounds!!
     val pct = { bpm: Double -> fmt(100 * bpm / profile.maxHr!!, 1).trimEnd('0').trimEnd('.') }
     return "${pct(lo)}-${pct(hi)}% HR"
@@ -128,14 +128,14 @@ data class WorkoutEvent(
 
 /** Evento para POST /events/bulk?upsert=true: un external_id por día (y por clave), así reenviar lo actualiza. */
 fun workoutEvent(session: Session, day: String, profile: Profile, key: String? = null) = WorkoutEvent(
-    startDateLocal = "${day}T00:00:00", type = SPORT_TYPES[session.sport]!!, name = "TrainSync · ${session.name}",
+    startDateLocal = "${day}T00:00:00", type = SPORT_TYPES[session.sport]!!, name = "Brivel · ${session.name}",
     description = describe(session, profile), movingTime = session.durationMin * 60,
     externalId = "trainsync-$day" + (key?.let { "-$it" } ?: ""),
 )
 
 /** Fuerza como entrenamiento de pesas: lista de ejercicios sin guiones, para que no se lea como pasos con objetivo. */
 fun strengthEvent(session: HealthStrength, day: String) = WorkoutEvent(
-    startDateLocal = "${day}T00:00:00", type = "WeightTraining", name = "TrainSync · ${session.name}",
+    startDateLocal = "${day}T00:00:00", type = "WeightTraining", name = "Brivel · ${session.name}",
     description = (session.exercises.map { "• $it" } + "" + session.notes).joinToString("\n"),
     movingTime = session.durationMin * 60, externalId = "trainsync-$day-strength",
 )

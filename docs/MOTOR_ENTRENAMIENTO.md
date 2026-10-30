@@ -1,4 +1,4 @@
-# MOTOR DE ENTRENAMIENTO — TrainSync
+# MOTOR DE ENTRENAMIENTO — Brivel
 
 > **Versión:** 0.6 — Días del usuario en la plantilla y emparejado de lo hecho con lo planificado (§15.1)
 > **Fecha:** 2026-10-21
@@ -17,7 +17,7 @@ Cada regla lleva una etiqueta de certeza:
 | **[Verificado: ref]** | Respaldado por la referencia citada (sección 16). Se ha comprobado el resumen o el texto, no siempre el texto completo. |
 | **[Práctica: fuente]** | Recomendación publicada de un entrenador o plataforma de referencia (Friel, TrainingPeaks, Daniels), sin ensayo controlado detrás. |
 | **[Práctica]** | Práctica habitual de entrenadores; no se ha encontrado fuente concreta ni ensayo. |
-| **[Inferencia]** | Decisión de diseño de TrainSync. Se buscó evidencia y no la hay; es un parámetro razonable que se podrá ajustar con datos reales. |
+| **[Inferencia]** | Decisión de diseño de Brivel. Se buscó evidencia y no la hay; es un parámetro razonable que se podrá ajustar con datos reales. |
 
 Las [Inferencia] que quedan son las que **no tienen evidencia publicada** después de buscarla (sección 11.2), no las que faltan por revisar.
 
@@ -405,7 +405,7 @@ Deportes no activos en el perfil se sustituyen por el primer deporte activo.
 
 **Zonas por deporte.** Friel usa límites distintos para correr (Z1 < 85 %, Z2 85–89 %, Z3 90–94 %, Z4 95–99 %, Z5 ≥ 100 % LTHR) y para ciclismo (Z1 < 81 %, Z2 81–89 %, Z3 90–93 %, Z4 94–99 %, Z5 ≥ 100 %) [Práctica: Friel, vía TrainingPeaks y 220 Triathlon]. La Memoria §8.3 aplica a los dos deportes la tabla de ciclismo. **Cambio:** usar la tabla de running para running. Las zonas por defecto de intervals.icu también se basan en Friel [Práctica: foro de intervals.icu, no documentación oficial].
 
-**Detalle de implementación:** intervals.icu entrega `icu_hr_zone_times` con las zonas que el atleta tenga configuradas allí, que pueden no coincidir con la tabla de la Memoria §8.3. El motor debe recalcular las zonas de TrainSync a partir de los límites de `sportSettings.hr_zones` o del stream de FC. [No verificado: estructura exacta de esos campos]
+**Detalle de implementación:** intervals.icu entrega `icu_hr_zone_times` con las zonas que el atleta tenga configuradas allí, que pueden no coincidir con la tabla de la Memoria §8.3. El motor debe recalcular las zonas de Brivel a partir de los límites de `sportSettings.hr_zones` o del stream de FC. [No verificado: estructura exacta de esos campos]
 
 ---
 
@@ -546,7 +546,7 @@ Clave: `plan:{user_id}:{fecha}`. Se invalida cuando: [Memoria RF-05/Fase 3 + Inf
 
 Garmin elige la sesión sugerida según el tipo de carga que te falta: aeróbico bajo, aeróbico alto o anaeróbico
 [Verificado: Garmin, "Daily Suggested Workouts"; Forerunner 965, "Training Status"]. Firstbeat no publica sus rangos
-objetivo, así que TrainSync los toma de su propio modelo polarizado (§1, Memoria §8.4).
+objetivo, así que Brivel los toma de su propio modelo polarizado (§1, Memoria §8.4).
 
 - **Medida:** la carga (`icu_training_load`) de cada actividad de los últimos 28 días se reparte según su tiempo en las
   7 zonas de FC de intervals.icu: Z1–Z2 aeróbico bajo, Z3–Z5a aeróbico alto, Z5b+ anaeróbico. [Inferencia: las zonas
@@ -566,7 +566,7 @@ con Garmin; Garmin no publica la fórmula. Verificado solo que los objetivos pue
 - **Modelo:** recta velocidad = a + b·FC con los datos segundo a segundo (`/activity/{id}/streams`) de las 12 carreras
   más recientes: solo llano (|pendiente| ≤ 2 %), corriendo (> 1,5 m/s) y sin los 5 primeros minutos; mediana por tramos de
   5 ppm con ≥ 60 s; hacen falta ≥ 4 tramos y 15 ppm de rango. [Inferencia]
-- **Uso:** los límites de FC de cada zona de TrainSync (§3, techo LTHR − 30 incluido) se convierten en ritmo con la recta.
+- **Uso:** los límites de FC de cada zona de Brivel (§3, techo LTHR − 30 incluido) se convierten en ritmo con la recta.
   Con modelo, toda la carrera va por ritmo salvo trail (por FC), tests (por RPE) y Z6 (RPE). Sin modelo, la calidad usa
   el ritmo umbral de intervals.icu con las zonas de Friel [Práctica: Friel, "Quick guide to setting zones"] y el resto, FC.
 - **Comprobación:** si el ritmo que la recta predice en la LTHR difiere más de un 5 % del ritmo umbral de intervals.icu,
@@ -586,12 +586,12 @@ con Garmin; Garmin no publica la fórmula. Verificado solo que los objetivos pue
 - **Natación:** ritmo absoluto desde el CSS (umbral de natación de intervals.icu); los descansos, sin objetivo.
 - Formatos comprobados contra la API el 2026-10-21 (`prototype/backend/app/services/workout_text.py`).
 
-## 15. TrainSync frente a Garmin
+## 15. Brivel frente a Garmin
 
 Objetivo del proyecto: una fórmula propia, determinista y documentada, igual o mejor que las sugerencias de Garmin y su
 competencia, sin depender de una IA para proponer sesiones.
 
-| Pieza | Garmin | TrainSync |
+| Pieza | Garmin | Brivel |
 |---|---|---|
 | Tipos de sesión | Recuperación, base, tempo, umbral, VO2max, anaeróbico, sprint [Verificado: Garmin] | Los mismos (tempo y anaeróbico desde v0.5) + larga, específico de carrera, brick, test y fuerza |
 | Elección diaria | Carga, load focus, tiempo de recuperación, sueño, sesiones recientes [Verificado] | Reparto de la carga (§12), TSB, HRV, sueño, RPE, días seguidos y vuelta tras una parada (§3) |

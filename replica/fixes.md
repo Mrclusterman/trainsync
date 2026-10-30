@@ -1,4 +1,4 @@
-# Qué odian los usuarios de TrainingPeaks y Garmin Connect, y qué hace TrainSync con ello
+# Qué odian los usuarios de TrainingPeaks y Garmin Connect, y qué hace Brivel con ello
 
 > **Fecha:** 2026-10-20 · Hecho con la skill `replica-entrepreneur` (Jakeschincariol/replica-skill @ 77c9436).
 > Las citas son de reseñas reales, copiadas tal cual y enlazadas. Son **investigación, no testimonios**: no se usan en la web ni en anuncios.
@@ -42,10 +42,10 @@
 ## 3. Lo que nadie resuelve (posicionamiento)
 
 1. **Quien ya pagó el hardware y no quiere pagar otra vez por sus propios datos.** Es la queja de pago más repetida de Garmin Connect; las reseñas sobre Connect+ empiezan a finales de marzo de 2025. Y la versión gratis de TrainingPeaks no sirve para planificar. 53 reseñas de GC y hasta 31 de TP, 2 fuentes.
-2. **Quien está dejando las apps para hacerse su propia herramienta con IA o con intervals.icu.** Aparece en reseñas recientes de ambas apps: "Folks, just build your own tool in Claude." ([App Store US](https://itunes.apple.com/us/rss/customerreviews/page=1/id=408047715/sortBy=mostRecent/json), 1★, 2026-10-12) · "Use intervals.icu and move on from this rubbish product if you can" ([App Store US](https://itunes.apple.com/us/rss/customerreviews/page=3/id=408047715/sortBy=mostRecent/json), 2★) · "I created a Garmin CLI that just connects to Garmin Connect. My agent loves it. Now it is my coach" ([Hacker News](https://news.ycombinator.com/item?id=50106116)). **Fino** (pocas reseñas), pero apunta justo a lo que es TrainSync.
+2. **Quien está dejando las apps para hacerse su propia herramienta con IA o con intervals.icu.** Aparece en reseñas recientes de ambas apps: "Folks, just build your own tool in Claude." ([App Store US](https://itunes.apple.com/us/rss/customerreviews/page=1/id=408047715/sortBy=mostRecent/json), 1★, 2026-10-12) · "Use intervals.icu and move on from this rubbish product if you can" ([App Store US](https://itunes.apple.com/us/rss/customerreviews/page=3/id=408047715/sortBy=mostRecent/json), 2★) · "I created a Garmin CLI that just connects to Garmin Connect. My agent loves it. Now it is my coach" ([Hacker News](https://news.ycombinator.com/item?id=50106116)). **Fino** (pocas reseñas), pero apunta justo a lo que es Brivel.
 3. **Hispanohablantes.** **Fino** (8 reseñas de una sola fuente).
 
-## 4. Plan de mejoras para TrainSync
+## 4. Plan de mejoras para Brivel
 
 Elegidas por evidencia × lo barato que es hacerlas. Tamaño: S (días), M (1–2 semanas), L (más).
 
@@ -59,19 +59,19 @@ Elegidas por evidencia × lo barato que es hacerlas. Tamaño: S (días), M (1–
 | 6 | **Hecho (2026-10-21).** **Web ligera que funcione sin conexión** (PWA con la semana en caché). Instalable (`manifest.ts`) y `public/sw.js`: las páginas de la app se guardan al verlas y sin red se ve la última copia, con aviso; la caché se borra al cerrar sesión | M | prototype/web | Lenta (39 TP, 92 GC) y sin conexión (17 GC, 2 fuentes) |
 | 7 | **Hecho (2026-10-21).** **Español completo de serie, incluida la web**. Ejercicios, natación, fases y sesiones en español, con el nombre habitual entre paréntesis (hip thrust, pull buoy…). Se mantiene la sintaxis que exige intervals.icu (`HR`, `Pace`) | S | frontend (ya en `lang="es"`), textos de sesiones | 8 TP, fino |
 
-Las quejas de precio y cobro no aplican mientras TrainSync sea gratis. Las notificaciones (si llegan en la Fase 5) deben poder desactivarse por tipo.
+Las quejas de precio y cobro no aplican mientras Brivel sea gratis. Las notificaciones (si llegan en la Fase 5) deben poder desactivarse por tipo.
 
 ## 5. Posicionamiento
 
-**A.** Para quien ya pagó su reloj y no quiere pagar otra suscripción para entrenar con sus propios datos, TrainSync planifica gratis, sin anuncios y con código abierto.
+**A.** Para quien ya pagó su reloj y no quiere pagar otra suscripción para entrenar con sus propios datos, Brivel planifica gratis, sin anuncios y con código abierto.
 Evidencia: suscripción y muro de pago, 53 reseñas de GC y hasta 31 de TP, 2 fuentes.
 
-**B.** Para quien no puede planificar desde el móvil, TrainSync es una web pensada para el móvil donde mueves la sesión de hoy y el plan se recalcula solo.
+**B.** Para quien no puede planificar desde el móvil, Brivel es una web pensada para el móvil donde mueves la sesión de hoy y el plan se recalcula solo.
 Evidencia: planificar y mover en el móvil, 24 reseñas de TP, 1 fuente (fino).
 
-**C.** Para quien quiere entender por qué le toca descanso hoy, TrainSync explica cada sesión con tu HRV, tu sueño y tu forma, y cita la evidencia de cada regla.
+**C.** Para quien quiere entender por qué le toca descanso hoy, Brivel explica cada sesión con tu HRV, tu sueño y tu forma, y cita la evidencia de cada regla.
 Evidencia: métricas en las que no confían, 28 reseñas, 2 fuentes (fino por app).
 
-**Recomendada: A.** Es la queja con más reseñas y fuentes, encaja con lo que TrainSync ya es (gratis, AGPL, sobre intervals.icu) y no depende de funciones que aún no existen.
+**Recomendada: A.** Es la queja con más reseñas y fuentes, encaja con lo que Brivel ya es (gratis, AGPL, sobre intervals.icu) y no depende de funciones que aún no existen.
 
 No usar los nombres de TrainingPeaks ni de Garmin en el nombre de la app, anuncios ni ficha de tienda. Una página de comparación con ellos es una cuestión legal que conviene consultar con un abogado en España.

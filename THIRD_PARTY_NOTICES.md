@@ -1,6 +1,6 @@
 # Avisos de terceros
 
-TrainSync (AGPL-3.0-only) incluye o usa los siguientes componentes con licencias compatibles:
+Brivel (AGPL-3.0-only) incluye o usa los siguientes componentes con licencias compatibles:
 
 | Componente | Uso | Licencia |
 |---|---|---|

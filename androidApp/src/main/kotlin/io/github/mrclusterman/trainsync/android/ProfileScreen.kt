@@ -146,7 +146,7 @@ fun ProfileTab(app: TrainSyncApp, version: Int, act: Act, changeGoal: () -> Unit
             SectionTitle("Aviso de salud")
             Secondary(HEALTH_NOTICE)
         }
-        Secondary("TrainSync es gratis y de código abierto (AGPL-3.0). Sin niveles de pago, sin anuncios y sin notificaciones comerciales.")
+        Secondary("Brivel es gratis y de código abierto (AGPL-3.0). Sin niveles de pago, sin anuncios y sin notificaciones comerciales.")
         Spacer(Modifier.height(24.dp))
     }
     if (confirmDelete) {

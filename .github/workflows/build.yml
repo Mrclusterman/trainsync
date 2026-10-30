@@ -41,7 +41,7 @@ jobs:
           DEVICE=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for k in sorted(d, reverse=True) if 'iOS' in k for x in d[k] if x['name'].startswith('iPhone')))")
           xcrun simctl boot "$DEVICE"
           xcrun simctl bootstatus "$DEVICE" -b
-          xcrun simctl install "$DEVICE" build/Build/Products/Debug-iphonesimulator/TrainSync.app
+          xcrun simctl install "$DEVICE" build/Build/Products/Debug-iphonesimulator/Brivel.app
           xcrun simctl launch "$DEVICE" io.github.mrclusterman.trainsync
           sleep 8
           mkdir -p screenshots
@@ -70,14 +70,14 @@ jobs:
           xcodebuild -project iosApp.xcodeproj -scheme iosApp -sdk iphoneos -configuration Release -derivedDataPath build \
             -destination 'generic/platform=iOS' build CODE_SIGNING_ALLOWED=NO
           mkdir -p Payload
-          cp -R build/Build/Products/Release-iphoneos/TrainSync.app Payload/
-          codesign -f -s - --entitlements iosApp/iosApp.entitlements Payload/TrainSync.app
-          codesign -d --entitlements - Payload/TrainSync.app
-          zip -qry TrainSync.ipa Payload
+          cp -R build/Build/Products/Release-iphoneos/Brivel.app Payload/
+          codesign -f -s - --entitlements iosApp/iosApp.entitlements Payload/Brivel.app
+          codesign -d --entitlements - Payload/Brivel.app
+          zip -qry Brivel.ipa Payload
       - uses: actions/upload-artifact@v7
         with:
           name: trainsync-ipa
-          path: iosApp/TrainSync.ipa
+          path: iosApp/Brivel.ipa
 
   prototype:
     runs-on: ubuntu-latest

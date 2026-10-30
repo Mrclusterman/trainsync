@@ -164,7 +164,7 @@ class IntervalsGoldenTest {
             respond(body, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
         }
         val client = IntervalsClient("i123", "clave", engine)
-        val event = WorkoutEvent(startDateLocal = "2026-10-22T00:00:00", type = "Run", name = "TrainSync · Tempo",
+        val event = WorkoutEvent(startDateLocal = "2026-10-22T00:00:00", type = "Run", name = "Brivel · Tempo",
             description = "- 10m", movingTime = 600, externalId = "trainsync-2026-10-22")
         val created = client.upsertWorkouts(listOf(event))
         assertEquals("100", created.single()["id"].toString())

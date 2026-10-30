@@ -1,4 +1,4 @@
-# Visión — TrainSync
+# Visión — Brivel
 
 > **Estado:** borrador para revisar con Gabriel · **Fecha:** 2026-10-22
 > Ordena todo lo demás: cada apartado, función o cambio debe encajar aquí. Si algo no encaja, o se cambia la visión o no
@@ -27,7 +27,7 @@ por salud. La app no cambia de modo, cambia de objetivo.
 
 ## 3. Qué tomamos de cada una
 
-| | Garmin Connect | Apple Health / Google Health | TrainSync |
+| | Garmin Connect | Apple Health / Google Health | Brivel |
 |---|---|---|---|
 | Decide la sesión de hoy | Sí (Garmin Coach, sugerencias diarias) | No | Sí, con el motivo de cada decisión y su evidencia |
 | Reúne datos de varias marcas | No (solo Garmin) | Sí | Sí: intervals.icu hoy; Apple Salud y Health Connect con la app móvil |
@@ -131,7 +131,7 @@ Cuatro apartados y un flujo de objetivo. Todo lo de hoy (Salud, Plan, Hoy) se re
   secreto y webhooks). El más barato sería Cloudflare Workers + D1 (0 € hasta 100.000 peticiones al día) usado solo
   como relevo: recibe, el móvil descarga y se borra. Avisos: el programa de Garmin podría tener las altas pausadas (sin
   confirmar), Strava exige suscripción y prohíbe intermediarios desde el 2026-06-30, y un servidor con datos de salud
-  hace a TrainSync responsable del tratamiento (RGPD art. 9; revisar `CUMPLIMIENTO.md` antes).
+  hace a Brivel responsable del tratamiento (RGPD art. 9; revisar `CUMPLIMIENTO.md` antes).
 
 **Coste:** sin servidor, lo fijo son las cuentas de desarrollador (Apple ~99 $/año, Google ~25 $ una vez; cifras de
 memoria, sin comprobar) y un dominio.
@@ -176,16 +176,33 @@ memoria, sin comprobar) y un dominio.
 | Longevidad | Solo lo que miden relojes y básculas; sin analíticas |
 | Entrenadores | Más adelante (Fase 4) |
 | Financiación | Sin servidor: solo cuentas de desarrollador y dominio |
-| Nombre | Abierto, no es prioritario. Se sigue con TrainSync como nombre de trabajo; Biotos no convence (sección 12) |
+| Nombre | **Brivel** (2026-10-30; antes TrainSync). Dominio `brivel.app` comprado; marca sin registrar (sección 12) |
 
 ## 12. Nombre
 
-Comprobado el 2026-10-22 en App Store España (API de búsqueda de Apple), dominios (RDAP) y búsqueda web. **Sin comprobar
-en registros de marcas** (EUIPO, OEPM): hacerlo antes de usar ningún nombre.
+**Decidido el 2026-10-30: Brivel** (*brío* + «-vel»). Sustituye a TrainSync, que queda en los identificadores internos
+(paquete `io.github.mrclusterman.trainsync`, `applicationId`, bundle id, claves de guardado, repositorio): cambiarlos
+instalaría otra app y perdería los datos del móvil.
 
-| Nombre | Resultado |
+Criterios: palabra inventada o real, neutra en español e inglés, dos sílabas como mucho y `.app` libre.
+
+Comprobado el 2026-10-30:
+
+- **Dominio:** `brivel.app` comprado en Cloudflare Registrar (caduca el 2027-10-30). `brivel.com` está registrado por otro.
+- **App Store** (España y EE. UU., API de búsqueda de Apple): ninguna app con ese nombre.
+- **Marcas** (WIPO Global Brand Database, que incluye EUIPO, OEPM y Madrid): ninguna BRIVEL en la UE ni en España;
+  solo una en Corea, clase 3. La más parecida es BREVEL (Brevel Ltd., internacional con la UE y España, clases 5 y 29).
+  Nada parecido en las clases de una app (9, 10, 41, 42, 44).
+- **Registro de la marca en EUIPO:** aplazado hasta que haya presupuesto.
+- **Símbolo:** la línea de pulso; icono verde en claro, bosque en oscuro y monocromo para iOS tintado y Android temático.
+
+Descartados:
+
+| Nombre | Motivo |
 |---|---|
-| Bios | Descartado: BIOS Health (Cambridge, salud) usa bios.health; bios.app y biosapp.com registrados |
-| PhysOS | Arriesgado: ya hay una app "PHYSOS" (Medicina) en App Store |
-| Anabios | Arriesgado: AnaBios Corp. (San Diego, investigación farmacéutica) |
-| **Biotos** | Sin apps ni empresas con ese nombre encontradas; biotos.app y biotos.health libres (biotos.com registrado). Del griego *bíotos*, "vida, sustento", y termina en OS |
+| Bios | BIOS Health (Cambridge, salud) usa bios.health; bios.app y biosapp.com registrados |
+| PhysOS | Ya hay una app "PHYSOS" (Medicina) en App Store |
+| Anabios | AnaBios Corp. (San Diego, investigación farmacéutica) |
+| Biotos | Libre, pero no convence |
+| Brivo | Marca BRIVO registrada en la USPTO, clase 9 (Brivo Systems LLC), con apps en la App Store |
+| Palabras reales cortas (Brio, Soma, Cora, Pulsa, Tono, Vigor…) | `.app` registrado y muchas apps con el mismo nombre |

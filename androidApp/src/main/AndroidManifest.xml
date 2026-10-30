@@ -20,7 +20,7 @@
         <package android:name="com.google.android.apps.healthdata" />
     </queries>
     <application
-        android:label="TrainSync"
+        android:label="Brivel"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
         android:allowBackup="false"

@@ -8,7 +8,7 @@ private let weekdays = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
 
 enum ReminderError: LocalizedError {
     case denied
-    var errorDescription: String? { "Sin permiso para avisarte: actívalo en Ajustes → Notificaciones → TrainSync" }
+    var errorDescription: String? { "Sin permiso para avisarte: actívalo en Ajustes → Notificaciones → Brivel" }
 }
 
 /// Borrador editable del perfil en tipos de Swift; se convierte al del núcleo al guardar.
@@ -242,7 +242,7 @@ struct ProfileView: View {
                     Secondary("Aviso de salud")
                     Secondary(TextsKt.HEALTH_NOTICE)
                 }
-                Secondary("TrainSync es gratis y de código abierto (AGPL-3.0). Sin niveles de pago, sin anuncios y sin notificaciones comerciales.")
+                Secondary("Brivel es gratis y de código abierto (AGPL-3.0). Sin niveles de pago, sin anuncios y sin notificaciones comerciales.")
             }.padding(16)
         }
         .background(Palette.bg)

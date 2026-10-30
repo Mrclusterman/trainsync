@@ -1,14 +1,17 @@
-# TrainSync
+# Brivel
+
+> Antes TrainSync (nombre de trabajo hasta el 2026-10-30). El código y el repositorio conservan `trainsync` en los
+> identificadores internos.
 
 Planes de entrenamiento de resistencia gratuitos y open source sobre los datos de intervals.icu.
 
-**Compromiso:** TrainSync es y será gratis, **sin niveles de pago, sin anuncios y sin notificaciones comerciales**.
+**Compromiso:** Brivel es y será gratis, **sin niveles de pago, sin anuncios y sin notificaciones comerciales**.
 Ninguna función se bloquea para empujar a pagar. Se revisa en cada versión ([`docs/CUMPLIMIENTO.md`](docs/CUMPLIMIENTO.md), punto 9).
 Especificación: [`docs/MEMORIA_TECNICA.md`](docs/MEMORIA_TECNICA.md) · Motor: [`docs/MOTOR_ENTRENAMIENTO.md`](docs/MOTOR_ENTRENAMIENTO.md) · Diseño: [`docs/DISENO_ATHLETIC_PRECISION.md`](docs/DISENO_ATHLETIC_PRECISION.md)
 
 ## Hacia dónde va
 
-TrainSync pasa a ser **apps nativas que funcionan sin servidor**: el motor corre en el propio móvil y tus datos de salud
+Brivel pasa a ser **apps nativas que funcionan sin servidor**: el motor corre en el propio móvil y tus datos de salud
 no salen de él ([`docs/VISION.md`](docs/VISION.md)).
 
 | Carpeta | Qué es |
@@ -105,7 +108,7 @@ cd prototype/backend && .venv/bin/pytest
 
 Copyright (C) 2026 Gabriel Miralles Alvarez.
 
-TrainSync es software libre bajo la [GNU Affero General Public License v3.0](LICENSE) (`AGPL-3.0-only`).
+Brivel es software libre bajo la [GNU Affero General Public License v3.0](LICENSE) (`AGPL-3.0-only`).
 Puedes usarlo, estudiarlo, modificarlo y redistribuirlo; si ofreces una versión modificada como servicio
 en red, debes publicar su código fuente bajo la misma licencia. Componentes de terceros: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 

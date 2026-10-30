@@ -66,7 +66,7 @@ fun Onboarding(app: TrainSyncApp, act: Act) {
         Spacer(Modifier.height(24.dp))
         when (step) {
             0 -> {
-                Text("TrainSync", fontSize = 36.sp, fontWeight = FontWeight.ExtraBold)
+                Text("Brivel", fontSize = 36.sp, fontWeight = FontWeight.ExtraBold)
                 Text("El sistema operativo de tu cuerpo", fontSize = 18.sp, color = Palette.ok)
                 Secondary("Te dice qué hacer hoy y por qué, con tus datos y según la evidencia. Gratis, sin anuncios y de código abierto.")
                 Secondary(PRIVACY_NOTE)

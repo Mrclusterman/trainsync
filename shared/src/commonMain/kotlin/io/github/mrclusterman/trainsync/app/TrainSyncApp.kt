@@ -221,14 +221,14 @@ class TrainSyncApp(
                     item.session != null -> workoutEvent(item.session, day.date, physio, key = item.slot)
                     item.healthStrength != null -> strengthEvent(item.healthStrength, day.date)
                     else -> WorkoutEvent(startDateLocal = "${day.date}T00:00:00", type = "WeightTraining",
-                        name = "TrainSync · Fuerza", movingTime = item.durationMin * 60,
+                        name = "Brivel · Fuerza", movingTime = item.durationMin * 60,
                         description = (listOf(item.hint, "") + item.exercises.map { "• $it" } + listOfNotNull(item.notes))
                             .joinToString("\n"),
                         externalId = "trainsync-${day.date}-strength")
                 }
             }
             c.upsertWorkouts(events)
-            return events.map { it.name.removePrefix("TrainSync · ") }
+            return events.map { it.name.removePrefix("Brivel · ") }
         } finally {
             c.close()
         }

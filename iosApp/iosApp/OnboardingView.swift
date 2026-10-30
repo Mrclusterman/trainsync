@@ -52,7 +52,7 @@ struct OnboardingView: View {
             VStack(alignment: .leading, spacing: 14) {
                 switch step == -1 ? (hasProfile ? 1 : 0) : step {
                 case 0:
-                    Text("TrainSync").font(.ui(36, .heavy, relativeTo: .largeTitle)).padding(.top, 40)
+                    Text("Brivel").font(.ui(36, .heavy, relativeTo: .largeTitle)).padding(.top, 40)
                     Text("El sistema operativo de tu cuerpo").font(.ui(20, .semibold, relativeTo: .title3)).foregroundStyle(Palette.ok)
                     Secondary("Te dice qué hacer hoy y por qué, con tus datos y según la evidencia. Gratis, sin anuncios y de código abierto.")
                     Secondary(TextsKt.PRIVACY_NOTE)

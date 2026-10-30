@@ -1,4 +1,4 @@
-# Estado del arte — TrainSync (Fase A)
+# Estado del arte — Brivel (Fase A)
 
 > **Fecha:** 2026-10-21 · Base bibliográfica del modelo de objetivos sin fecha (ponerse en forma, fuerza y músculo,
 > perder grasa) y de las integraciones. Etiquetas: **[Verificado]** texto literal de la fuente primaria ·
@@ -119,14 +119,14 @@ constancia sobre la complejidad. Es también la justificación de los objetivos 
 | Marca o plataforma | Acceso para una app de terceros | Fuente |
 |---|---|---|
 | **Garmin** | Programa de desarrolladores solo para empresas; **nuevas solicitudes pausadas** desde septiembre de 2026 tras una demanda con Strava | [Secundaria: the5krunner, 14-09-2026; otros integradores] |
-| **intervals.icu** | API con clave personal (la que usa TrainSync); recibe datos de Garmin, Polar, Suunto, COROS, Wahoo y otros. Su desarrollador avisó de que quizá tenga que bloquear el acceso a datos de Garmin por la API | [Fuente: foro de intervals.icu, oct. 2026] |
+| **intervals.icu** | API con clave personal (la que usa Brivel); recibe datos de Garmin, Polar, Suunto, COROS, Wahoo y otros. Su desarrollador avisó de que quizá tenga que bloquear el acceso a datos de Garmin por la API | [Fuente: foro de intervals.icu, oct. 2026] |
 | **Polar** | AccessLink: gratuita y de alta directa, con consentimiento OAuth del usuario | [Fuente: blog de Polar; Secundaria: guías de integración] |
 | **Suunto** | API en la nube tras registrar la app; publicar en SuuntoPlus exige programa de socios y acuerdo | [Secundaria] |
 | **COROS** | Sin API general documentada; desde mayo de 2026, servidor MCP oficial para asistentes de IA | [Secundaria] |
 | **Fitbit / Google** | La Fitbit Web API se apaga el 30-10-2026; sustituta: Google Health API (nube, nuevo consentimiento). Health Connect solo en el móvil | [Fuente: documentación de Google] |
 | **Samsung** | Samsung Health Data SDK, solo en el móvil Android | [Fuente: Samsung Developers] |
 | **Apple** | HealthKit, solo en el iPhone (sin API de servidor) | [No verificado] |
-| **Strava** | **Viable para TrainSync**: el motor es determinista, sin IA. Condiciones desde nov. 2024: datos solo visibles para su propio usuario y prohibido usarlos en modelos de IA; en 2026, sin intermediarios. Da actividades (FC, ritmo, potencia), no sueño ni HRV. [No verificado] límite de un atleta conectado hasta la revisión de la app | [Secundaria: TechRepublic, CyberInsider] |
+| **Strava** | **Viable para Brivel**: el motor es determinista, sin IA. Condiciones desde nov. 2024: datos solo visibles para su propio usuario y prohibido usarlos en modelos de IA; en 2026, sin intermediarios. Da actividades (FC, ritmo, potencia), no sueño ni HRV. [No verificado] límite de un atleta conectado hasta la revisión de la app | [Secundaria: TechRepublic, CyberInsider] |
 | **Cualquier marca** | Archivos FIT/GPX exportados a mano: formato abierto, sin acuerdos | [Inferencia] |
 
 **Consecuencia para el diseño:** no se puede depender de una sola marca. Propuesta: (1) intervals.icu como agregador

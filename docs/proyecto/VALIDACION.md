@@ -1,4 +1,4 @@
-# Validación del motor — TrainSync
+# Validación del motor — Brivel
 
 > **Fecha:** 2026-10-29 · Reproducible: `VALIDATION_REPORT=1 ./gradlew :shared:jvmTest --tests '*ValidationTest*'`.
 > Sin la variable solo comprueba; se ejecuta en cada compilación de la nube. Resultados completos:

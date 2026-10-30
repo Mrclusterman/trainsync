@@ -1,11 +1,11 @@
-# TrainSync: un motor determinista y explicable de planificación del ejercicio para la salud y el rendimiento
+# Brivel: un motor determinista y explicable de planificación del ejercicio para la salud y el rendimiento
 
 **Memoria del proyecto**
 **Autor:** Gabriel Miralles Álvarez
 **Fecha:** 21 de octubre de 2026
 **Código y documentación:** repositorio `trainsync` (licencia AGPL-3.0-only)
 
-> Esta memoria documenta el motor de TrainSync con rigor académico: estado del arte con fuentes verificadas, diseño
+> Esta memoria documenta el motor de Brivel con rigor académico: estado del arte con fuentes verificadas, diseño
 > trazable, validación reproducible y límites declarados, para que cada decisión del producto se pueda revisar.
 
 ---
@@ -14,7 +14,7 @@
 
 Las aplicaciones de planificación del entrenamiento más extendidas son de pago o reservan sus funciones útiles a una
 suscripción, y casi todas están pensadas para preparar una competición: una vez superada, el usuario pierde el motivo para
-seguir usándolas. Este trabajo presenta TrainSync, una aplicación gratuita y de código abierto cuyo núcleo es un motor de
+seguir usándolas. Este trabajo presenta Brivel, una aplicación gratuita y de código abierto cuyo núcleo es un motor de
 planificación **determinista y explicable**, sin inteligencia artificial en tiempo de uso, que genera planes semanales para
 tres objetivos: preparar un evento, ponerse en forma y ganar fuerza y músculo. Los dos últimos no tienen
 fecha de fin: se organizan en bloques de cuatro semanas que se renuevan según la adherencia real del usuario.
@@ -38,7 +38,7 @@ explicabilidad, aplicaciones de salud, adherencia.
 ## Abstract
 
 Mainstream training-planning apps are paid or paywall their useful features, and most target a single competition, after
-which users lose their reason to keep using them. This work presents TrainSync, a free, open-source application built
+which users lose their reason to keep using them. This work presents Brivel, a free, open-source application built
 around a **deterministic, explainable** planning engine, with no artificial intelligence at run time, that produces weekly
 plans for four goals: an event, general fitness, strength and muscle, and fat loss. The last three have no end date: they
 run in renewable four-week blocks adjusted to the user's actual adherence. The model enforces a common floor derived from
@@ -96,7 +96,7 @@ plataformas, incompatible con sus condiciones de uso de datos (Strava prohíbe u
 
 ### 1.2 Propuesta
 
-TrainSync propone un motor de planificación **determinista** (mismas entradas, mismo plan), **explicable** (cada decisión
+Brivel propone un motor de planificación **determinista** (mismas entradas, mismo plan), **explicable** (cada decisión
 lleva su motivo visible y cada regla su etiqueta de evidencia) y **gratuito y abierto** (AGPL-3.0), que sirva de ayuda
 diaria y no solo de preparación para una carrera. La inteligencia artificial se usó como herramienta de desarrollo (§4.4),
 pero no forma parte del producto.
@@ -361,7 +361,7 @@ dos criterios sin comprobar casi nada. Que la validación encontrara defectos re
 
 ### 8.1 Frente a Garmin y la competencia
 
-TrainSync cubre los mismos tipos de sesión que las sugerencias diarias de Garmin y su criterio central (cubrir el tipo de carga
+Brivel cubre los mismos tipos de sesión que las sugerencias diarias de Garmin y su criterio central (cubrir el tipo de carga
 que falta), pero con fórmulas publicadas y citadas, y añade lo que Garmin no ofrece: bici sin potenciómetro, objetivos de
 salud sin fecha que se adaptan a la adherencia y gratuidad. La comparación es de diseño, no de resultados: no existe una base
 común para medir qué plan funciona mejor en personas.

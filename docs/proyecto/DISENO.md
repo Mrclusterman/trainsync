@@ -1,4 +1,4 @@
-# Diseño del modelo — TrainSync (Fase B)
+# Diseño del modelo — Brivel (Fase B)
 
 > **Fecha:** 2026-10-21 · Especificación del motor para objetivos sin fecha. Cada regla cita su base en
 > `ESTADO_DEL_ARTE.md` (EA §n) o en `MOTOR_ENTRENAMIENTO.md` (MOTOR §n), con la etiqueta de certeza de allí; lo que no

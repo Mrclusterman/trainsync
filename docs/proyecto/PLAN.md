@@ -1,11 +1,11 @@
-# Plan del proyecto — Motor de entrenamiento de TrainSync
+# Plan del proyecto — Motor de entrenamiento de Brivel
 
 > **Fecha:** 2026-10-21 · **Entregable final:** la memoria del proyecto (`docs/proyecto/MEMORIA.md`). Todo lo que la memoria
 > afirme tiene que estar respaldado por bibliografía verificada o por una validación ejecutada y reproducible en este repo.
 
 ## Decisiones de partida (Gabriel, 2026-10-21)
 
-1. TrainSync deja de ser solo un planificador de carreras: es una **ayuda diaria de salud para todo tipo de público**.
+1. Brivel deja de ser solo un planificador de carreras: es una **ayuda diaria de salud para todo tipo de público**.
    Si el único objetivo es un evento, al terminarlo desaparece el motivo para seguir usando la app.
 2. **Objetivos:** preparar un evento (lo que ya existe), **ponerse en forma**, **fuerza y músculo** y **perder grasa** (este último retirado el 2026-10-21, `DISENO.md` §2).
    Los tres nuevos no tienen fecha: bloques continuos que se renuevan.

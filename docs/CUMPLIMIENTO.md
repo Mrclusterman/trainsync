@@ -1,4 +1,4 @@
-# CUMPLIMIENTO — TrainSync
+# CUMPLIMIENTO — Brivel
 
 > **Versión:** 0.3 · **Fecha:** 2026-10-21
 > **Ámbito:** app gratuita y open source, responsable en España, usuarios en la UE, que trata datos de salud (FC, HRV, sueño) importados de intervals.icu.
@@ -10,7 +10,7 @@ Etiquetas: **[Verificado]** comprobado en el código o en la app real · **[Fuen
 
 ## 0. Lo más importante
 
-1. **Los datos de TrainSync son datos de salud.** FC, HRV, sueño y métricas continuas de wearables se tratan como categoría especial del art. 9 RGPD. Hace falta **consentimiento explícito**, específico para datos de salud y separado de la aceptación de los términos (art. 9.2.a). [Fuente: guías de cumplimiento sobre wearables; los reguladores tienden a no aceptar el argumento "es un dispositivo de consumo"]
+1. **Los datos de Brivel son datos de salud.** FC, HRV, sueño y métricas continuas de wearables se tratan como categoría especial del art. 9 RGPD. Hace falta **consentimiento explícito**, específico para datos de salud y separado de la aceptación de los términos (art. 9.2.a). [Fuente: guías de cumplimiento sobre wearables; los reguladores tienden a no aceptar el argumento "es un dispositivo de consumo"]
 2. **Nada de esto bloquea el uso personal actual** (un solo usuario, en local, con su propia cuenta). **Sí bloquea abrir la app a otras personas**: todo lo marcado "antes de publicar" debe estar hecho antes de la Fase 1 en producción.
 
 ---
@@ -20,7 +20,7 @@ Etiquetas: **[Verificado]** comprobado en el código o en la app real · **[Fuen
 | # | Requisito | ¿Aplica? | Estado hoy | Cuándo | Base / nota |
 |---|---|---|---|---|---|
 | 1 | Política de privacidad | Sí | Pendiente | Antes de publicar | RGPD arts. 13-14. Debe cubrir datos de salud (art. 9), intervals.icu como origen, plazos de conservación y derechos |
-| 2 | Términos de uso | Sí | Pendiente | Antes de publicar | Incluir que TrainSync **no es consejo médico** ni producto sanitario y que el usuario entrena bajo su responsabilidad |
+| 2 | Términos de uso | Sí | Pendiente | Antes de publicar | Incluir que Brivel **no es consejo médico** ni producto sanitario y que el usuario entrena bajo su responsabilidad |
 | 3 | Política de reembolso | **No**, mientras sea gratis | — | Si hay pago o donaciones con contraprestación | — |
 | 4 | Política de cookies | Hoy no hay cookies | [Verificado: 0 cookies en / y /plan] | Fase 1 (cookie de sesión) | Las cookies técnicas estrictamente necesarias (sesión, autenticación) están exentas de consentimiento (art. 22.2 LSSI, guía AEPD) [Fuente: resúmenes de la guía AEPD]. Se describirán en la política de privacidad |
 | 5 | Banner de consentimiento de cookies | **No**, mientras solo haya cookies técnicas | — | Solo si se añade analítica o terceros | Si se añade, debe tener "rechazar" con el mismo peso que "aceptar" (ver #9) |

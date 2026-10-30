@@ -1,4 +1,4 @@
-# MEMORIA TÉCNICA — TrainSync
+# MEMORIA TÉCNICA — Brivel
 ### App de planificación de entrenamiento basada en intervals.icu
 
 > **Versión:** 0.5 — Reglas de TSB, HRV, zonas de running y clasificación de Z4 corregidas según bibliografía (ver `MOTOR_ENTRENAMIENTO.md` §11.1)  
@@ -29,7 +29,7 @@
 
 ### 1.1 Problema que resuelve
 
-Las apps de planificación de entrenamiento de calidad (TrainingPeaks, Today's Plan, Intervals.icu Premium) son de pago. El objetivo de TrainSync es ofrecer planes de entrenamiento dinámicos, científicamente fundamentados y completamente gratuitos, usando los datos que el usuario ya genera automáticamente con su hardware (Garmin, iGPSport) a través de intervals.icu.
+Las apps de planificación de entrenamiento de calidad (TrainingPeaks, Today's Plan, Intervals.icu Premium) son de pago. El objetivo de Brivel es ofrecer planes de entrenamiento dinámicos, científicamente fundamentados y completamente gratuitos, usando los datos que el usuario ya genera automáticamente con su hardware (Garmin, iGPSport) a través de intervals.icu.
 
 ### 1.2 Propuesta de valor
 
@@ -227,7 +227,7 @@ Cualquier persona que use intervals.icu para registrar sus actividades de runnin
 | **Redis** | Cache de sesiones, cache de planes calculados, broker de mensajes para Celery |
 | **Celery Worker** | Tareas asíncronas: sincronización periódica con intervals.icu, recálculo de planes |
 | **Ollama** | LLM local opcional para generación de descripciones de entrenamiento en lenguaje natural |
-| **intervals.icu API** | Fuente de datos externa. Solo lectura desde TrainSync |
+| **intervals.icu API** | Fuente de datos externa. Solo lectura desde Brivel |
 
 ---
 
@@ -406,7 +406,7 @@ wellness_data                   -- Hypertable TimescaleDB (time: recorded_date)
 ├── ramp_rate                   -- Tasa de cambio del CTL
 ├── resting_hr (nullable)       -- FC en reposo (bpm) — campo: "restingHR"
 ├── hrv_rmssd (nullable)        -- HRV en ms — campo: "hrv" (RMSSD). hrvSDNN no disponible
-├── hrv_status                  -- within_swc/outside_swc — CALCULADO por TrainSync, no viene de API (ver 8.4)
+├── hrv_status                  -- within_swc/outside_swc — CALCULADO por Brivel, no viene de API (ver 8.4)
 ├── sleep_secs (nullable)       -- Duración sueño en segundos — campo: "sleepSecs"
 ├── sleep_score (nullable)      -- 0-100 — campo: "sleepScore"
 ├── sleep_quality (nullable)    -- Escala entera — campo: "sleepQuality"
@@ -448,7 +448,7 @@ onboarding_tests
 
 ### 7.2 Endpoints principales a consumir
 
-| Endpoint | Uso en TrainSync |
+| Endpoint | Uso en Brivel |
 |---|---|
 | `GET /athlete/{id}` | Perfil del atleta, datos básicos |
 | `GET /athlete/{id}/activities.csv` | Lista de actividades (CSV, más eficiente que JSON) |
@@ -457,7 +457,7 @@ onboarding_tests
 | `GET /athlete/{id}/events` | Eventos/objetivos definidos en intervals |
 | `GET /athlete/{id}/fitnesschart` | CTL, ATL históricos calculados por intervals |
 
-> **Nota de implementación:** intervals.icu ya calcula CTL/ATL directamente en el endpoint de wellness. Usaremos estos valores en lugar de recalcularlos, ya que tienen el historial completo del atleta desde antes de TrainSync.
+> **Nota de implementación:** intervals.icu ya calcula CTL/ATL directamente en el endpoint de wellness. Usaremos estos valores en lugar de recalcularlos, ya que tienen el historial completo del atleta desde antes de Brivel.
 
 ### 7.3 Campos de wellness confirmados disponibles (verificado 2026-04-21 con cuenta real)
 
@@ -493,7 +493,7 @@ Confirmados en el CSV de actividades:
 
 ### 7.5 Perfil de ejemplo para desarrollo y pruebas
 
-Valores ficticios con los que se escriben los tests y los ejemplos de este documento. No corresponden a ningún atleta real; la columna Fuente indica de dónde los toma TrainSync en una cuenta real:
+Valores ficticios con los que se escriben los tests y los ejemplos de este documento. No corresponden a ningún atleta real; la columna Fuente indica de dónde los toma Brivel en una cuenta real:
 
 | Dato | Valor de ejemplo | Fuente |
 |---|---|---|
@@ -506,7 +506,7 @@ Valores ficticios con los que se escriben los tests y los ejemplos de este docum
 | FTP guardado | Valor manual, sin medición real | Campo `icu_ftp` |
 | Deportes registrados | Run, Ride, TrailRun, VirtualRide, Walk, Hike | Actividades CSV |
 
-> **Nota sobre TSB:** intervals.icu no devuelve TSB directamente en el endpoint de wellness. TrainSync lo calcula como `TSB = CTL - ATL` usando los campos `ctl` y `atl` del endpoint de wellness.
+> **Nota sobre TSB:** intervals.icu no devuelve TSB directamente en el endpoint de wellness. Brivel lo calcula como `TSB = CTL - ATL` usando los campos `ctl` y `atl` del endpoint de wellness.
 
 ```
 Sincronización inicial (al conectar cuenta):
@@ -645,7 +645,7 @@ TSB < -30    → riesgo alto, solo recuperación
 
 **rTSS — Fuerza (Resistance TSS)**
 
-intervals.icu no calcula carga para sesiones de fuerza. TrainSync la estima mediante RPE y duración:
+intervals.icu no calcula carga para sesiones de fuerza. Brivel la estima mediante RPE y duración:
 ```
 rTSS = (RPE / 10)² × (duracion_min / 60) × 100
 
@@ -808,7 +808,7 @@ Duatlón:
 
 **Cálculo de HRV status (ln RMSSD vs SWC personal)** — v0.4
 
-intervals.icu no proporciona un estado HRV categorizado. TrainSync usa el método de los estudios de entrenamiento guiado por HRV (Vesterinen 2016, Javaloyes 2019) y de la guía del Australian Institute of Sport:
+intervals.icu no proporciona un estado HRV categorizado. Brivel usa el método de los estudios de entrenamiento guiado por HRV (Vesterinen 2016, Javaloyes 2019) y de la guía del Australian Institute of Sport:
 
 ```
 ln_rmssd   = ln(RMSSD de cada mañana)
@@ -894,7 +894,7 @@ Total de semanas disponibles → dividir en:
 - [ ] Endpoints REST: `/users`, `/wellness`, `/activities`
 - [ ] Tests unitarios del cliente de intervals.icu
 
-**Criterio de éxito:** Un usuario puede registrarse, introducir su API key de intervals.icu, y ver sus actividades y wellness en la API de TrainSync.
+**Criterio de éxito:** Un usuario puede registrarse, introducir su API key de intervals.icu, y ver sus actividades y wellness en la API de Brivel.
 
 ---
 
