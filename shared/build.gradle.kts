@@ -24,6 +24,9 @@ kotlin {
         nodejs {  // los tests, sin navegador
             testTask {
                 environment("GOLDEN_DIR", file("src/jvmAndJsTest/resources/golden").absolutePath)
+                val webTypes = rootProject.file("web/src/types.ts")
+                inputs.file(webTypes)  // si solo cambia types.ts, el test tiene que volver a correr
+                environment("WEB_TYPES", webTypes.absolutePath)
                 useMocha { timeout = "120s" }  // los casos de referencia tardan más que los 2 s por defecto
             }
         }
