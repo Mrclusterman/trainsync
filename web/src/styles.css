@@ -70,3 +70,44 @@ button:focus-visible { outline: 3px solid var(--text); outline-offset: 2px; }
 .dot.done { background: var(--ok); }
 .dot i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
 .ok-text { display: flex; align-items: center; gap: 6px; color: var(--ok); font-size: 14px; font-weight: 600; }
+
+.grow { flex: 1; }
+button.secondary { background: var(--chip); color: var(--text); font-weight: 600; }
+button.text { background: none; min-height: 44px; padding: 0 6px; color: var(--ok); font-weight: 600; align-self: flex-start; }
+button.text.muted { color: var(--muted); }
+.tag { min-height: 0; margin-top: 4px; padding: 2px 8px; border-radius: 8px; background: var(--chip); color: var(--muted);
+  font-size: 11px; font-weight: 600; }
+fieldset { border: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+legend { font-size: 14px; margin-bottom: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { min-height: 36px; padding: 0 14px; border-radius: 10px; background: none; color: var(--text); box-shadow: inset 0 0 0 1px var(--muted); }
+.chip[aria-pressed="true"] { background: var(--ok-soft); box-shadow: inset 0 0 0 2px var(--ok); font-weight: 700; }
+.small-badge { width: 32px; height: 32px; }
+.lift { display: flex; flex-direction: column; gap: 2px; padding-top: 6px; }
+.lift form { gap: 8px; }
+.lift label { display: flex; flex-direction: column; font-size: 12px; color: var(--muted); }
+.lift input { width: 90px; min-height: 44px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--muted);
+  background: var(--surface); color: var(--text); font: 15px "IBM Plex Mono", monospace; }
+.status:empty { display: none; }
+.status { position: sticky; bottom: 16px; padding: 12px 16px; border-radius: 14px; background: var(--text); color: var(--bg); font-size: 14px; }
+
+/* Ordenador y tableta: más ancho, la semana en una columna al lado y las sesiones en rejilla */
+.layout, .col, .sessions { display: flex; flex-direction: column; gap: 14px; }
+.page-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 4px 24px; }
+@media (min-width: 600px) and (max-width: 899px) { main.wide { max-width: 760px; padding: 24px 28px 40px; } }
+@media (min-width: 900px) {
+  main.wide { max-width: 1180px; padding: 32px 32px 48px; gap: 20px; }
+  h1 { font-size: 32px; }
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; }
+  .side { position: sticky; top: 24px; }
+  .sessions { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; align-items: start; }
+  .module > button.secondary { align-self: flex-start; }
+  .status { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: 480px; }
+}
+@media (min-width: 1280px) {
+  .layout { grid-template-columns: minmax(0, 1fr) 380px; }
+}
+@media (hover: hover) {
+  button:hover { filter: brightness(1.06); }
+  button.text:hover, .tag:hover { text-decoration: underline; filter: none; }
+}

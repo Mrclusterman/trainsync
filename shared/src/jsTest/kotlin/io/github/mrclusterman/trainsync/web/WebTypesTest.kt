@@ -14,7 +14,7 @@ import kotlin.test.assertEquals
 
 private val fs: dynamic = js("process.getBuiltinModule('fs')")
 
-/** web/src/types.ts está escrito a mano: cada campo que declara tiene que salir en el JSON de la pantalla. */
+/** web/src/types.ts está escrito a mano: cada campo que declara tiene que salir en el JSON de Hoy o de liftJson. */
 class WebTypesTest {
     private class MemoryStore : KeyValueStore {
         private val map = mutableMapOf<String, String>()
@@ -39,7 +39,9 @@ class WebTypesTest {
         val json = Json { encodeDefaults = true }
         val sent = listOf(30, 31).flatMap { d ->
             today = LocalDate(2026, 10, d)
-            keys(Json.parseToJsonElement(json.encodeToString(app.todayScreen())))
+            val screen = app.todayScreen()
+            val lifts = screen.day.items.flatMap { it.exercises }.mapNotNull { liftJson(app, it) }
+            (listOf(json.encodeToString(screen)) + lifts).flatMap { keys(Json.parseToJsonElement(it)) }
         }.toSet()
         val types = fs.readFileSync(js("process.env.WEB_TYPES"), "utf8") as String
         val declared = Regex("""(\w+)\??:\s""").findAll(types.substringAfter("export type Tone")).map { it.groupValues[1] }.toSet()

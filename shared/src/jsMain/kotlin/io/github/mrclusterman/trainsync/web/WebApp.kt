@@ -5,15 +5,20 @@ package io.github.mrclusterman.trainsync.web
 // Puente de la versión web: el mismo controlador que las apps, con los datos en el navegador. Las pantallas salen en
 // JSON para que la interfaz (web/) reciba objetos planos de JavaScript.
 
+import io.github.mrclusterman.trainsync.app.EVIDENCE_MEANING
 import io.github.mrclusterman.trainsync.app.GoalKind
 import io.github.mrclusterman.trainsync.app.KeyValueStore
 import io.github.mrclusterman.trainsync.app.SPORT_LABEL
 import io.github.mrclusterman.trainsync.app.TrainSyncApp
 import io.github.mrclusterman.trainsync.app.UserProfile
+import io.github.mrclusterman.trainsync.app.kg
+import io.github.mrclusterman.trainsync.app.repRange
 import kotlinx.browser.localStorage
 import kotlinx.browser.sessionStorage
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import kotlin.js.Date
 import org.w3c.dom.Storage
 
@@ -24,6 +29,17 @@ private class WebStore(private val storage: Storage) : KeyValueStore {
 
 // La fecha local del navegador; TimeZone.currentSystemDefault() en JS necesita la base de zonas horarias aparte
 private fun browserToday() = Date().let { LocalDate(it.getFullYear(), it.getMonth() + 1, it.getDate()) }
+
+internal fun liftJson(app: TrainSyncApp, line: String): String? {
+    if (repRange(line) == null) return null
+    val hint = app.liftHint(line)
+    return buildJsonObject {
+        put("exercise", hint.exercise)
+        put("last", hint.last?.let { "La última vez: ${it.weightKg?.let(::kg) ?: "tu peso"} × ${it.reps} (${it.sets} series)" })
+        put("suggestion", hint.suggestion)
+        put("weight", hint.last?.weightKg?.let { kg(it).removeSuffix(" kg") } ?: "")
+    }.toString()
+}
 
 @JsExport
 class WebApp {
@@ -45,6 +61,24 @@ class WebApp {
 
     fun sportLabel(sport: String): String = SPORT_LABEL[sport] ?: sport
 
+    fun evidenceMeaning(tag: String): String = "${EVIDENCE_MEANING[tag]} Fuentes en la documentación del motor."
+
+    // Acciones de Hoy, las mismas que en DayContent de Android; los errores llegan a la web como excepciones con su texto
     fun markDone(date: String, sport: String) = app.markDone(date, sport)
     fun unmarkDone(date: String, sport: String) = app.unmarkDone(date, sport)
+    fun answerReadiness(sleep: Int, energy: Int, soreness: Int) = app.answerReadiness(sleep, energy, soreness)
+    fun chooseAlternative(date: String, plannedSport: String, chosenSport: String) = app.chooseAlternative(date, plannedSport, chosenSport)
+    fun clearChoice(date: String) = app.clearChoice(date)
+    fun canChangeDay(date: String): Boolean = app.canChangeDay(date)
+    fun preferTrain(date: String) = app.changeDay(date, app.minutesToTrain(app.day(date)))
+    fun cannotTrain(date: String) = app.changeDay(date, 0)
+
+    /** Un ejercicio con repeticiones: lo de la última vez y la sugerencia de hoy; null si va por tiempo (planchas). */
+    fun liftJson(line: String): String? = liftJson(app, line)
+
+    /** Como LiftRows de Android: las series salen de la línea del plan ("3 × 8–12"). */
+    fun logLift(date: String, line: String, weight: String, reps: String) {
+        val sets = Regex("""(\d+) ×""").find(line)?.groupValues?.get(1)?.toInt() ?: 1
+        app.logLift(date, line, weight.replace(',', '.').toDoubleOrNull(), reps.toIntOrNull() ?: 0, sets)
+    }
 }
