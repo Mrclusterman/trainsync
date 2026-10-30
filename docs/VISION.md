@@ -106,7 +106,7 @@ Cuatro apartados y un flujo de objetivo. Todo lo de hoy (Salud, Plan, Hoy) se re
 - **Motor en un núcleo compartido** por las dos apps, que corre en el propio móvil. Propuesta: Kotlin Multiplatform
   (decidido). El motor en Python se reescribió una vez en Kotlin con pruebas de equivalencia; desde el 2026-10-29 el
   núcleo de Kotlin es la **única fuente**: el motor del prototipo queda congelado y la validación vive en
-  `shared/src/jvmTest/.../engine/ValidationTest.kt`.
+  `shared/src/jvmTest/.../engine/ValidationTest.kt` (los casos de referencia, en `shared/src/jvmAndJsTest`).
 - **Los datos se quedan en el móvil:** Apple Salud / Health Connect se leen en el dispositivo e intervals.icu se llama
   directamente desde la app con la clave del usuario, guardada en el llavero del sistema.
 - **Sin servidor ni cuentas** en las fases 1–3: no hay contraseñas, emails ni base de datos con datos de salud de nadie.
@@ -114,6 +114,20 @@ Cuatro apartados y un flujo de objetivo. Todo lo de hoy (Salud, Plan, Hoy) se re
 - **El servidor solo vuelve si hace falta:** entrenadores (compartir datos entre personas), Garmin directo (envía los
   datos a un servidor) y quizá Strava (su autorización) [Inferencia: sin comprobar].
 - **La web actual** (Next.js + FastAPI) queda como prototipo de referencia mientras llegan las apps.
+- **Versión web (2026-10-30, en estudio):** el núcleo compila a JavaScript (`js { browser() }` en
+  `shared/build.gradle.kts`) y los casos de referencia (`shared/src/jvmAndJsTest`) dan lo mismo en JS que en la JVM; el
+  CI lo comprueba con `:shared:jsNodeTest`. La web sería estática, con el motor en el navegador y los datos guardados
+  en él, alojable gratis (por ejemplo Cloudflare). intervals.icu acepta llamadas desde el navegador: CORS comprobado el
+  2026-10-30 en `/athlete/0` y `/wellness` (permite `authorization` y GET, POST, PUT, DELETE). El navegador no lee Apple
+  Salud ni Health Connect, así que en la web los datos vendrían de intervals.icu. Falta decidir la interfaz (Compose
+  Multiplatform o propia) y el almacenamiento (`localStorage` o IndexedDB).
+- **Conexiones directas sin intervals.icu (estudiado el 2026-10-30, sin decidir):** el móvil ya puede prescindir de
+  intervals.icu con Apple Salud y Health Connect (Garmin escribe en Health Connect actividades, pulso y sueño, desde
+  Android 14; no Body Battery ni estrés). Garmin, Strava, Polar, COROS o Wahoo directos necesitan servidor (OAuth con
+  secreto y webhooks). El más barato sería Cloudflare Workers + D1 (0 € hasta 100.000 peticiones al día) usado solo
+  como relevo: recibe, el móvil descarga y se borra. Avisos: el programa de Garmin podría tener las altas pausadas (sin
+  confirmar), Strava exige suscripción y prohíbe intermediarios desde el 2026-06-30, y un servidor con datos de salud
+  hace a TrainSync responsable del tratamiento (RGPD art. 9; revisar `CUMPLIMIENTO.md` antes).
 
 **Coste:** sin servidor, lo fijo son las cuentas de desarrollador (Apple ~99 $/año, Google ~25 $ una vez; cifras de
 memoria, sin comprobar) y un dominio.
